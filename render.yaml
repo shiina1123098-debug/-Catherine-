@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: catherine-bot
+    runtime: python
+    runtimeVersion: 3.11.9
+    buildCommand: pip install -r requirements_gemini.txt
+    startCommand: python catherine_bot_final.py
+    autoDeploy: true
+    envVars:
+      - key: MTU1MjAyMTA4NzU3MzkwMTQxMg.GvK4nZ.c24ZM7M5NEuJwLi88UOTRzeAjF7w6AjzrW-6aA
+        scope: build,runtime
+      - key: AQ.Ab8RN6Iyc0ThCtdf-SIOEncLW_JnhFQE59gc2YirQSi8oULf9g
+        scope: build,runtime
