@@ -10,7 +10,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Configurar Gemini
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+genai.configure(api_key=os.environ.get("AQ.Ab8RN6Iyc0ThCtdf-SIOEncLW_JnhFQE59gc2YirQSi8oULf9g"))
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Historial de conversaciones por canal
@@ -154,4 +154,4 @@ async def on_message(message):
     await bot.process_commands(message)
 
 # Iniciar el bot
-bot.run(os.environ.get("DISCORD_TOKEN"))
+bot.run(os.environ.get("MTU1MjAyMTA4NzU3MzkwMTQxMg.GvK4nZ.c24ZM7M5NEuJwLi88UOTRzeAjF7w6AjzrW-6aA"))
