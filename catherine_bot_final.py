@@ -3,6 +3,25 @@ from discord.ext import commands
 import google.generativeai as genai
 import os
 from collections import defaultdict
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
+
+# --- Mini servidor web falso (solo para que Render detecte un puerto abierto) ---
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Catherine esta viva")
+    def log_message(self, format, *args):
+        pass  # Silenciar logs del servidor falso
+
+def run_fake_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+    server.serve_forever()
+
+threading.Thread(target=run_fake_server, daemon=True).start()
+# --- Fin del servidor falso ---
 
 # Configuración del bot
 intents = discord.Intents.default()
