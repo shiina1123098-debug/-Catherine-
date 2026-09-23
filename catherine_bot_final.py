@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 from google import genai
 import os
+import asyncio
+import yt_dlp
 from collections import defaultdict
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
@@ -161,6 +163,61 @@ async def on_message(message):
                 await message.reply(f"❌ Hubo un error: {str(e)}")
 
     await bot.process_commands(message)
+
+@bot.event
+async def on_command_error(ctx, error):
+    await ctx.reply(f"❌ Error al ejecutar el comando: {error}")
+
+@bot.command(name="mp3search")
+async def mp3search(ctx, *, busqueda: str = None):
+    """Busca un video en YouTube y manda el audio como MP3"""
+    if not busqueda:
+        await ctx.reply("Decime qué buscar. Ejemplo: `!mp3search bruh sound effect`")
+        return
+
+    os.makedirs("descargas", exist_ok=True)
+    aviso = await ctx.reply("Buscando y descargando el audio, dame un segundo...")
+
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "default_search": "ytsearch1",
+        "outtmpl": f"descargas/%(id)s.%(ext)s",
+        "noplaylist": True,
+        "quiet": True,
+        "no_warnings": True,
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "192",
+        }],
+    }
+
+    def descargar():
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(busqueda, download=True)
+            if "entries" in info:
+                info = info["entries"][0]
+            titulo = info.get("title", "audio")
+            ruta = ydl.prepare_filename(info).rsplit(".", 1)[0] + ".mp3"
+            return ruta, titulo
+
+    try:
+        # Correrlo en un hilo aparte para no congelar el bot mientras descarga
+        ruta_archivo, titulo = await asyncio.to_thread(descargar)
+
+        tamaño_mb = os.path.getsize(ruta_archivo) / (1024 * 1024)
+
+        if tamaño_mb > 9.5:
+            await aviso.edit(content=f"❌ **{titulo}** pesa {tamaño_mb:.1f}MB, es demasiado grande para subirlo a Discord (límite ~10MB).")
+        else:
+            await aviso.edit(content=f"Listo: **{titulo}**")
+            await ctx.send(file=discord.File(ruta_archivo))
+
+        if os.path.exists(ruta_archivo):
+            os.remove(ruta_archivo)
+
+    except Exception as e:
+        await aviso.edit(content=f"❌ No pude descargar el audio: {str(e)}")
 
 # Iniciar el bot
 bot.run(os.environ.get("DISCORD_TOKEN"))
