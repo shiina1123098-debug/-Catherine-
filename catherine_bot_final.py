@@ -2,9 +2,10 @@ import discord
 from discord.ext import commands
 from google import genai
 import os
-import shutil
+import re
+import io
 import asyncio
-import yt_dlp
+import aiohttp
 from collections import defaultdict
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
@@ -62,20 +63,16 @@ Usuario: te quiero mucho
 Usuario: ¿me ayudas con la tarea?
 †Catherine†: *Asiente levemente con la cabeza y acerca su silla.* Está bien, déjame ver qué es. Si no entiendes algo, dímelo y te lo explicaré de forma sencilla."""
 
-# Copiar el archivo de cookies (si existe) a /tmp, porque /etc/secrets es de solo lectura
-# y yt-dlp necesita poder escribir en el archivo mientras lo usa
-RUTA_COOKIES = "/tmp/cookies.txt"
-if os.path.exists("/etc/secrets/cookies.txt"):
-    shutil.copy("/etc/secrets/cookies.txt", RUTA_COOKIES)
+# Config de RapidAPI (youtube-mp36) para convertir YouTube a mp3
+RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
+RAPIDAPI_HOST = "youtube-mp36.p.rapidapi.com"
+
+# Config de YouTube Data API v3 (oficial de Google) para buscar por texto
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 
 @bot.event
 async def on_ready():
     print(f"✨ {bot.user} está conectada y lista")
-    if os.path.exists(RUTA_COOKIES):
-        tamaño = os.path.getsize(RUTA_COOKIES)
-        print(f"🍪 cookies.txt encontrado ({tamaño} bytes)")
-    else:
-        print("⚠️ cookies.txt NO encontrado en /etc/secrets/")
 
 async def generar_resumen(channel_id):
     """Genera un resumen de los últimos mensajes"""
@@ -180,61 +177,93 @@ async def on_message(message):
 async def on_command_error(ctx, error):
     await ctx.reply(f"❌ Error al ejecutar el comando: {error}")
 
-@bot.command(name="mp3search")
-async def mp3search(ctx, *, busqueda: str = None):
-    """Busca un video en YouTube y manda el audio como MP3"""
-    if not busqueda:
-        await ctx.reply("Decime qué buscar. Ejemplo: `!mp3search bruh sound effect`")
+@bot.command(name="mp3")
+async def mp3(ctx, *, entrada: str = None):
+    """Busca (o recibe un link de) un video de YouTube y manda el audio como mp3"""
+    if not entrada:
+        await ctx.reply("Decime qué buscar, o pasame un link. Ejemplo: `!mp3 bruh sound effect`")
         return
 
-    os.makedirs("descargas", exist_ok=True)
-    aviso = await ctx.reply("Buscando y descargando el audio, dame un segundo...")
+    if not RAPIDAPI_KEY:
+        await ctx.reply("❌ Falta configurar RAPIDAPI_KEY en las variables de entorno de Render.")
+        return
 
-    ydl_opts = {
-        "format": "bestaudio/best",
-        "default_search": "ytsearch1",
-        "outtmpl": f"descargas/%(id)s.%(ext)s",
-        "noplaylist": True,
-        "quiet": True,
-        "no_warnings": True,
-        "postprocessors": [{
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "mp3",
-            "preferredquality": "192",
-        }],
-    }
+    aviso = await ctx.reply("Buscando el video, dame un segundo...")
 
-    # Si hay cookies de YouTube cargadas (Render > Environment > Secret Files), usarlas
-    # para evitar que YouTube bloquee la IP del servidor por "parecer un bot"
-    if os.path.exists(RUTA_COOKIES):
-        ydl_opts["cookiefile"] = RUTA_COOKIES
-
-    def descargar():
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(busqueda, download=True)
-            if "entries" in info:
-                info = info["entries"][0]
-            titulo = info.get("title", "audio")
-            ruta = ydl.prepare_filename(info).rsplit(".", 1)[0] + ".mp3"
-            return ruta, titulo
+    match = re.search(r"(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})", entrada)
 
     try:
-        # Correrlo en un hilo aparte para no congelar el bot mientras descarga
-        ruta_archivo, titulo = await asyncio.to_thread(descargar)
+        async with aiohttp.ClientSession() as session:
+            if match:
+                video_id = match.group(1)
+            else:
+                # No es un link: buscarlo con la YouTube Data API oficial
+                if not YOUTUBE_API_KEY:
+                    await aviso.edit(content="❌ Falta configurar YOUTUBE_API_KEY para poder buscar por texto (o pasame directamente un link).")
+                    return
 
-        tamaño_mb = os.path.getsize(ruta_archivo) / (1024 * 1024)
+                params_busqueda = {
+                    "part": "snippet",
+                    "q": entrada,
+                    "type": "video",
+                    "maxResults": 1,
+                    "key": YOUTUBE_API_KEY,
+                }
+                async with session.get("https://www.googleapis.com/youtube/v3/search", params=params_busqueda) as resp_busqueda:
+                    data_busqueda = await resp_busqueda.json()
 
-        if tamaño_mb > 9.5:
-            await aviso.edit(content=f"❌ **{titulo}** pesa {tamaño_mb:.1f}MB, es demasiado grande para subirlo a Discord (límite ~10MB).")
-        else:
+                items = data_busqueda.get("items", [])
+                if not items:
+                    error_msg = data_busqueda.get("error", {}).get("message")
+                    await aviso.edit(content=f"❌ No encontré nada para eso.{f' ({error_msg})' if error_msg else ''}")
+                    return
+
+                video_id = items[0]["id"]["videoId"]
+
+            await aviso.edit(content="Convirtiendo el audio, dame un segundo más...")
+
+            headers = {
+                "X-RapidAPI-Key": RAPIDAPI_KEY,
+                "X-RapidAPI-Host": RAPIDAPI_HOST,
+            }
+
+            mp3_url = None
+            titulo = "audio"
+
+            # La API tarda unos segundos en procesar el video, reintentamos unas cuantas veces
+            for _ in range(10):
+                async with session.get(f"https://{RAPIDAPI_HOST}/dl", params={"id": video_id}, headers=headers) as resp:
+                    data = await resp.json()
+
+                estado = data.get("status")
+                if estado == "ok":
+                    mp3_url = data.get("link")
+                    titulo = data.get("title", "audio")
+                    break
+                elif estado == "processing":
+                    await asyncio.sleep(3)
+                else:
+                    await aviso.edit(content=f"❌ No se pudo convertir: {data.get('msg', 'error desconocido')}")
+                    return
+
+            if not mp3_url:
+                await aviso.edit(content="❌ Tardó demasiado en procesar el video, probá de nuevo en un rato.")
+                return
+
+            async with session.get(mp3_url) as resp_mp3:
+                contenido = await resp_mp3.read()
+
+            tamaño_mb = len(contenido) / (1024 * 1024)
+            if tamaño_mb > 9.5:
+                await aviso.edit(content=f"❌ **{titulo}** pesa {tamaño_mb:.1f}MB, es demasiado grande para Discord (límite ~10MB).")
+                return
+
             await aviso.edit(content=f"Listo: **{titulo}**")
-            await ctx.send(file=discord.File(ruta_archivo))
-
-        if os.path.exists(ruta_archivo):
-            os.remove(ruta_archivo)
+            nombre_archivo = re.sub(r'[\\/*?:"<>|]', "", titulo)[:80] or "audio"
+            await ctx.send(file=discord.File(io.BytesIO(contenido), filename=f"{nombre_archivo}.mp3"))
 
     except Exception as e:
-        await aviso.edit(content=f"❌ No pude descargar el audio: {str(e)}")
+        await aviso.edit(content=f"❌ Hubo un error: {str(e)}")
 
 # Iniciar el bot
 bot.run(os.environ.get("DISCORD_TOKEN"))
