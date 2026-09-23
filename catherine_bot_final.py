@@ -64,6 +64,11 @@ Usuario: ¿me ayudas con la tarea?
 @bot.event
 async def on_ready():
     print(f"✨ {bot.user} está conectada y lista")
+    if os.path.exists("/etc/secrets/cookies.txt"):
+        tamaño = os.path.getsize("/etc/secrets/cookies.txt")
+        print(f"🍪 cookies.txt encontrado ({tamaño} bytes)")
+    else:
+        print("⚠️ cookies.txt NO encontrado en /etc/secrets/")
 
 async def generar_resumen(channel_id):
     """Genera un resumen de los últimos mensajes"""
