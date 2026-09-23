@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # Instalar ffmpeg a nivel del sistema (yt-dlp lo necesita para convertir a mp3)
 RUN apt-get update && \
