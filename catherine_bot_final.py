@@ -185,12 +185,23 @@ async def mp3search(ctx, *, busqueda: str = None):
         "noplaylist": True,
         "quiet": True,
         "no_warnings": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "web"],
+            }
+        },
         "postprocessors": [{
             "key": "FFmpegExtractAudio",
             "preferredcodec": "mp3",
             "preferredquality": "192",
         }],
     }
+
+    # Si hay cookies de YouTube cargadas (Render > Environment > Secret Files), usarlas
+    # para evitar que YouTube bloquee la IP del servidor por "parecer un bot"
+    ruta_cookies = "/etc/secrets/cookies.txt"
+    if os.path.exists(ruta_cookies):
+        ydl_opts["cookiefile"] = ruta_cookies
 
     def descargar():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
