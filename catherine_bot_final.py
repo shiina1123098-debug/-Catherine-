@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from google import genai
 import os
+import shutil
 import asyncio
 import yt_dlp
 from collections import defaultdict
@@ -61,11 +62,17 @@ Usuario: te quiero mucho
 Usuario: ¿me ayudas con la tarea?
 †Catherine†: *Asiente levemente con la cabeza y acerca su silla.* Está bien, déjame ver qué es. Si no entiendes algo, dímelo y te lo explicaré de forma sencilla."""
 
+# Copiar el archivo de cookies (si existe) a /tmp, porque /etc/secrets es de solo lectura
+# y yt-dlp necesita poder escribir en el archivo mientras lo usa
+RUTA_COOKIES = "/tmp/cookies.txt"
+if os.path.exists("/etc/secrets/cookies.txt"):
+    shutil.copy("/etc/secrets/cookies.txt", RUTA_COOKIES)
+
 @bot.event
 async def on_ready():
     print(f"✨ {bot.user} está conectada y lista")
-    if os.path.exists("/etc/secrets/cookies.txt"):
-        tamaño = os.path.getsize("/etc/secrets/cookies.txt")
+    if os.path.exists(RUTA_COOKIES):
+        tamaño = os.path.getsize(RUTA_COOKIES)
         print(f"🍪 cookies.txt encontrado ({tamaño} bytes)")
     else:
         print("⚠️ cookies.txt NO encontrado en /etc/secrets/")
@@ -204,9 +211,8 @@ async def mp3search(ctx, *, busqueda: str = None):
 
     # Si hay cookies de YouTube cargadas (Render > Environment > Secret Files), usarlas
     # para evitar que YouTube bloquee la IP del servidor por "parecer un bot"
-    ruta_cookies = "/etc/secrets/cookies.txt"
-    if os.path.exists(ruta_cookies):
-        ydl_opts["cookiefile"] = ruta_cookies
+    if os.path.exists(RUTA_COOKIES):
+        ydl_opts["cookiefile"] = RUTA_COOKIES
 
     def descargar():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
