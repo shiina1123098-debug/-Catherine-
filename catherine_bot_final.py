@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands, tasks
+import random
 from google import genai
 import os
 import re
@@ -34,6 +35,7 @@ threading.Thread(target=run_fake_server, daemon=True).start()
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
+bot.remove_command("help")
 
 COLOR_CATHERINE = 0xF5F4F0  # blanco hueso, discord no deja el blanco puro (#FFFFFF) como color de embed
 
@@ -312,6 +314,101 @@ async def top(ctx):
     embed = crear_embed(titulo="🏆 Top de balances", descripcion="\n".join(lineas))
     await ctx.reply(embed=embed)
 
+@bot.command(name="w")
+async def work(ctx):
+    """Da una cantidad random de monedas (1.5k a 3k)"""
+    global hubo_cambios_sin_guardar
+    user_id = str(ctx.author.id)
+
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+
+    ganancia = random.randint(1500, 3000)
+    balances_cache[user_id]["balance"] += ganancia
+    hubo_cambios_sin_guardar = True
+
+    embed = crear_embed(
+        titulo="💼 A trabajar",
+        descripcion=f"Ganaste **{ganancia}** monedas.\nBalance actual: **{balances_cache[user_id]['balance']}**",
+    )
+    await ctx.reply(embed=embed)
+
+@bot.command(name="cf")
+async def coinflip(ctx, opcion: str = None, cantidad: int = None):
+    """Apuesta plata a cara o cruz, 50/50"""
+    global hubo_cambios_sin_guardar
+
+    if opcion is None or cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!cf cara 500` o `!cf cruz 500`"))
+        return
+
+    opcion = opcion.lower()
+    if opcion not in ("cara", "cruz"):
+        await ctx.reply(embed=crear_embed(descripcion="Elegí `cara` o `cruz`."))
+        return
+
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="La apuesta tiene que ser mayor a 0."))
+        return
+
+    user_id = str(ctx.author.id)
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+
+    if balances_cache[user_id]["balance"] < cantidad:
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{balances_cache[user_id]['balance']}**."))
+        return
+
+    resultado = random.choice(("cara", "cruz"))
+    gano = resultado == opcion
+
+    if gano:
+        balances_cache[user_id]["balance"] += cantidad
+        descripcion = f"Salió **{resultado}**. Ganaste **{cantidad}**.\nBalance actual: **{balances_cache[user_id]['balance']}**"
+    else:
+        balances_cache[user_id]["balance"] -= cantidad
+        descripcion = f"Salió **{resultado}**. Perdiste **{cantidad}**.\nBalance actual: **{balances_cache[user_id]['balance']}**"
+
+    hubo_cambios_sin_guardar = True
+    await ctx.reply(embed=crear_embed(titulo="🪙 Coinflip", descripcion=descripcion))
+
+@bot.command(name="addmoney")
+async def addmoney(ctx, miembro: discord.Member = None, cantidad: int = None):
+    """Le agrega plata a alguien. Solo el dueño del server puede usarlo."""
+    global hubo_cambios_sin_guardar
+
+    if ctx.author.id != ctx.guild.owner_id:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño del server."))
+        return
+
+    if miembro is None or cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!addmoney @persona 1000`"))
+        return
+
+    user_id = str(miembro.id)
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": miembro.display_name, "balance": 0}
+
+    balances_cache[user_id]["balance"] += cantidad
+    hubo_cambios_sin_guardar = True
+
+    embed = crear_embed(descripcion=f"Le di **{cantidad}** a **{miembro.display_name}**.\nBalance nuevo: **{balances_cache[user_id]['balance']}**")
+    await ctx.reply(embed=embed)
+
+@bot.command(name="help")
+async def ayuda(ctx):
+    """Lista los comandos de Catherine"""
+    lineas = [
+        "`!saldo` — ver tu balance",
+        "`!top` — top 10 de balances",
+        "`!w` — trabajar, ganás entre 1.5k y 3k",
+        "`!cf cara/cruz cantidad` — apostar a cara o cruz",
+        "`!mp3 búsqueda` o `!mp3 link` — te paso el audio de un video",
+        "`!datasave` — fuerza el guardado de los balances",
+    ]
+    embed = crear_embed(titulo="Comandos de Catherine", descripcion="\n".join(lineas))
+    await ctx.reply(embed=embed)
+
 @bot.command(name="datasave")
 async def datasave(ctx):
     """Fuerza el guardado inmediato de los balances a GitHub"""
@@ -394,13 +491,13 @@ async def mp3(ctx, *, entrada: str = None):
         await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar RAPIDAPI_KEY en las variables de entorno de Render."))
         return
 
-    progreso = ["🔍 Buscando el video..."]
-    embed = crear_embed(titulo="🎵 Catherine buscando audio", descripcion="\n".join(progreso))
+    embed = crear_embed(titulo=entrada, descripcion="(1/3) Buscando video")
     aviso = await ctx.reply(embed=embed)
 
-    async def actualizar(linea_nueva):
-        progreso.append(linea_nueva)
-        embed.description = "\n".join(progreso)
+    async def actualizar(nueva_descripcion, nuevo_titulo=None):
+        if nuevo_titulo is not None:
+            embed.title = nuevo_titulo
+        embed.description = nueva_descripcion
         await aviso.edit(embed=embed)
 
     match = re.search(r"(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})", entrada)
@@ -409,7 +506,6 @@ async def mp3(ctx, *, entrada: str = None):
         async with aiohttp.ClientSession() as session:
             if match:
                 video_id = match.group(1)
-                await actualizar("✅ Es un link directo, vamos con ese")
             else:
                 if " - " in entrada:
                     titulo_busqueda, canal_busqueda = entrada.split(" - ", 1)
@@ -426,12 +522,11 @@ async def mp3(ctx, *, entrada: str = None):
                     video_id, error_api = await buscar_por_api(session, titulo_busqueda, canal_busqueda)
 
                 if not video_id:
-                    await actualizar(f"❌ No encontré nada para eso.{f' ({error_api})' if error_api else ''}")
+                    await actualizar(f"No encontré nada para eso.{f' ({error_api})' if error_api else ''}")
                     return
 
-                await actualizar("✅ Encontré el video")
-
-            await actualizar("🎛️ Convirtiendo el audio a mp3...")
+            await actualizar("(2/3) Video encontrado")
+            await actualizar("(3/3) Convirtiendo a MP3")
 
             headers = {
                 "X-RapidAPI-Key": RAPIDAPI_KEY,
@@ -453,15 +548,12 @@ async def mp3(ctx, *, entrada: str = None):
                 elif estado == "processing":
                     await asyncio.sleep(3)
                 else:
-                    await actualizar(f"❌ No se pudo convertir: {data.get('msg', 'error desconocido')}")
+                    await actualizar(f"No se pudo convertir: {data.get('msg', 'error desconocido')}")
                     return
 
             if not mp3_url:
-                await actualizar("❌ Tardó demasiado en procesar el video, probá de nuevo en un rato.")
+                await actualizar("Tardó demasiado en procesar el video, probá de nuevo en un rato.")
                 return
-
-            await actualizar(f"✅ Convertido: **{titulo}**")
-            await actualizar("⬇️ Bajando el archivo para mandártelo...")
 
             headers_descarga = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -480,27 +572,21 @@ async def mp3(ctx, *, entrada: str = None):
 
             if contenido is None:
                 # No pudimos bajarlo desde el servidor, pero el link funciona para un usuario normal
-                progreso.append(f"⚠️ No pude bajarlo yo misma, pero acá tenés el link directo:\n{mp3_url}")
-                embed.title = f"🎵 {titulo}"
-                embed.description = "\n".join(progreso)
-                await aviso.edit(embed=embed)
+                await actualizar(f"No pude bajarlo yo misma, pero acá tenés el link directo:\n{mp3_url}", nuevo_titulo=titulo)
                 return
 
             tamaño_mb = len(contenido) / (1024 * 1024)
             if tamaño_mb > 9.5:
-                progreso.append(f"❌ Pesa {tamaño_mb:.1f}MB, es demasiado grande para Discord (límite ~10MB). Te dejo el link:\n{mp3_url}")
-                embed.description = "\n".join(progreso)
-                await aviso.edit(embed=embed)
+                await actualizar(f"Pesa {tamaño_mb:.1f}MB, es demasiado grande para Discord (límite ~10MB). Te dejo el link:\n{mp3_url}", nuevo_titulo=titulo)
                 return
 
-            progreso.append("✅ Listo, ahí te va")
-            embed.title = f"🎵 {titulo}"
-            embed.description = "\n".join(progreso)
+            embed.title = titulo
+            embed.description = "Aquí tienes:"
             nombre_archivo = re.sub(r'[\\/*?:"<>|]', "", titulo)[:80] or "audio"
             await aviso.edit(embed=embed, attachments=[discord.File(io.BytesIO(contenido), filename=f"{nombre_archivo}.mp3")])
 
     except Exception as e:
-        await actualizar(f"❌ Hubo un error: {str(e)}")
+        await actualizar(f"Hubo un error: {str(e)}")
 
 # Iniciar el bot
 bot.run(os.environ.get("DISCORD_TOKEN"))
