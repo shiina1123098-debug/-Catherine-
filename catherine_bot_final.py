@@ -35,6 +35,14 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+COLOR_CATHERINE = 0xF5F4F0  # blanco hueso, discord no deja el blanco puro (#FFFFFF) como color de embed
+
+def crear_embed(titulo=None, descripcion=None, footer=None):
+    embed = discord.Embed(title=titulo, description=descripcion, color=COLOR_CATHERINE)
+    if footer:
+        embed.set_footer(text=footer)
+    return embed
+
 # Configurar Gemini (nueva Interactions API)
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 MODEL_NAME = "gemini-3.5-flash-lite"
@@ -245,15 +253,15 @@ async def on_message(message):
 
 @bot.event
 async def on_command_error(ctx, error):
-    await ctx.reply(f"❌ Error al ejecutar el comando: {error}")
+    await ctx.reply(embed=crear_embed(descripcion=f"❌ Error al ejecutar el comando: {error}"))
 
-@bot.command(name="balance")
-async def balance(ctx):
+@bot.command(name="saldo")
+async def saldo(ctx):
     """Muestra (y crea si no existe) el balance del usuario, todo desde RAM"""
     global hubo_cambios_sin_guardar
 
     if not GITHUB_TOKEN or not GITHUB_REPO:
-        await ctx.reply("❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render.")
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
         return
 
     user_id = str(ctx.author.id)
@@ -262,28 +270,64 @@ async def balance(ctx):
         if user_id not in balances_cache:
             balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
             hubo_cambios_sin_guardar = True
-            await ctx.reply(f"Te creé una cuenta nueva. Tu balance es **{balances_cache[user_id]['balance']}**.")
+            embed = crear_embed(
+                titulo="✨ Cuenta nueva",
+                descripcion=(
+                    f"No tenías cuenta todavía, así que te abrí una. Arrancás en cero, "
+                    f"pero de acá en más va a ir quedando registrado lo que vayas juntando."
+                ),
+                footer=ctx.author.display_name,
+            )
+            embed.add_field(name="🪙 Balance", value="0", inline=True)
         else:
-            await ctx.reply(f"Tu balance es **{balances_cache[user_id]['balance']}**.")
+            balance_actual = balances_cache[user_id]["balance"]
+            ranking_ordenado = sorted(balances_cache.items(), key=lambda item: item[1].get("balance", 0), reverse=True)
+            posicion = next((i for i, (uid, _) in enumerate(ranking_ordenado, start=1) if uid == user_id), None)
+
+            embed = crear_embed(titulo=f"🪙 Balance de {ctx.author.display_name}", footer=f"{len(balances_cache)} cuentas registradas")
+            embed.add_field(name="Balance", value=f"**{balance_actual}**", inline=True)
+            if posicion:
+                embed.add_field(name="Puesto local", value=f"#{posicion}", inline=True)
+
+        await ctx.reply(embed=embed)
     except Exception as e:
-        await ctx.reply(f"❌ Hubo un error: {str(e)}")
+        await ctx.reply(embed=crear_embed(descripcion=f"❌ Hubo un error: {str(e)}"))
+
+@bot.command(name="top")
+async def top(ctx):
+    """Muestra el top 10 de usuarios con más balance"""
+    if not balances_cache:
+        await ctx.reply(embed=crear_embed(descripcion="Todavía nadie tiene cuenta. Usá `!saldo` para abrir la tuya."))
+        return
+
+    ranking_ordenado = sorted(balances_cache.items(), key=lambda item: item[1].get("balance", 0), reverse=True)[:10]
+    medallas = ["🥇", "🥈", "🥉"]
+
+    lineas = []
+    for i, (uid, datos) in enumerate(ranking_ordenado):
+        posicion = medallas[i] if i < 3 else f"`#{i+1}`"
+        nombre = datos.get("nombre", "???")
+        lineas.append(f"{posicion} **{nombre}** — {datos.get('balance', 0)}")
+
+    embed = crear_embed(titulo="🏆 Top de balances", descripcion="\n".join(lineas))
+    await ctx.reply(embed=embed)
 
 @bot.command(name="datasave")
 async def datasave(ctx):
     """Fuerza el guardado inmediato de los balances a GitHub"""
     if not GITHUB_TOKEN or not GITHUB_REPO:
-        await ctx.reply("❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render.")
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
         return
 
-    aviso = await ctx.reply("Guardando...")
+    aviso = await ctx.reply(embed=crear_embed(descripcion="🔄 Guardando los datos en GitHub..."))
     try:
         guardado = await guardar_balances_en_github()
         if guardado:
-            await aviso.edit(content="💾 Listo, los datos quedaron guardados en GitHub.")
+            await aviso.edit(embed=crear_embed(descripcion="💾 Listo, quedó todo guardado en GitHub. Podés estar tranquilo/a."))
         else:
-            await aviso.edit(content="No había cambios nuevos para guardar.")
+            await aviso.edit(embed=crear_embed(descripcion="No había cambios nuevos desde el último guardado, así que no hizo falta tocar nada."))
     except Exception as e:
-        await aviso.edit(content=f"❌ Hubo un error al guardar: {str(e)}")
+        await aviso.edit(embed=crear_embed(descripcion=f"❌ Hubo un error al guardar: {str(e)}"))
 
 async def buscar_por_scraping(session, texto):
     """Busca directo en youtube.com/results y parsea el primer video ID. Más preciso que la API, pero puede fallar."""
@@ -343,14 +387,21 @@ async def buscar_por_api(session, titulo_busqueda, canal_busqueda):
 async def mp3(ctx, *, entrada: str = None):
     """Busca (o recibe un link de) un video de YouTube y manda el audio como mp3"""
     if not entrada:
-        await ctx.reply("Decime qué buscar, o pasame un link. Ejemplo: `!mp3 bruh` o `!mp3 bruh - juanitoFachero142`")
+        await ctx.reply(embed=crear_embed(descripcion="Decime qué buscar, o pasame un link. Ejemplo: `!mp3 bruh` o `!mp3 bruh - juanitoFachero142`"))
         return
 
     if not RAPIDAPI_KEY:
-        await ctx.reply("❌ Falta configurar RAPIDAPI_KEY en las variables de entorno de Render.")
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar RAPIDAPI_KEY en las variables de entorno de Render."))
         return
 
-    aviso = await ctx.reply("Buscando el video, dame un segundo...")
+    progreso = ["🔍 Buscando el video..."]
+    embed = crear_embed(titulo="🎵 Catherine buscando audio", descripcion="\n".join(progreso))
+    aviso = await ctx.reply(embed=embed)
+
+    async def actualizar(linea_nueva):
+        progreso.append(linea_nueva)
+        embed.description = "\n".join(progreso)
+        await aviso.edit(embed=embed)
 
     match = re.search(r"(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})", entrada)
 
@@ -358,8 +409,8 @@ async def mp3(ctx, *, entrada: str = None):
         async with aiohttp.ClientSession() as session:
             if match:
                 video_id = match.group(1)
+                await actualizar("✅ Es un link directo, vamos con ese")
             else:
-                # Separador opcional: "titulo - canal" acota la búsqueda a ese canal
                 if " - " in entrada:
                     titulo_busqueda, canal_busqueda = entrada.split(" - ", 1)
                     titulo_busqueda = titulo_busqueda.strip()
@@ -368,20 +419,19 @@ async def mp3(ctx, *, entrada: str = None):
                     titulo_busqueda, canal_busqueda = entrada.strip(), None
 
                 video_id = None
-
-                # 1° intento: scraping directo (más preciso, pero sin garantías)
                 texto_scraping = f"{titulo_busqueda} {canal_busqueda}" if canal_busqueda else titulo_busqueda
                 video_id = await buscar_por_scraping(session, texto_scraping)
 
-                # 2° intento: si el scraping falló, recurrir a la API oficial de Google
                 if not video_id:
                     video_id, error_api = await buscar_por_api(session, titulo_busqueda, canal_busqueda)
 
                 if not video_id:
-                    await aviso.edit(content=f"❌ No encontré nada para eso.{f' ({error_api})' if error_api else ''}")
+                    await actualizar(f"❌ No encontré nada para eso.{f' ({error_api})' if error_api else ''}")
                     return
 
-            await aviso.edit(content="Convirtiendo el audio, dame un segundo más...")
+                await actualizar("✅ Encontré el video")
+
+            await actualizar("🎛️ Convirtiendo el audio a mp3...")
 
             headers = {
                 "X-RapidAPI-Key": RAPIDAPI_KEY,
@@ -391,7 +441,6 @@ async def mp3(ctx, *, entrada: str = None):
             mp3_url = None
             titulo = "audio"
 
-            # La API tarda unos segundos en procesar el video, reintentamos unas cuantas veces
             for _ in range(10):
                 async with session.get(f"https://{RAPIDAPI_HOST}/dl", params={"id": video_id}, headers=headers) as resp:
                     data = await resp.json()
@@ -404,12 +453,15 @@ async def mp3(ctx, *, entrada: str = None):
                 elif estado == "processing":
                     await asyncio.sleep(3)
                 else:
-                    await aviso.edit(content=f"❌ No se pudo convertir: {data.get('msg', 'error desconocido')}")
+                    await actualizar(f"❌ No se pudo convertir: {data.get('msg', 'error desconocido')}")
                     return
 
             if not mp3_url:
-                await aviso.edit(content="❌ Tardó demasiado en procesar el video, probá de nuevo en un rato.")
+                await actualizar("❌ Tardó demasiado en procesar el video, probá de nuevo en un rato.")
                 return
+
+            await actualizar(f"✅ Convertido: **{titulo}**")
+            await actualizar("⬇️ Bajando el archivo para mandártelo...")
 
             headers_descarga = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -428,20 +480,27 @@ async def mp3(ctx, *, entrada: str = None):
 
             if contenido is None:
                 # No pudimos bajarlo desde el servidor, pero el link funciona para un usuario normal
-                await aviso.edit(content=f"🎵 **{titulo}**\n{mp3_url}")
+                progreso.append(f"⚠️ No pude bajarlo yo misma, pero acá tenés el link directo:\n{mp3_url}")
+                embed.title = f"🎵 {titulo}"
+                embed.description = "\n".join(progreso)
+                await aviso.edit(embed=embed)
                 return
 
             tamaño_mb = len(contenido) / (1024 * 1024)
             if tamaño_mb > 9.5:
-                await aviso.edit(content=f"❌ **{titulo}** pesa {tamaño_mb:.1f}MB, es demasiado grande para Discord (límite ~10MB).\n{mp3_url}")
+                progreso.append(f"❌ Pesa {tamaño_mb:.1f}MB, es demasiado grande para Discord (límite ~10MB). Te dejo el link:\n{mp3_url}")
+                embed.description = "\n".join(progreso)
+                await aviso.edit(embed=embed)
                 return
 
-            await aviso.edit(content=f"Listo: **{titulo}**")
+            progreso.append("✅ Listo, ahí te va")
+            embed.title = f"🎵 {titulo}"
+            embed.description = "\n".join(progreso)
             nombre_archivo = re.sub(r'[\\/*?:"<>|]', "", titulo)[:80] or "audio"
-            await ctx.send(file=discord.File(io.BytesIO(contenido), filename=f"{nombre_archivo}.mp3"))
+            await aviso.edit(embed=embed, attachments=[discord.File(io.BytesIO(contenido), filename=f"{nombre_archivo}.mp3")])
 
     except Exception as e:
-        await aviso.edit(content=f"❌ Hubo un error: {str(e)}")
+        await actualizar(f"❌ Hubo un error: {str(e)}")
 
 # Iniciar el bot
 bot.run(os.environ.get("DISCORD_TOKEN"))
