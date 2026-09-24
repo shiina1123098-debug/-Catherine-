@@ -263,7 +263,7 @@ async def mp3(ctx, *, entrada: str = None):
                 await asyncio.sleep(2)
 
             if contenido is None:
-                await aviso.edit(content=f"❌ El link del audio no respondió bien (status {status_actual}): {texto_error}")
+                await aviso.edit(content=f"❌ El link del audio no respondió bien (status {status_actual}): {texto_error}\n\nLink que dio la API: {mp3_url}")
                 return
 
             tamaño_mb = len(contenido) / (1024 * 1024)
