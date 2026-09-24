@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from google import genai
 import os
 import re
@@ -77,44 +77,72 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_REPO = os.environ.get("GITHUB_REPO")  # ej: "usuario/nombre-del-repo"
 GITHUB_ARCHIVO_BALANCES = "data/balances.json"
 
-async def leer_balances(session):
-    """Lee balances.json del repo. Devuelve (diccionario, sha_del_archivo)."""
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_BALANCES}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
-    async with session.get(url, headers=headers) as resp:
-        if resp.status == 404:
-            # El archivo todavía no existe, arrancamos con un diccionario vacío
-            return {}, None
-        resp.raise_for_status()
-        data = await resp.json()
-        contenido = base64.b64decode(data["content"]).decode("utf-8")
-        return json.loads(contenido), data["sha"]
+# Los balances viven en RAM mientras el bot corre; solo se sincronizan con
+# GitHub cada 6hs (o a mano con !datasave) para no golpear la API todo el tiempo
+balances_cache = {}
+balances_sha = None
+balances_cargados = False
+hubo_cambios_sin_guardar = False
 
-async def guardar_balances(session, balances, sha):
-    """Sube balances.json actualizado al repo (crea el archivo si no existía)."""
+async def cargar_balances_desde_github():
+    global balances_cache, balances_sha, balances_cargados
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_BALANCES}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github+json",
     }
-    contenido_b64 = base64.b64encode(json.dumps(balances, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
-    body = {
-        "message": "Actualizar balances",
-        "content": contenido_b64,
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 404:
+                balances_cache, balances_sha = {}, None
+            else:
+                resp.raise_for_status()
+                data = await resp.json()
+                contenido = base64.b64decode(data["content"]).decode("utf-8")
+                balances_cache = json.loads(contenido)
+                balances_sha = data["sha"]
+    balances_cargados = True
+
+async def guardar_balances_en_github():
+    """Sube el estado actual de balances_cache a GitHub. Devuelve True si guardó algo."""
+    global balances_sha, hubo_cambios_sin_guardar
+    if not hubo_cambios_sin_guardar:
+        return False
+
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_BALANCES}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
     }
-    if sha:
-        body["sha"] = sha
-    async with session.put(url, headers=headers, json=body) as resp:
-        resp.raise_for_status()
-        data = await resp.json()
-        return data["content"]["sha"]
+    contenido_b64 = base64.b64encode(json.dumps(balances_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+    body = {"message": "Actualizar balances", "content": contenido_b64}
+    if balances_sha:
+        body["sha"] = balances_sha
+
+    async with aiohttp.ClientSession() as session:
+        async with session.put(url, headers=headers, json=body) as resp:
+            resp.raise_for_status()
+            data = await resp.json()
+            balances_sha = data["content"]["sha"]
+
+    hubo_cambios_sin_guardar = False
+    return True
+
+@tasks.loop(hours=6)
+async def guardado_periodico():
+    guardado = await guardar_balances_en_github()
+    if guardado:
+        print("💾 Balances sincronizados con GitHub (guardado periódico)")
 
 @bot.event
 async def on_ready():
     print(f"✨ {bot.user} está conectada y lista")
+    global balances_cargados
+    if not balances_cargados and GITHUB_TOKEN and GITHUB_REPO:
+        await cargar_balances_desde_github()
+        print(f"💰 Balances cargados desde GitHub ({len(balances_cache)} cuentas)")
+        if not guardado_periodico.is_running():
+            guardado_periodico.start()
 
 async def generar_resumen(channel_id):
     """Genera un resumen de los últimos mensajes"""
@@ -221,7 +249,9 @@ async def on_command_error(ctx, error):
 
 @bot.command(name="balance")
 async def balance(ctx):
-    """Muestra (y crea si no existe) el balance del usuario"""
+    """Muestra (y crea si no existe) el balance del usuario, todo desde RAM"""
+    global hubo_cambios_sin_guardar
+
     if not GITHUB_TOKEN or not GITHUB_REPO:
         await ctx.reply("❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render.")
         return
@@ -229,24 +259,91 @@ async def balance(ctx):
     user_id = str(ctx.author.id)
 
     try:
-        async with aiohttp.ClientSession() as session:
-            balances, sha = await leer_balances(session)
-
-            if user_id not in balances:
-                balances[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
-                nuevo_sha = await guardar_balances(session, balances, sha)
-                await ctx.reply(f"Te creé una cuenta nueva. Tu balance es **{balances[user_id]['balance']}**.")
-            else:
-                await ctx.reply(f"Tu balance es **{balances[user_id]['balance']}**.")
-
+        if user_id not in balances_cache:
+            balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+            hubo_cambios_sin_guardar = True
+            await ctx.reply(f"Te creé una cuenta nueva. Tu balance es **{balances_cache[user_id]['balance']}**.")
+        else:
+            await ctx.reply(f"Tu balance es **{balances_cache[user_id]['balance']}**.")
     except Exception as e:
         await ctx.reply(f"❌ Hubo un error: {str(e)}")
+
+@bot.command(name="datasave")
+async def datasave(ctx):
+    """Fuerza el guardado inmediato de los balances a GitHub"""
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        await ctx.reply("❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render.")
+        return
+
+    aviso = await ctx.reply("Guardando...")
+    try:
+        guardado = await guardar_balances_en_github()
+        if guardado:
+            await aviso.edit(content="💾 Listo, los datos quedaron guardados en GitHub.")
+        else:
+            await aviso.edit(content="No había cambios nuevos para guardar.")
+    except Exception as e:
+        await aviso.edit(content=f"❌ Hubo un error al guardar: {str(e)}")
+
+async def buscar_por_scraping(session, texto):
+    """Busca directo en youtube.com/results y parsea el primer video ID. Más preciso que la API, pero puede fallar."""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    }
+    try:
+        async with session.get("https://www.youtube.com/results", params={"search_query": texto}, headers=headers) as resp:
+            if resp.status != 200:
+                return None
+            html = await resp.text()
+        coincidencia = re.search(r'"videoId":"([a-zA-Z0-9_-]{11})"', html)
+        return coincidencia.group(1) if coincidencia else None
+    except Exception:
+        return None
+
+async def buscar_por_api(session, titulo_busqueda, canal_busqueda):
+    """Busca con la YouTube Data API oficial (respaldo si el scraping falla)."""
+    if not YOUTUBE_API_KEY:
+        return None, "Falta configurar YOUTUBE_API_KEY."
+
+    channel_id = None
+    if canal_busqueda:
+        params_canal = {
+            "part": "snippet",
+            "q": canal_busqueda,
+            "type": "channel",
+            "maxResults": 1,
+            "key": YOUTUBE_API_KEY,
+        }
+        async with session.get("https://www.googleapis.com/youtube/v3/search", params=params_canal) as resp_canal:
+            data_canal = await resp_canal.json()
+        items_canal = data_canal.get("items", [])
+        if items_canal:
+            channel_id = items_canal[0]["id"]["channelId"]
+
+    params_busqueda = {
+        "part": "snippet",
+        "q": titulo_busqueda,
+        "type": "video",
+        "maxResults": 1,
+        "key": YOUTUBE_API_KEY,
+    }
+    if channel_id:
+        params_busqueda["channelId"] = channel_id
+
+    async with session.get("https://www.googleapis.com/youtube/v3/search", params=params_busqueda) as resp_busqueda:
+        data_busqueda = await resp_busqueda.json()
+
+    items = data_busqueda.get("items", [])
+    if not items:
+        error_msg = data_busqueda.get("error", {}).get("message")
+        return None, error_msg
+    return items[0]["id"]["videoId"], None
 
 @bot.command(name="mp3")
 async def mp3(ctx, *, entrada: str = None):
     """Busca (o recibe un link de) un video de YouTube y manda el audio como mp3"""
     if not entrada:
-        await ctx.reply("Decime qué buscar, o pasame un link. Ejemplo: `!mp3 bruh sound effect`")
+        await ctx.reply("Decime qué buscar, o pasame un link. Ejemplo: `!mp3 bruh` o `!mp3 bruh - juanitoFachero142`")
         return
 
     if not RAPIDAPI_KEY:
@@ -262,28 +359,27 @@ async def mp3(ctx, *, entrada: str = None):
             if match:
                 video_id = match.group(1)
             else:
-                # No es un link: buscarlo con la YouTube Data API oficial
-                if not YOUTUBE_API_KEY:
-                    await aviso.edit(content="❌ Falta configurar YOUTUBE_API_KEY para poder buscar por texto (o pasame directamente un link).")
+                # Separador opcional: "titulo - canal" acota la búsqueda a ese canal
+                if " - " in entrada:
+                    titulo_busqueda, canal_busqueda = entrada.split(" - ", 1)
+                    titulo_busqueda = titulo_busqueda.strip()
+                    canal_busqueda = canal_busqueda.strip()
+                else:
+                    titulo_busqueda, canal_busqueda = entrada.strip(), None
+
+                video_id = None
+
+                # 1° intento: scraping directo (más preciso, pero sin garantías)
+                texto_scraping = f"{titulo_busqueda} {canal_busqueda}" if canal_busqueda else titulo_busqueda
+                video_id = await buscar_por_scraping(session, texto_scraping)
+
+                # 2° intento: si el scraping falló, recurrir a la API oficial de Google
+                if not video_id:
+                    video_id, error_api = await buscar_por_api(session, titulo_busqueda, canal_busqueda)
+
+                if not video_id:
+                    await aviso.edit(content=f"❌ No encontré nada para eso.{f' ({error_api})' if error_api else ''}")
                     return
-
-                params_busqueda = {
-                    "part": "snippet",
-                    "q": entrada,
-                    "type": "video",
-                    "maxResults": 1,
-                    "key": YOUTUBE_API_KEY,
-                }
-                async with session.get("https://www.googleapis.com/youtube/v3/search", params=params_busqueda) as resp_busqueda:
-                    data_busqueda = await resp_busqueda.json()
-
-                items = data_busqueda.get("items", [])
-                if not items:
-                    error_msg = data_busqueda.get("error", {}).get("message")
-                    await aviso.edit(content=f"❌ No encontré nada para eso.{f' ({error_msg})' if error_msg else ''}")
-                    return
-
-                video_id = items[0]["id"]["videoId"]
 
             await aviso.edit(content="Convirtiendo el audio, dame un segundo más...")
 
@@ -349,4 +445,3 @@ async def mp3(ctx, *, entrada: str = None):
 
 # Iniciar el bot
 bot.run(os.environ.get("DISCORD_TOKEN"))
-          
