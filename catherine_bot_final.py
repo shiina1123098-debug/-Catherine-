@@ -124,14 +124,28 @@ async def guardar_balances_en_github():
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github+json",
     }
-    contenido_b64 = base64.b64encode(json.dumps(balances_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
-    body = {"message": "Actualizar balances", "content": contenido_b64}
-    if balances_sha:
-        body["sha"] = balances_sha
 
     async with aiohttp.ClientSession() as session:
+        # Refrescar el sha justo antes de escribir: evita el 422 si el archivo
+        # ya existía sin que lo supiéramos, o si cambió desde la última carga.
+        async with session.get(url, headers=headers) as resp_get:
+            if resp_get.status == 200:
+                data_actual = await resp_get.json()
+                balances_sha = data_actual["sha"]
+            elif resp_get.status == 404:
+                balances_sha = None
+            else:
+                resp_get.raise_for_status()
+
+        contenido_b64 = base64.b64encode(json.dumps(balances_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+        body = {"message": "Actualizar balances", "content": contenido_b64}
+        if balances_sha:
+            body["sha"] = balances_sha
+
         async with session.put(url, headers=headers, json=body) as resp:
-            resp.raise_for_status()
+            if resp.status not in (200, 201):
+                texto_error = await resp.text()
+                raise RuntimeError(f"{resp.status}: {texto_error}")
             data = await resp.json()
             balances_sha = data["content"]["sha"]
 
