@@ -250,16 +250,21 @@ async def mp3(ctx, *, entrada: str = None):
                 await aviso.edit(content="❌ Tardó demasiado en procesar el video, probá de nuevo en un rato.")
                 return
 
-            # Pequeña espera: el link recién generado a veces tarda un instante en estar
-            # disponible del todo en el CDN de la API
-            await asyncio.sleep(2)
-
-            async with session.get(mp3_url) as resp_mp3:
-                if resp_mp3.status != 200 or "audio" not in resp_mp3.headers.get("Content-Type", ""):
+            # Reintentar la descarga unas cuantas veces: a veces el link tarda
+            # un instante en estar disponible del todo, aunque la API ya diga "ok"
+            contenido = None
+            for intento in range(5):
+                async with session.get(mp3_url, headers={"User-Agent": "Mozilla/5.0"}) as resp_mp3:
+                    if resp_mp3.status == 200 and "audio" in resp_mp3.headers.get("Content-Type", ""):
+                        contenido = await resp_mp3.read()
+                        break
                     texto_error = (await resp_mp3.text())[:200]
-                    await aviso.edit(content=f"❌ El link del audio no respondió bien (status {resp_mp3.status}): {texto_error}")
-                    return
-                contenido = await resp_mp3.read()
+                    status_actual = resp_mp3.status
+                await asyncio.sleep(2)
+
+            if contenido is None:
+                await aviso.edit(content=f"❌ El link del audio no respondió bien (status {status_actual}): {texto_error}")
+                return
 
             tamaño_mb = len(contenido) / (1024 * 1024)
             if tamaño_mb > 9.5:
