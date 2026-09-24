@@ -250,7 +250,15 @@ async def mp3(ctx, *, entrada: str = None):
                 await aviso.edit(content="❌ Tardó demasiado en procesar el video, probá de nuevo en un rato.")
                 return
 
+            # Pequeña espera: el link recién generado a veces tarda un instante en estar
+            # disponible del todo en el CDN de la API
+            await asyncio.sleep(2)
+
             async with session.get(mp3_url) as resp_mp3:
+                if resp_mp3.status != 200 or "audio" not in resp_mp3.headers.get("Content-Type", ""):
+                    texto_error = (await resp_mp3.text())[:200]
+                    await aviso.edit(content=f"❌ El link del audio no respondió bien (status {resp_mp3.status}): {texto_error}")
+                    return
                 contenido = await resp_mp3.read()
 
             tamaño_mb = len(contenido) / (1024 * 1024)
