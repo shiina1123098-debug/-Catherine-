@@ -250,25 +250,29 @@ async def mp3(ctx, *, entrada: str = None):
                 await aviso.edit(content="❌ Tardó demasiado en procesar el video, probá de nuevo en un rato.")
                 return
 
-            # Reintentar la descarga unas cuantas veces: a veces el link tarda
-            # un instante en estar disponible del todo, aunque la API ya diga "ok"
+            headers_descarga = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "*/*",
+                "Referer": "https://ytjar.info/",
+            }
+
             contenido = None
-            for intento in range(5):
-                async with session.get(mp3_url, headers={"User-Agent": "Mozilla/5.0"}) as resp_mp3:
-                    if resp_mp3.status == 200 and "audio" in resp_mp3.headers.get("Content-Type", ""):
+            for intento in range(3):
+                async with session.get(mp3_url, headers=headers_descarga) as resp_mp3:
+                    if resp_mp3.status == 200:
                         contenido = await resp_mp3.read()
                         break
-                    texto_error = (await resp_mp3.text())[:200]
                     status_actual = resp_mp3.status
                 await asyncio.sleep(2)
 
             if contenido is None:
-                await aviso.edit(content=f"❌ El link del audio no respondió bien (status {status_actual}): {texto_error}\n\nLink que dio la API: {mp3_url}")
+                # No pudimos bajarlo desde el servidor, pero el link funciona para un usuario normal
+                await aviso.edit(content=f"🎵 **{titulo}**\n{mp3_url}")
                 return
 
             tamaño_mb = len(contenido) / (1024 * 1024)
             if tamaño_mb > 9.5:
-                await aviso.edit(content=f"❌ **{titulo}** pesa {tamaño_mb:.1f}MB, es demasiado grande para Discord (límite ~10MB).")
+                await aviso.edit(content=f"❌ **{titulo}** pesa {tamaño_mb:.1f}MB, es demasiado grande para Discord (límite ~10MB).\n{mp3_url}")
                 return
 
             await aviso.edit(content=f"Listo: **{titulo}**")
