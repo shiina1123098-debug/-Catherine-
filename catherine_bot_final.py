@@ -152,7 +152,7 @@ async def guardar_balances_en_github():
     hubo_cambios_sin_guardar = False
     return True
 
-@tasks.loop(hours=6)
+@tasks.loop(minutes=15)
 async def guardado_periodico():
     guardado = await guardar_balances_en_github()
     if guardado:
@@ -409,6 +409,193 @@ async def addmoney(ctx, miembro: discord.Member = None, cantidad: int = None):
     embed = crear_embed(descripcion=f"Le di **{cantidad}** a **{miembro.display_name}**.\nBalance nuevo: **{balances_cache[user_id]['balance']}**")
     await ctx.reply(embed=embed)
 
+PALOS = ["♠", "♥", "♦", "♣"]
+RANGOS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
+
+def crear_baraja():
+    baraja = [(rango, palo) for palo in PALOS for rango in RANGOS]
+    random.shuffle(baraja)
+    return baraja
+
+def valor_mano(cartas):
+    total = 0
+    ases = 0
+    for rango, _ in cartas:
+        if rango in ("J", "Q", "K"):
+            total += 10
+        elif rango == "A":
+            total += 11
+            ases += 1
+        else:
+            total += int(rango)
+    while total > 21 and ases:
+        total -= 10
+        ases -= 1
+    return total
+
+class BlackjackView(discord.ui.View):
+    def __init__(self, autor, apuesta):
+        super().__init__(timeout=90)
+        self.autor = autor
+        self.apuesta = apuesta
+        self.baraja = crear_baraja()
+        self.mano_jugador = [self.baraja.pop(), self.baraja.pop()]
+        self.mano_crupier = [self.baraja.pop(), self.baraja.pop()]
+        self.mensaje = None
+
+    def formatear_mano(self, mano):
+        return " ".join(f"{rango}{palo}" for rango, palo in mano)
+
+    def construir_embed(self, revelar_crupier=False, resultado=None):
+        if revelar_crupier:
+            crupier_txt = f"{self.formatear_mano(self.mano_crupier)}  (**{valor_mano(self.mano_crupier)}**)"
+        else:
+            primera = self.mano_crupier[0]
+            crupier_txt = f"{primera[0]}{primera[1]} 🂠"
+
+        jugador_txt = f"{self.formatear_mano(self.mano_jugador)}  (**{valor_mano(self.mano_jugador)}**)"
+
+        descripcion = f"Apuesta: **{self.apuesta}**"
+        if resultado:
+            descripcion += f"\n\n{resultado}"
+
+        embed = crear_embed(titulo="🃏 Blackjack", descripcion=descripcion, footer=self.autor.display_name)
+        embed.add_field(name="Cartas del crupier", value=crupier_txt, inline=False)
+        embed.add_field(name="Tus cartas", value=jugador_txt, inline=False)
+        return embed
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Este no es tu juego, che.", ephemeral=True)
+            return False
+        return True
+
+    def _deshabilitar_botones(self):
+        for item in self.children:
+            item.disabled = True
+
+    def _liquidar(self, resultado_tipo):
+        """resultado_tipo: 'gana', 'pierde', 'empata', 'blackjack'"""
+        global hubo_cambios_sin_guardar
+        user_id = str(self.autor.id)
+        if user_id not in balances_cache:
+            balances_cache[user_id] = {"nombre": self.autor.display_name, "balance": 0}
+
+        if resultado_tipo == "gana":
+            balances_cache[user_id]["balance"] += self.apuesta
+            texto = f"Ganaste **{self.apuesta}**."
+        elif resultado_tipo == "blackjack":
+            ganancia = int(self.apuesta * 1.5)
+            balances_cache[user_id]["balance"] += ganancia
+            texto = f"¡Blackjack! Ganaste **{ganancia}**."
+        elif resultado_tipo == "pierde":
+            balances_cache[user_id]["balance"] -= self.apuesta
+            texto = f"Perdiste **{self.apuesta}**."
+        else:
+            texto = "Empate, recuperás tu apuesta."
+
+        hubo_cambios_sin_guardar = True
+        texto += f"\nBalance actual: **{balances_cache[user_id]['balance']}**"
+        return texto
+
+    async def _terminar(self, interaction, resultado_tipo):
+        texto = self._liquidar(resultado_tipo)
+        self._deshabilitar_botones()
+        embed = self.construir_embed(revelar_crupier=True, resultado=texto)
+        await interaction.response.edit_message(embed=embed, view=self)
+        self.stop()
+
+    async def _resolver_crupier(self, interaction):
+        while valor_mano(self.mano_crupier) < 17:
+            self.mano_crupier.append(self.baraja.pop())
+
+        valor_j = valor_mano(self.mano_jugador)
+        valor_c = valor_mano(self.mano_crupier)
+
+        if valor_c > 21 or valor_j > valor_c:
+            if valor_j == 21 and len(self.mano_jugador) == 2:
+                await self._terminar(interaction, "blackjack")
+            else:
+                await self._terminar(interaction, "gana")
+        elif valor_j < valor_c:
+            await self._terminar(interaction, "pierde")
+        else:
+            await self._terminar(interaction, "empata")
+
+    @discord.ui.button(label="Pedir carta 🃏", style=discord.ButtonStyle.primary)
+    async def pedir(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.mano_jugador.append(self.baraja.pop())
+        valor_actual = valor_mano(self.mano_jugador)
+
+        if valor_actual > 21:
+            await self._terminar(interaction, "pierde")
+            return
+
+        if valor_actual == 21:
+            await self._resolver_crupier(interaction)
+            return
+
+        embed = self.construir_embed()
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="Quedarse 🛑", style=discord.ButtonStyle.secondary)
+    async def quedarse(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._resolver_crupier(interaction)
+
+    async def on_timeout(self):
+        if self.mensaje is None:
+            return
+        self._deshabilitar_botones()
+        try:
+            embed = self.construir_embed(
+                revelar_crupier=True,
+                resultado="⏳ Se acabó el tiempo. La partida quedó abandonada (no se cobró ni se pagó nada).",
+            )
+            await self.mensaje.edit(embed=embed, view=self)
+        except discord.HTTPException:
+            pass
+
+@bot.command(name="blackjack", aliases=["bj"])
+async def blackjack(ctx, cantidad: int = None):
+    """Jugá al blackjack apostando monedas"""
+    if cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!bj 500`"))
+        return
+
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="La apuesta tiene que ser mayor a 0."))
+        return
+
+    user_id = str(ctx.author.id)
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+
+    if balances_cache[user_id]["balance"] < cantidad:
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{balances_cache[user_id]['balance']}**."))
+        return
+
+    view = BlackjackView(ctx.author, cantidad)
+
+    # Blackjack natural con las 2 primeras cartas: se resuelve directo, sin botones
+    if valor_mano(view.mano_jugador) == 21:
+        while valor_mano(view.mano_crupier) < 17:
+            view.mano_crupier.append(view.baraja.pop())
+
+        if valor_mano(view.mano_crupier) == 21 and len(view.mano_crupier) == 2:
+            resultado_tipo = "empata"
+        else:
+            resultado_tipo = "blackjack"
+
+        texto = view._liquidar(resultado_tipo)
+        view._deshabilitar_botones()
+        embed = view.construir_embed(revelar_crupier=True, resultado=texto)
+        await ctx.reply(embed=embed, view=view)
+        return
+
+    embed = view.construir_embed()
+    mensaje = await ctx.reply(embed=embed, view=view)
+    view.mensaje = mensaje
+
 @bot.command(name="help")
 async def ayuda(ctx):
     """Lista los comandos de Catherine"""
@@ -417,6 +604,7 @@ async def ayuda(ctx):
         "`!top` — top 10 de balances",
         "`!w` — trabajar, ganás entre 1.5k y 3k",
         "`!cf cara/cruz cantidad` — apostar a cara o cruz",
+        "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
         "`!mp3 búsqueda` o `!mp3 link` — te paso el audio de un video",
         "`!datasave` — fuerza el guardado de los balances",
     ]
