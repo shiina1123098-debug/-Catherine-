@@ -31,6 +31,36 @@
         "Imagen": "",
         "Fuente": "Cowboy Bebop",
         "Valor": 3500
+      },
+      {
+        "Nombre": "L Lawliet",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/10/249647.jpg",
+        "Fuente": "Death Note",
+        "Valor": 230000
+      },
+      {
+        "Nombre": "Rimuru Tempest",
+        "Imagen": "",
+        "Fuente": "That Time I Got Reincarnated as a Slime",
+        "Valor": 250000
+      },
+      {
+        "Nombre": "Kazuma Satou",
+        "Imagen": "",
+        "Fuente": "KonoSuba",
+        "Valor": 3000
+      },
+      {
+        "Nombre": "Sora",
+        "Imagen": "",
+        "Fuente": "No Game No Life",
+        "Valor": 9000
+      },
+      {
+        "Nombre": "Genos",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/9/297329.jpg",
+        "Fuente": "One Punch Man",
+        "Valor": 9000
       }
     ]
   }
