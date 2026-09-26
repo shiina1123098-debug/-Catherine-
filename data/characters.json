@@ -151,6 +151,18 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/10/59125.jpg",
         "Fuente": "Death Note",
         "Valor": 15000
+      },
+      {
+        "Nombre": "Casca",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/14/72697.jpg",
+        "Fuente": "Berserk",
+        "Valor": 4000
+      },
+      {
+        "Nombre": "Nobara Kugisaki",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/12/422313.jpg",
+        "Fuente": "Jujutsu Kaisen",
+        "Valor": 6500
       }
     ]
   }
