@@ -8,6 +8,7 @@ import io
 import json
 import base64
 import asyncio
+import time
 import aiohttp
 from collections import defaultdict
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -44,6 +45,13 @@ def crear_embed(titulo=None, descripcion=None, footer=None):
     if footer:
         embed.set_footer(text=footer)
     return embed
+
+def formatear_numero(numero):
+    """Le pone puntos de miles: 1000000 -> 1.000.000. Si no es un número, lo devuelve tal cual."""
+    try:
+        return f"{int(numero):,}".replace(",", ".")
+    except (TypeError, ValueError):
+        return str(numero)
 
 # Configurar Gemini (nueva Interactions API)
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
@@ -86,6 +94,8 @@ YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_REPO = os.environ.get("GITHUB_REPO")  # ej: "usuario/nombre-del-repo"
 GITHUB_ARCHIVO_BALANCES = "data/balances.json"
+GITHUB_ARCHIVO_PERSONAJES = "data/rw.json"
+GITHUB_ARCHIVO_CHARACTERS = "data/characters.json"
 
 # Los balances viven en RAM mientras el bot corre; solo se sincronizan con
 # GitHub cada 6hs (o a mano con !datasave) para no golpear la API todo el tiempo
@@ -93,6 +103,114 @@ balances_cache = {}
 balances_sha = None
 balances_cargados = False
 hubo_cambios_sin_guardar = False
+
+# Personajes para !rw: se cargan (solo lectura) desde data/rw.json en el repo.
+# Vos editás ese JSON a mano en GitHub (subiendo las fotos a Imgur primero) y
+# corrés !rwreload para que el bot los tome sin necesidad de reiniciarse.
+personajes_cache = []
+personajes_cargados = False
+
+def campo_personaje(personaje, *claves, default="???"):
+    for clave in claves:
+        if clave in personaje and personaje[clave] not in (None, ""):
+            return personaje[clave]
+    return default
+
+async def cargar_personajes_desde_github():
+    global personajes_cache, personajes_cargados
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_PERSONAJES}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 404:
+                personajes_cache = []
+            else:
+                resp.raise_for_status()
+                data = await resp.json()
+                contenido = base64.b64decode(data["content"]).decode("utf-8")
+                bruto = json.loads(contenido)
+                if isinstance(bruto, list):
+                    personajes_cache = bruto
+                elif isinstance(bruto, dict):
+                    # por si el JSON viene como {"personajes": [...]} en vez de una lista pelada
+                    personajes_cache = next((v for v in bruto.values() if isinstance(v, list)), [])
+                else:
+                    personajes_cache = []
+    personajes_cargados = True
+
+# Colección de personajes reclamados por cada usuario (characters.json)
+characters_cache = {}
+characters_sha = None
+characters_cargados = False
+hubo_cambios_characters_sin_guardar = False
+
+async def cargar_characters_desde_github():
+    global characters_cache, characters_sha, characters_cargados
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_CHARACTERS}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 404:
+                characters_cache, characters_sha = {}, None
+            else:
+                resp.raise_for_status()
+                data = await resp.json()
+                contenido = base64.b64decode(data["content"]).decode("utf-8")
+                characters_cache = json.loads(contenido)
+                characters_sha = data["sha"]
+    characters_cargados = True
+
+async def guardar_characters_en_github():
+    """Sube el estado actual de characters_cache a GitHub. Devuelve True si guardó algo."""
+    global characters_sha, hubo_cambios_characters_sin_guardar
+    if not hubo_cambios_characters_sin_guardar:
+        return False
+
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_CHARACTERS}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp_get:
+            if resp_get.status == 200:
+                data_actual = await resp_get.json()
+                characters_sha = data_actual["sha"]
+            elif resp_get.status == 404:
+                characters_sha = None
+            else:
+                resp_get.raise_for_status()
+
+        contenido_b64 = base64.b64encode(json.dumps(characters_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+        body = {"message": "Actualizar colecciones", "content": contenido_b64}
+        if characters_sha:
+            body["sha"] = characters_sha
+
+        async with session.put(url, headers=headers, json=body) as resp:
+            if resp.status not in (200, 201):
+                texto_error = await resp.text()
+                raise RuntimeError(f"{resp.status}: {texto_error}")
+            data = await resp.json()
+            characters_sha = data["content"]["sha"]
+
+    hubo_cambios_characters_sin_guardar = False
+    return True
+
+def agregar_personaje_a_coleccion(usuario, personaje):
+    global hubo_cambios_characters_sin_guardar
+    user_id = str(usuario.id)
+    if user_id not in characters_cache:
+        characters_cache[user_id] = {"nombre": usuario.display_name, "personajes": []}
+    characters_cache[user_id]["nombre"] = usuario.display_name
+    characters_cache[user_id]["personajes"].append(personaje)
+    hubo_cambios_characters_sin_guardar = True
 
 async def cargar_balances_desde_github():
     global balances_cache, balances_sha, balances_cargados
@@ -154,9 +272,12 @@ async def guardar_balances_en_github():
 
 @tasks.loop(minutes=15)
 async def guardado_periodico():
-    guardado = await guardar_balances_en_github()
-    if guardado:
+    guardado_balances = await guardar_balances_en_github()
+    if guardado_balances:
         print("💾 Balances sincronizados con GitHub (guardado periódico)")
+    guardado_characters = await guardar_characters_en_github()
+    if guardado_characters:
+        print("📚 Colecciones sincronizadas con GitHub (guardado periódico)")
 
 @bot.event
 async def on_ready():
@@ -167,6 +288,16 @@ async def on_ready():
         print(f"💰 Balances cargados desde GitHub ({len(balances_cache)} cuentas)")
         if not guardado_periodico.is_running():
             guardado_periodico.start()
+
+    global personajes_cargados
+    if not personajes_cargados and GITHUB_TOKEN and GITHUB_REPO:
+        await cargar_personajes_desde_github()
+        print(f"🎴 Personajes de !rw cargados desde GitHub ({len(personajes_cache)} personajes)")
+
+    global characters_cargados
+    if not characters_cargados and GITHUB_TOKEN and GITHUB_REPO:
+        await cargar_characters_desde_github()
+        print(f"📚 Colecciones cargadas desde GitHub ({len(characters_cache)} usuarios)")
 
 async def generar_resumen(channel_id):
     """Genera un resumen de los últimos mensajes"""
@@ -294,14 +425,14 @@ async def saldo(ctx):
                 ),
                 footer=ctx.author.display_name,
             )
-            embed.add_field(name="🪙 Balance", value="0", inline=True)
+            embed.add_field(name="🪙 Balance", value=formatear_numero(0), inline=True)
         else:
             balance_actual = balances_cache[user_id]["balance"]
             ranking_ordenado = sorted(balances_cache.items(), key=lambda item: item[1].get("balance", 0), reverse=True)
             posicion = next((i for i, (uid, _) in enumerate(ranking_ordenado, start=1) if uid == user_id), None)
 
             embed = crear_embed(titulo=f"🪙 Balance de {ctx.author.display_name}", footer=f"{len(balances_cache)} cuentas registradas")
-            embed.add_field(name="Balance", value=f"**{balance_actual}**", inline=True)
+            embed.add_field(name="Balance", value=f"**{formatear_numero(balance_actual)}**", inline=True)
             if posicion:
                 embed.add_field(name="Puesto local", value=f"#{posicion}", inline=True)
 
@@ -323,7 +454,7 @@ async def top(ctx):
     for i, (uid, datos) in enumerate(ranking_ordenado):
         posicion = medallas[i] if i < 3 else f"`#{i+1}`"
         nombre = datos.get("nombre", "???")
-        lineas.append(f"{posicion} **{nombre}** — {datos.get('balance', 0)}")
+        lineas.append(f"{posicion} **{nombre}** — {formatear_numero(datos.get('balance', 0))}")
 
     embed = crear_embed(titulo="🏆 Top de balances", descripcion="\n".join(lineas))
     await ctx.reply(embed=embed)
@@ -343,7 +474,7 @@ async def work(ctx):
 
     embed = crear_embed(
         titulo="💼 A trabajar",
-        descripcion=f"Ganaste **{ganancia}** monedas.\nBalance actual: **{balances_cache[user_id]['balance']}**",
+        descripcion=f"Ganaste **{formatear_numero(ganancia)}** monedas.\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**",
     )
     await ctx.reply(embed=embed)
 
@@ -370,7 +501,7 @@ async def coinflip(ctx, opcion: str = None, cantidad: int = None):
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
 
     if balances_cache[user_id]["balance"] < cantidad:
-        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{balances_cache[user_id]['balance']}**."))
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_numero(balances_cache[user_id]['balance'])}**."))
         return
 
     resultado = random.choice(("cara", "cruz"))
@@ -378,10 +509,10 @@ async def coinflip(ctx, opcion: str = None, cantidad: int = None):
 
     if gano:
         balances_cache[user_id]["balance"] += cantidad
-        descripcion = f"Salió **{resultado}**. Ganaste **{cantidad}**.\nBalance actual: **{balances_cache[user_id]['balance']}**"
+        descripcion = f"Salió **{resultado}**. Ganaste **{formatear_numero(cantidad)}**.\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**"
     else:
         balances_cache[user_id]["balance"] -= cantidad
-        descripcion = f"Salió **{resultado}**. Perdiste **{cantidad}**.\nBalance actual: **{balances_cache[user_id]['balance']}**"
+        descripcion = f"Salió **{resultado}**. Perdiste **{formatear_numero(cantidad)}**.\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**"
 
     hubo_cambios_sin_guardar = True
     await ctx.reply(embed=crear_embed(titulo="🪙 Coinflip", descripcion=descripcion))
@@ -406,7 +537,7 @@ async def addmoney(ctx, miembro: discord.Member = None, cantidad: int = None):
     balances_cache[user_id]["balance"] += cantidad
     hubo_cambios_sin_guardar = True
 
-    embed = crear_embed(descripcion=f"Le di **{cantidad}** a **{miembro.display_name}**.\nBalance nuevo: **{balances_cache[user_id]['balance']}**")
+    embed = crear_embed(descripcion=f"Le di **{formatear_numero(cantidad)}** a **{miembro.display_name}**.\nBalance nuevo: **{formatear_numero(balances_cache[user_id]['balance'])}**")
     await ctx.reply(embed=embed)
 
 PALOS = ["♠", "♥", "♦", "♣"]
@@ -455,7 +586,7 @@ class BlackjackView(discord.ui.View):
 
         jugador_txt = f"{self.formatear_mano(self.mano_jugador)}  (**{valor_mano(self.mano_jugador)}**)"
 
-        descripcion = f"Apuesta: **{self.apuesta}**"
+        descripcion = f"Apuesta: **{formatear_numero(self.apuesta)}**"
         if resultado:
             descripcion += f"\n\n{resultado}"
 
@@ -483,19 +614,19 @@ class BlackjackView(discord.ui.View):
 
         if resultado_tipo == "gana":
             balances_cache[user_id]["balance"] += self.apuesta
-            texto = f"Ganaste **{self.apuesta}**."
+            texto = f"Ganaste **{formatear_numero(self.apuesta)}**."
         elif resultado_tipo == "blackjack":
             ganancia = int(self.apuesta * 1.5)
             balances_cache[user_id]["balance"] += ganancia
-            texto = f"¡Blackjack! Ganaste **{ganancia}**."
+            texto = f"¡Blackjack! Ganaste **{formatear_numero(ganancia)}**."
         elif resultado_tipo == "pierde":
             balances_cache[user_id]["balance"] -= self.apuesta
-            texto = f"Perdiste **{self.apuesta}**."
+            texto = f"Perdiste **{formatear_numero(self.apuesta)}**."
         else:
             texto = "Empate, recuperás tu apuesta."
 
         hubo_cambios_sin_guardar = True
-        texto += f"\nBalance actual: **{balances_cache[user_id]['balance']}**"
+        texto += f"\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**"
         return texto
 
     async def _terminar(self, interaction, resultado_tipo):
@@ -571,7 +702,7 @@ async def blackjack(ctx, cantidad: int = None):
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
 
     if balances_cache[user_id]["balance"] < cantidad:
-        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{balances_cache[user_id]['balance']}**."))
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_numero(balances_cache[user_id]['balance'])}**."))
         return
 
     view = BlackjackView(ctx.author, cantidad)
@@ -596,6 +727,136 @@ async def blackjack(ctx, cantidad: int = None):
     mensaje = await ctx.reply(embed=embed, view=view)
     view.mensaje = mensaje
 
+# Rangos de rareza para !rw: cuanto más vale el personaje, menos peso tiene
+# a la hora de salir sorteado. (mínimo, máximo, peso, nombre)
+RANGOS_RAREZA = [
+    (0, 7999, 60, "⚪ Común"),
+    (8000, 19999, 25, "🟢 Poco común"),
+    (20000, 499999, 12, "🔵 Raro"),
+    (500000, float("inf"), 3, "🟡 Legendario"),
+]
+
+def parsear_valor(valor):
+    """Convierte '20.000', '20,000' o 20000 a int. Devuelve None si no se puede."""
+    try:
+        limpio = str(valor).replace("$", "").replace(".", "").replace(",", "").strip()
+        return int(limpio)
+    except (TypeError, ValueError):
+        return None
+
+def info_rareza(valor):
+    """Devuelve (peso, nombre_rareza) según el valor del personaje."""
+    numero = parsear_valor(valor)
+    if numero is None:
+        return RANGOS_RAREZA[0][2], RANGOS_RAREZA[0][3]
+    for minimo, maximo, peso, nombre in RANGOS_RAREZA:
+        if minimo <= numero <= maximo:
+            return peso, nombre
+    return RANGOS_RAREZA[0][2], RANGOS_RAREZA[0][3]
+
+class RWClaimView(discord.ui.View):
+    """Botón de reclamo: 30s exclusivos para quien usó !rw, 60s más libres para
+    cualquiera, y después de esos 90s totales se vence sin que nadie lo reclame."""
+
+    SEGUNDOS_EXCLUSIVOS = 30
+    SEGUNDOS_TOTALES = 90
+
+    def __init__(self, autor, personaje, nombre, imagen, fuente, valor, rareza):
+        super().__init__(timeout=self.SEGUNDOS_TOTALES)
+        self.autor = autor
+        self.personaje = personaje
+        self.nombre = nombre
+        self.imagen = imagen
+        self.fuente = fuente
+        self.valor = valor
+        self.rareza = rareza
+        self.hora_inicio = time.monotonic()
+        self.reclamado_por = None
+        self.mensaje = None
+
+    @discord.ui.button(label="Reclamar 🔒", style=discord.ButtonStyle.success)
+    async def reclamar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.reclamado_por is not None:
+            await interaction.response.send_message("Ya lo reclamaron, llegaste tarde.", ephemeral=True)
+            return
+
+        transcurrido = time.monotonic() - self.hora_inicio
+        if transcurrido < self.SEGUNDOS_EXCLUSIVOS and interaction.user.id != self.autor.id:
+            restante = int(self.SEGUNDOS_EXCLUSIVOS - transcurrido) + 1
+            await interaction.response.send_message(
+                f"Todavía es exclusivo de {self.autor.display_name} por {restante}s más.",
+                ephemeral=True,
+            )
+            return
+
+        self.reclamado_por = interaction.user
+        agregar_personaje_a_coleccion(interaction.user, self.personaje)
+
+        button.disabled = True
+        button.label = f"Reclamado por {interaction.user.display_name}"
+        button.style = discord.ButtonStyle.secondary
+
+        embed = interaction.message.embeds[0]
+        embed.add_field(name="🔒 Reclamado por", value=interaction.user.display_name, inline=False)
+        await interaction.response.edit_message(embed=embed, view=self)
+        self.stop()
+
+    async def on_timeout(self):
+        if self.reclamado_por is not None or self.mensaje is None:
+            return
+        for item in self.children:
+            item.disabled = True
+        try:
+            embed = self.mensaje.embeds[0]
+            embed.add_field(name="⌛", value="Nadie lo reclamó a tiempo, se perdió.", inline=False)
+            await self.mensaje.edit(embed=embed, view=self)
+        except discord.HTTPException:
+            pass
+
+@bot.command(name="rw")
+async def rw(ctx):
+    """Sacá un personaje random del rw.json (los de más valor son más difíciles de sacar)"""
+    if not personajes_cache:
+        await ctx.reply(embed=crear_embed(
+            descripcion="No hay personajes cargados todavía. Subí el `rw.json` al repo y corré `!rwreload`."
+        ))
+        return
+
+    pesos_y_rarezas = [info_rareza(campo_personaje(p, "Valor", "valor")) for p in personajes_cache]
+    pesos = [pr[0] for pr in pesos_y_rarezas]
+
+    indice = random.choices(range(len(personajes_cache)), weights=pesos, k=1)[0]
+    personaje = personajes_cache[indice]
+    rareza = pesos_y_rarezas[indice][1]
+
+    nombre = campo_personaje(personaje, "Nombre", "nombre")
+    imagen = campo_personaje(personaje, "Imagen", "imagen", default=None)
+    fuente = campo_personaje(personaje, "Fuente", "fuente")
+    valor = campo_personaje(personaje, "Valor", "valor")
+
+    embed = crear_embed(titulo=f"🎴 {nombre}", footer=f"Tirado por {ctx.author.display_name}")
+    embed.add_field(name="Fuente", value=str(fuente), inline=True)
+    embed.add_field(name="Valor", value=formatear_numero(valor), inline=True)
+    embed.add_field(name="Rareza", value=rareza, inline=True)
+    if imagen:
+        embed.set_image(url=imagen)
+
+    view = RWClaimView(ctx.author, personaje, nombre, imagen, fuente, valor, rareza)
+    mensaje = await ctx.reply(embed=embed, view=view)
+    view.mensaje = mensaje
+
+@bot.command(name="rwreload")
+async def rwreload(ctx):
+    """Recarga rw.json desde GitHub sin reiniciar el bot"""
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
+        return
+    try:
+        await cargar_personajes_desde_github()
+        await ctx.reply(embed=crear_embed(descripcion=f"🔄 Listo, cargué **{len(personajes_cache)}** personajes desde GitHub."))
+    except Exception as e:
+        await ctx.reply(embed=crear_embed(descripcion=f"❌ Hubo un error al recargar: {str(e)}"))
+
 @bot.command(name="help")
 async def ayuda(ctx):
     """Lista los comandos de Catherine"""
@@ -605,6 +866,9 @@ async def ayuda(ctx):
         "`!w` — trabajar, ganás entre 1.5k y 3k",
         "`!cf cara/cruz cantidad` — apostar a cara o cruz",
         "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
+        "`!rw` — tirar un personaje random (tenés 30s exclusivos para reclamarlo)",
+        "`!rwreload` — recargar la lista de personajes desde GitHub",
+        "`!coleccion` o `!harem` [@alguien] — ver los personajes reclamados",
         "`!mp3 búsqueda` o `!mp3 link` — te paso el audio de un video",
         "`!datasave` — fuerza el guardado de los balances",
     ]
@@ -613,20 +877,52 @@ async def ayuda(ctx):
 
 @bot.command(name="datasave")
 async def datasave(ctx):
-    """Fuerza el guardado inmediato de los balances a GitHub"""
+    """Fuerza el guardado inmediato de los balances y las colecciones a GitHub"""
     if not GITHUB_TOKEN or not GITHUB_REPO:
         await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
         return
 
     aviso = await ctx.reply(embed=crear_embed(descripcion="🔄 Guardando los datos en GitHub..."))
     try:
-        guardado = await guardar_balances_en_github()
-        if guardado:
+        guardado_balances = await guardar_balances_en_github()
+        guardado_characters = await guardar_characters_en_github()
+        if guardado_balances or guardado_characters:
             await aviso.edit(embed=crear_embed(descripcion="💾 Listo, quedó todo guardado en GitHub. Podés estar tranquilo/a."))
         else:
             await aviso.edit(embed=crear_embed(descripcion="No había cambios nuevos desde el último guardado, así que no hizo falta tocar nada."))
     except Exception as e:
         await aviso.edit(embed=crear_embed(descripcion=f"❌ Hubo un error al guardar: {str(e)}"))
+
+@bot.command(name="coleccion", aliases=["harem"])
+async def coleccion(ctx, miembro: discord.Member = None):
+    """Muestra los personajes reclamados por vos o por alguien más"""
+    miembro = miembro or ctx.author
+    user_id = str(miembro.id)
+
+    datos = characters_cache.get(user_id)
+    if not datos or not datos.get("personajes"):
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"**{miembro.display_name}** todavía no reclamó ningún personaje. Probá `!rw`."
+        ))
+        return
+
+    personajes_del_usuario = datos["personajes"]
+    lineas = []
+    for p in personajes_del_usuario[-15:]:
+        nombre_p = campo_personaje(p, "Nombre", "nombre")
+        valor_p = campo_personaje(p, "Valor", "valor")
+        lineas.append(f"• **{nombre_p}** — {formatear_numero(valor_p)}")
+
+    descripcion = "\n".join(lineas)
+    if len(personajes_del_usuario) > 15:
+        descripcion += f"\n... y {len(personajes_del_usuario) - 15} más"
+
+    embed = crear_embed(
+        titulo=f"📚 Colección de {miembro.display_name}",
+        descripcion=descripcion,
+        footer=f"{len(personajes_del_usuario)} personajes en total",
+    )
+    await ctx.reply(embed=embed)
 
 async def buscar_por_scraping(session, texto):
     """Busca directo en youtube.com/results y parsea el primer video ID. Más preciso que la API, pero puede fallar."""
