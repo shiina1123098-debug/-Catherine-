@@ -203,6 +203,18 @@ async def guardar_characters_en_github():
     hubo_cambios_characters_sin_guardar = False
     return True
 
+def usuario_ya_tiene_personaje(usuario, personaje):
+    """True si ese usuario ya tiene un personaje con el mismo nombre en su colección."""
+    user_id = str(usuario.id)
+    datos = characters_cache.get(user_id)
+    if not datos:
+        return False
+    nombre_nuevo = campo_personaje(personaje, "Nombre", "nombre")
+    return any(
+        campo_personaje(p, "Nombre", "nombre") == nombre_nuevo
+        for p in datos.get("personajes", [])
+    )
+
 def agregar_personaje_a_coleccion(usuario, personaje):
     global hubo_cambios_characters_sin_guardar
     user_id = str(usuario.id)
@@ -805,6 +817,13 @@ class RWClaimView(discord.ui.View):
             )
             return
 
+        if usuario_ya_tiene_personaje(interaction.user, self.personaje):
+            await interaction.response.send_message(
+                f"Ya tenés a **{self.nombre}** en tu colección, no podés repetirlo.",
+                ephemeral=True,
+            )
+            return
+
         self.reclamado_por = interaction.user
         agregar_personaje_a_coleccion(interaction.user, self.personaje)
 
@@ -974,7 +993,11 @@ class ColeccionView(discord.ui.View):
         super().__init__(timeout=120)
         self.autor = autor  # solo quien pidió la colección puede pasar de página
         self.miembro = miembro
-        self.personajes = personajes
+        self.personajes = sorted(
+            personajes,
+            key=lambda p: parsear_valor(campo_personaje(p, "Valor", "valor")) or 0,
+            reverse=True,
+        )
         self.pagina = 0
         self.total_paginas = max(1, -(-len(personajes) // PERSONAJES_POR_PAGINA))
         self.mensaje = None
