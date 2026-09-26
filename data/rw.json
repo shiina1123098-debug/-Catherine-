@@ -599,4 +599,610 @@
     "Fuente": "No Game No Life",
     "Valor": 9000
   }
+  {
+    "Nombre": "Cinderella",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/8/8a/Cinderella.png/300px-Cinderella.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 85000
+  },
+  {
+    "Nombre": "Snow White",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/5/5e/Snow_White.png/300px-Snow_White.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 78000
+  },
+  {
+    "Nombre": "Rapunzel",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/2/2f/Rapunzel.png/300px-Rapunzel.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 72000
+  },
+  {
+    "Nombre": "The Little Mermaid",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/1/1a/Little_Mermaid.png/300px-Little_Mermaid.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 68000
+  },
+  {
+    "Nombre": "Frog Princess",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/3/3b/Princess_Frog.png/300px-Princess_Frog.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 65000
+  },
+  {
+    "Nombre": "Red Hood",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/4/4e/Red_Hood.png/300px-Red_Hood.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 250000
+  },
+  {
+    "Nombre": "Dorothy",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/6/6c/Dorothy.png/300px-Dorothy.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 95000
+  },
+  {
+    "Nombre": "Jeanne d'Arc",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/7/7d/Jeanne.png/300px-Jeanne.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 88000
+  },
+  {
+    "Nombre": "Miranda",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/8/8b/Miranda.png/300px-Miranda.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Leaf",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/9/9c/Leaf.png/300px-Leaf.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 420000
+  },
+  {
+    "Nombre": "Baphomet",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/0/0d/Baphomet.png/300px-Baphomet.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 380000
+  },
+  {
+    "Nombre": "Elma",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/a/a1/Elma.png/300px-Elma.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Victoria",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/b/b2/Victoria.png/300px-Victoria.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 8500
+  },
+  {
+    "Nombre": "Goose",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/c/c3/Goose.png/300px-Goose.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 6500
+  },
+  {
+    "Nombre": "Elizabeth Bathory",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/d/d4/Elisabeth.png/300px-Elisabeth.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 7800
+  },
+  {
+    "Nombre": "Catherine",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/e/e5/Catherine.png/300px-Catherine.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 9200
+  },
+  {
+    "Nombre": "Alice",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/f/f6/Alice.png/300px-Alice.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 950000
+  },
+  {
+    "Nombre": "Node",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/0/0a/Node.png/300px-Node.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Mabel",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/1/1b/Mabel.png/300px-Mabel.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Priket",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/2/2c/Prickett.png/300px-Prickett.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 430000
+  },
+  {
+    "Nombre": "Mary Ann",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/3/3d/Mary_Ann.png/300px-Mary_Ann.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 380000
+  },
+  {
+    "Nombre": "The White Rabbit",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/4/4e/White_Rabbit.png/300px-White_Rabbit.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 110000
+  },
+  {
+    "Nombre": "Cheshire Cat",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/5/5f/Cheshire_Cat.png/300px-Cheshire_Cat.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 98000
+  },
+  {
+    "Nombre": "The Hatter",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/6/6a/Hatter.png/300px-Hatter.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 85000
+  },
+  {
+    "Nombre": "Queen of Hearts",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/7/7b/Queen_of_Hearts.png/300px-Queen_of_Hearts.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 120000
+  },
+  {
+    "Nombre": "Red Queen",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/8/8c/Red_Queen.png/300px-Red_Queen.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 135000
+  },
+  {
+    "Nombre": "Meryphillia",
+    "Imagen": "https://blacksouls.miraheze.org/images/thumb/9/9d/Meryphillia.png/300px-Meryphillia.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Dio Brando",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/34897.jpg",
+    "Fuente": "JoJo's Bizarre Adventure",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Jotaro Kujo",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/7/30053.jpg",
+    "Fuente": "JoJo's Bizarre Adventure",
+    "Valor": 180000
+  },
+  {
+    "Nombre": "Johan Liebert",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/51572.jpg",
+    "Fuente": "Monster",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Ken Kaneki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/251327.jpg",
+    "Fuente": "Tokyo Ghoul",
+    "Valor": 160000
+  },
+  {
+    "Nombre": "Touka Kirishima",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/251329.jpg",
+    "Fuente": "Tokyo Ghoul",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Makima",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/509947.jpg",
+    "Fuente": "Chainsaw Man",
+    "Valor": 490000
+  },
+  {
+    "Nombre": "Denji",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/509946.jpg",
+    "Fuente": "Chainsaw Man",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Power",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/7/509948.jpg",
+    "Fuente": "Chainsaw Man",
+    "Valor": 11000
+  },
+  {
+    "Nombre": "Aki Hayakawa",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/509949.jpg",
+    "Fuente": "Chainsaw Man",
+    "Valor": 17000
+  },
+  {
+    "Nombre": "Doflamingo",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/310308.jpg",
+    "Fuente": "One Piece",
+    "Valor": 470000
+  },
+  {
+    "Nombre": "Nico Robin",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/16/368420.jpg",
+    "Fuente": "One Piece",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Trafalgar Law",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/246329.jpg",
+    "Fuente": "One Piece",
+    "Valor": 120000
+  },
+  {
+    "Nombre": "Pain (Nagato)",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/131319.jpg",
+    "Fuente": "Naruto",
+    "Valor": 440000
+  },
+  {
+    "Nombre": "Obito Uchiha",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/284123.jpg",
+    "Fuente": "Naruto",
+    "Valor": 130000
+  },
+  {
+    "Nombre": "Minato Namikaze",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/284124.jpg",
+    "Fuente": "Naruto",
+    "Valor": 190000
+  },
+  {
+    "Nombre": "Jiraiya",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/131318.jpg",
+    "Fuente": "Naruto",
+    "Valor": 42000
+  },
+  {
+    "Nombre": "Hinata Hyuga",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/284126.jpg",
+    "Fuente": "Naruto",
+    "Valor": 6800
+  },
+  {
+    "Nombre": "Gaara",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/131320.jpg",
+    "Fuente": "Naruto",
+    "Valor": 38000
+  },
+  {
+    "Nombre": "Rock Lee",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/131321.jpg",
+    "Fuente": "Naruto",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Shikamaru Nara",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/131322.jpg",
+    "Fuente": "Naruto",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Tsunade",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/131323.jpg",
+    "Fuente": "Naruto",
+    "Valor": 14000
+  },
+  {
+    "Nombre": "Might Guy",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/131324.jpg",
+    "Fuente": "Naruto",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Meliodas",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/287911.jpg",
+    "Fuente": "Seven Deadly Sins",
+    "Valor": 160000
+  },
+  {
+    "Nombre": "Escanor",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/351234.jpg",
+    "Fuente": "Seven Deadly Sins",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Ban",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/287912.jpg",
+    "Fuente": "Seven Deadly Sins",
+    "Valor": 110000
+  },
+  {
+    "Nombre": "Erza Scarlet",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/114113.jpg",
+    "Fuente": "Fairy Tail",
+    "Valor": 140000
+  },
+  {
+    "Nombre": "Natsu Dragneel",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/5/114112.jpg",
+    "Fuente": "Fairy Tail",
+    "Valor": 180000
+  },
+  {
+    "Nombre": "Gray Fullbuster",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/114114.jpg",
+    "Fuente": "Fairy Tail",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Asta",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/345678.jpg",
+    "Fuente": "Black Clover",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Yami Sukehiro",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/345679.jpg",
+    "Fuente": "Black Clover",
+    "Valor": 190000
+  },
+  {
+    "Nombre": "Nezuko Kamado",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/378254.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 5200
+  },
+  {
+    "Nombre": "Shinobu Kocho",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/386736.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Akaza",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/423444.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Kokushibo",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/423445.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 470000
+  },
+  {
+    "Nombre": "Douma",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/423446.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 460000
+  },
+  {
+    "Nombre": "Giyu Tomioka",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/12/386737.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 170000
+  },
+  {
+    "Nombre": "Sung Jin-Woo",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/540692.jpg",
+    "Fuente": "Solo Leveling",
+    "Valor": 500000
+  },
+  {
+    "Nombre": "Go Gunhee",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/540693.jpg",
+    "Fuente": "Solo Leveling",
+    "Valor": 120000
+  },
+  {
+    "Nombre": "Tusk",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/540694.jpg",
+    "Fuente": "Solo Leveling",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Iron",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/5/540695.jpg",
+    "Fuente": "Solo Leveling",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Tank",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/540696.jpg",
+    "Fuente": "Solo Leveling",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Kaisel",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/7/540697.jpg",
+    "Fuente": "Solo Leveling",
+    "Valor": 9500
+  },
+  {
+    "Nombre": "Ezio Auditore",
+    "Imagen": "https://static.wikia.nocookie.net/assassinscreed/images/8/8f/AC2_Ezio.png",
+    "Fuente": "Assassin's Creed",
+    "Valor": 180000
+  },
+  {
+    "Nombre": "Geralt of Rivia",
+    "Imagen": "https://static.wikia.nocookie.net/witcher/images/5/5e/Tw3_journal_geralt.png",
+    "Fuente": "The Witcher",
+    "Valor": 190000
+  },
+  {
+    "Nombre": "Kratos",
+    "Imagen": "https://static.wikia.nocookie.net/godofwar/images/4/4a/Kratos_GoW2018.png",
+    "Fuente": "God of War",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Doom Slayer",
+    "Imagen": "https://static.wikia.nocookie.net/doom/images/3/3e/Doom_Slayer.png",
+    "Fuente": "DOOM",
+    "Valor": 490000
+  },
+  {
+    "Nombre": "Master Chief",
+    "Imagen": "https://static.wikia.nocookie.net/halo/images/7/7e/Master_Chief.png",
+    "Fuente": "Halo",
+    "Valor": 160000
+  },
+  {
+    "Nombre": "Joel Miller",
+    "Imagen": "https://static.wikia.nocookie.net/thelastofus/images/2/2f/Joel_Miller.png",
+    "Fuente": "The Last of Us",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Ellie Williams",
+    "Imagen": "https://static.wikia.nocookie.net/thelastofus/images/8/8a/Ellie.png",
+    "Fuente": "The Last of Us",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Arthur Morgan",
+    "Imagen": "https://static.wikia.nocookie.net/reddeadredemption/images/9/9e/Arthur_Morgan.png",
+    "Fuente": "Red Dead Redemption",
+    "Valor": 170000
+  },
+  {
+    "Nombre": "John Marston",
+    "Imagen": "https://static.wikia.nocookie.net/reddeadredemption/images/1/1a/John_Marston.png",
+    "Fuente": "Red Dead Redemption",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "2B",
+    "Imagen": "https://static.wikia.nocookie.net/nier/images/2/2b/2B.png",
+    "Fuente": "NieR: Automata",
+    "Valor": 140000
+  },
+  {
+    "Nombre": "9S",
+    "Imagen": "https://static.wikia.nocookie.net/nier/images/9/9s/9S.png",
+    "Fuente": "NieR: Automata",
+    "Valor": 19000
+  },
+  {
+    "Nombre": "A2",
+    "Imagen": "https://static.wikia.nocookie.net/nier/images/a/a2/A2.png",
+    "Fuente": "NieR: Automata",
+    "Valor": 120000
+  },
+  {
+    "Nombre": "Cloud Strife",
+    "Imagen": "https://static.wikia.nocookie.net/finalfantasy/images/c/c7/Cloud_Strife.png",
+    "Fuente": "Final Fantasy VII",
+    "Valor": 160000
+  },
+  {
+    "Nombre": "Sephiroth",
+    "Imagen": "https://static.wikia.nocookie.net/finalfantasy/images/s/se/Sephiroth.png",
+    "Fuente": "Final Fantasy VII",
+    "Valor": 470000
+  },
+  {
+    "Nombre": "Tifa Lockhart",
+    "Imagen": "https://static.wikia.nocookie.net/finalfantasy/images/t/ti/Tifa.png",
+    "Fuente": "Final Fantasy VII",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Aerith Gainsborough",
+    "Imagen": "https://static.wikia.nocookie.net/finalfantasy/images/a/ae/Aerith.png",
+    "Fuente": "Final Fantasy VII",
+    "Valor": 14000
+  },
+  {
+    "Nombre": "Kyo Kusanagi",
+    "Imagen": "https://static.wikia.nocookie.net/snk/images/k/ky/Kyo.png",
+    "Fuente": "The King of Fighters",
+    "Valor": 130000
+  },
+  {
+    "Nombre": "Iori Yagami",
+    "Imagen": "https://static.wikia.nocookie.net/snk/images/i/io/Iori.png",
+    "Fuente": "The King of Fighters",
+    "Valor": 125000
+  },
+  {
+    "Nombre": "Terry Bogard",
+    "Imagen": "https://static.wikia.nocookie.net/snk/images/t/te/Terry.png",
+    "Fuente": "Fatal Fury",
+    "Valor": 110000
+  },
+  {
+    "Nombre": "Ryu",
+    "Imagen": "https://static.wikia.nocookie.net/streetfighter/images/r/ry/Ryu.png",
+    "Fuente": "Street Fighter",
+    "Valor": 180000
+  },
+  {
+    "Nombre": "Chun-Li",
+    "Imagen": "https://static.wikia.nocookie.net/streetfighter/images/c/ch/Chun_Li.png",
+    "Fuente": "Street Fighter",
+    "Valor": 170000
+  },
+  {
+    "Nombre": "Akuma",
+    "Imagen": "https://static.wikia.nocookie.net/streetfighter/images/a/ak/Akuma.png",
+    "Fuente": "Street Fighter",
+    "Valor": 460000
+  },
+  {
+    "Nombre": "Scorpion",
+    "Imagen": "https://static.wikia.nocookie.net/mortalkombat/images/s/sc/Scorpion.png",
+    "Fuente": "Mortal Kombat",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Sub-Zero",
+    "Imagen": "https://static.wikia.nocookie.net/mortalkombat/images/s/su/Sub_Zero.png",
+    "Fuente": "Mortal Kombat",
+    "Valor": 145000
+  },
+  {
+    "Nombre": "Raiden",
+    "Imagen": "https://static.wikia.nocookie.net/mortalkombat/images/r/ra/Raiden.png",
+    "Fuente": "Mortal Kombat",
+    "Valor": 440000
+  },
+  {
+    "Nombre": "Dante",
+    "Imagen": "https://static.wikia.nocookie.net/devilmaycry/images/d/da/Dante.png",
+    "Fuente": "Devil May Cry",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Vergil",
+    "Imagen": "https://static.wikia.nocookie.net/devilmaycry/images/v/ve/Vergil.png",
+    "Fuente": "Devil May Cry",
+    "Valor": 490000
+  },
+  {
+    "Nombre": "Nero",
+    "Imagen": "https://static.wikia.nocookie.net/devilmaycry/images/n/ne/Nero.png",
+    "Fuente": "Devil May Cry",
+    "Valor": 130000
+  },
+  {
+    "Nombre": "Guts (Berserker Armor)",
+    "Imagen": "https://static.wikia.nocookie.net/berserk/images/g/gu/Guts_Berserker.png",
+    "Fuente": "Berserk",
+    "Valor": 490000
+  },
+  {
+    "Nombre": "Griffith (Femto)",
+    "Imagen": "https://static.wikia.nocookie.net/berserk/images/g/gr/Femto.png",
+    "Fuente": "Berserk",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Skull Knight",
+    "Imagen": "https://static.wikia.nocookie.net/berserk/images/s/sk/Skull_Knight.png",
+    "Fuente": "Berserk",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Void",
+    "Imagen": "https://static.wikia.nocookie.net/berserk/images/v/vo/Void.png",
+    "Fuente": "Berserk",
+    "Valor": 500000
+  }
 ]
