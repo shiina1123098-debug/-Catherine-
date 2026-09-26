@@ -857,6 +857,47 @@ async def rwreload(ctx):
     except Exception as e:
         await ctx.reply(embed=crear_embed(descripcion=f"❌ Hubo un error al recargar: {str(e)}"))
 
+@bot.command(name="winfo")
+async def winfo(ctx, *, nombre_buscado: str = None):
+    """Muestra la ficha de un personaje puntual del rw.json, sin botón de reclamar"""
+    if not personajes_cache:
+        await ctx.reply(embed=crear_embed(
+            descripcion="No hay personajes cargados todavía. Subí el `rw.json` al repo y corré `!rwreload`."
+        ))
+        return
+
+    if not nombre_buscado:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!winfo Gojo Satoru`"))
+        return
+
+    buscado = nombre_buscado.lower().strip()
+    encontrados = [p for p in personajes_cache if buscado in campo_personaje(p, "Nombre", "nombre").lower()]
+
+    if not encontrados:
+        await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún personaje que coincida con **{nombre_buscado}**."))
+        return
+
+    exacto = next((p for p in encontrados if campo_personaje(p, "Nombre", "nombre").lower() == buscado), None)
+    personaje = exacto or encontrados[0]
+
+    nombre = campo_personaje(personaje, "Nombre", "nombre")
+    imagen = campo_personaje(personaje, "Imagen", "imagen", default=None)
+    fuente = campo_personaje(personaje, "Fuente", "fuente")
+    valor = campo_personaje(personaje, "Valor", "valor")
+    _, rareza = info_rareza(valor)
+
+    embed = crear_embed(titulo=f"🔎 {nombre}")
+    embed.add_field(name="Fuente", value=str(fuente), inline=True)
+    embed.add_field(name="Valor", value=formatear_numero(valor), inline=True)
+    embed.add_field(name="Rareza", value=rareza, inline=True)
+    if imagen:
+        embed.set_image(url=imagen)
+
+    if not exacto and len(encontrados) > 1:
+        embed.set_footer(text=f"Coincidencia parcial. Hay {len(encontrados) - 1} más con nombres similares.")
+
+    await ctx.reply(embed=embed)
+
 @bot.command(name="help")
 async def ayuda(ctx):
     """Lista los comandos de Catherine"""
@@ -868,6 +909,7 @@ async def ayuda(ctx):
         "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
         "`!rw` — tirar un personaje random (tenés 30s exclusivos para reclamarlo)",
         "`!rwreload` — recargar la lista de personajes desde GitHub",
+        "`!winfo nombre` — ver la ficha de un personaje puntual (sin reclamo)",
         "`!coleccion` o `!harem` [@alguien] — ver los personajes reclamados",
         "`!mp3 búsqueda` o `!mp3 link` — te paso el audio de un video",
         "`!datasave` — fuerza el guardado de los balances",
@@ -893,9 +935,69 @@ async def datasave(ctx):
     except Exception as e:
         await aviso.edit(embed=crear_embed(descripcion=f"❌ Hubo un error al guardar: {str(e)}"))
 
+PERSONAJES_POR_PAGINA = 10
+
+class ColeccionView(discord.ui.View):
+    def __init__(self, autor, miembro, personajes):
+        super().__init__(timeout=120)
+        self.autor = autor  # solo quien pidió la colección puede pasar de página
+        self.miembro = miembro
+        self.personajes = personajes
+        self.pagina = 0
+        self.total_paginas = max(1, -(-len(personajes) // PERSONAJES_POR_PAGINA))
+        self.mensaje = None
+        self._actualizar_botones()
+
+    def _actualizar_botones(self):
+        self.anterior.disabled = self.pagina == 0
+        self.siguiente.disabled = self.pagina >= self.total_paginas - 1
+
+    def construir_embed(self):
+        inicio = self.pagina * PERSONAJES_POR_PAGINA
+        fin = inicio + PERSONAJES_POR_PAGINA
+        lineas = []
+        for p in self.personajes[inicio:fin]:
+            nombre_p = campo_personaje(p, "Nombre", "nombre")
+            valor_p = campo_personaje(p, "Valor", "valor")
+            lineas.append(f"• **{nombre_p}** — {formatear_numero(valor_p)}")
+
+        return crear_embed(
+            titulo=f"📚 Colección de {self.miembro.display_name}",
+            descripcion="\n".join(lineas) if lineas else "No hay personajes en esta página.",
+            footer=f"Página {self.pagina + 1}/{self.total_paginas} — {len(self.personajes)} personajes en total",
+        )
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Solo quien pidió la colección puede cambiar de página.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="◀ Previous", style=discord.ButtonStyle.secondary)
+    async def anterior(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina -= 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.secondary)
+    async def siguiente(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina += 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    async def on_timeout(self):
+        if self.mensaje is None:
+            return
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.mensaje.edit(view=self)
+        except discord.HTTPException:
+            pass
+
 @bot.command(name="coleccion", aliases=["harem"])
 async def coleccion(ctx, miembro: discord.Member = None):
-    """Muestra los personajes reclamados por vos o por alguien más"""
+    """Muestra los personajes reclamados por vos o por alguien más, con paginado"""
     miembro = miembro or ctx.author
     user_id = str(miembro.id)
 
@@ -906,23 +1008,9 @@ async def coleccion(ctx, miembro: discord.Member = None):
         ))
         return
 
-    personajes_del_usuario = datos["personajes"]
-    lineas = []
-    for p in personajes_del_usuario[-15:]:
-        nombre_p = campo_personaje(p, "Nombre", "nombre")
-        valor_p = campo_personaje(p, "Valor", "valor")
-        lineas.append(f"• **{nombre_p}** — {formatear_numero(valor_p)}")
-
-    descripcion = "\n".join(lineas)
-    if len(personajes_del_usuario) > 15:
-        descripcion += f"\n... y {len(personajes_del_usuario) - 15} más"
-
-    embed = crear_embed(
-        titulo=f"📚 Colección de {miembro.display_name}",
-        descripcion=descripcion,
-        footer=f"{len(personajes_del_usuario)} personajes en total",
-    )
-    await ctx.reply(embed=embed)
+    view = ColeccionView(ctx.author, miembro, datos["personajes"])
+    mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
+    view.mensaje = mensaje
 
 async def buscar_por_scraping(session, texto):
     """Busca directo en youtube.com/results y parsea el primer video ID. Más preciso que la API, pero puede fallar."""
