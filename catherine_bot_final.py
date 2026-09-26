@@ -529,6 +529,49 @@ async def coinflip(ctx, opcion: str = None, cantidad: int = None):
     hubo_cambios_sin_guardar = True
     await ctx.reply(embed=crear_embed(titulo="🪙 Coinflip", descripcion=descripcion))
 
+@bot.command(name="roulette", aliases=["rt"])
+async def roulette(ctx, color: str = None, cantidad: int = None):
+    """Apuesta plata a rojo o negro en la ruleta (18/18 casillas, más 1 verde que hace perder a todos)"""
+    global hubo_cambios_sin_guardar
+
+    if color is None or cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!roulette rojo 500` o `!roulette negro 500`"))
+        return
+
+    color = color.lower()
+    alias = {"rojo": "rojo", "r": "rojo", "red": "rojo", "negro": "negro", "n": "negro", "black": "negro"}
+    if color not in alias:
+        await ctx.reply(embed=crear_embed(descripcion="Elegí `rojo` o `negro`."))
+        return
+    color = alias[color]
+
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="La apuesta tiene que ser mayor a 0."))
+        return
+
+    user_id = str(ctx.author.id)
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+
+    if balances_cache[user_id]["balance"] < cantidad:
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_numero(balances_cache[user_id]['balance'])}**."))
+        return
+
+    # 18 casillas rojas, 18 negras, 1 verde (el 0, hace perder a todos por igual)
+    resultado = random.choices(("rojo", "negro", "verde"), weights=(18, 18, 1), k=1)[0]
+    emoji_resultado = {"rojo": "🔴", "negro": "⚫", "verde": "🟢"}[resultado]
+    gano = resultado == color
+
+    if gano:
+        balances_cache[user_id]["balance"] += cantidad
+        descripcion = f"Salió {emoji_resultado} **{resultado}**. Ganaste **{formatear_numero(cantidad)}**.\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**"
+    else:
+        balances_cache[user_id]["balance"] -= cantidad
+        descripcion = f"Salió {emoji_resultado} **{resultado}**. Perdiste **{formatear_numero(cantidad)}**.\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**"
+
+    hubo_cambios_sin_guardar = True
+    await ctx.reply(embed=crear_embed(titulo="🎡 Ruleta", descripcion=descripcion))
+
 @bot.command(name="addmoney")
 async def addmoney(ctx, miembro: discord.Member = None, cantidad: int = None):
     """Le agrega plata a alguien. Solo el dueño del server puede usarlo."""
@@ -958,6 +1001,7 @@ async def ayuda(ctx):
         "`!w` — trabajar, ganás entre 1.5k y 3k",
         "`!cf cara/cruz cantidad` — apostar a cara o cruz",
         "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
+        "`!rt rojo/negro cantidad` o `!roulette rojo/negro cantidad` — jugar a la ruleta",
         "`!rw` — tirar un personaje random (tenés 30s exclusivos para reclamarlo)",
         "`!rwreload` — recargar la lista de personajes desde GitHub",
         "`!winfo nombre` — ver la ficha de un personaje puntual (sin reclamo)",
