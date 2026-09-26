@@ -139,6 +139,18 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/8/381150.jpg",
         "Fuente": "That Time I Got Reincarnated as a Slime",
         "Valor": 6000
+      },
+      {
+        "Nombre": "Gon Freecss",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/11/174517.jpg",
+        "Fuente": "Hunter x Hunter",
+        "Valor": 7500
+      },
+      {
+        "Nombre": "Ryuk",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/10/59125.jpg",
+        "Fuente": "Death Note",
+        "Valor": 15000
       }
     ]
   }
