@@ -1,20 +1,602 @@
 [
   {
-    "Nombre": "Alice Von Ataraxia",
-    "Imagen": "https://i.imgur.com/19Vbbh5.jpeg",
-    "Fuente": "Max Level Newbie",
-    "Valor": 1000000
-  },
-  {
     "Nombre": "Gojo Satoru",
     "Imagen": "https://i.imgur.com/WzRHR8D.jpeg",
     "Fuente": "Jujutsu Kaisen",
-    "Valor": 750000
+    "Valor": 980000
+  },
+  {
+    "Nombre": "Sukuna Ryomen",
+    "Imagen": "",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 950000
+  },
+  {
+    "Nombre": "Yuji Itadori",
+    "Imagen": "",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Megumi Fushiguro",
+    "Imagen": "",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Nobara Kugisaki",
+    "Imagen": "",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 6500
+  },
+  {
+    "Nombre": "Toji Fushiguro",
+    "Imagen": "",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 320000
+  },
+  {
+    "Nombre": "Naruto Uzumaki",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 890000
+  },
+  {
+    "Nombre": "Sasuke Uchiha",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 620000
+  },
+  {
+    "Nombre": "Kakashi Hatake",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 280000
+  },
+  {
+    "Nombre": "Itachi Uchiha",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Madara Uchiha",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 990000
+  },
+  {
+    "Nombre": "Sakura Haruno",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 3200
+  },
+  {
+    "Nombre": "Monkey D. Luffy",
+    "Imagen": "",
+    "Fuente": "One Piece",
+    "Valor": 920000
+  },
+  {
+    "Nombre": "Roronoa Zoro",
+    "Imagen": "",
+    "Fuente": "One Piece",
+    "Valor": 510000
+  },
+  {
+    "Nombre": "Sanji",
+    "Imagen": "",
+    "Fuente": "One Piece",
+    "Valor": 95000
+  },
+  {
+    "Nombre": "Nami",
+    "Imagen": "",
+    "Fuente": "One Piece",
+    "Valor": 4500
+  },
+  {
+    "Nombre": "Shanks",
+    "Imagen": "",
+    "Fuente": "One Piece",
+    "Valor": 680000
+  },
+  {
+    "Nombre": "Portgas D. Ace",
+    "Imagen": "",
+    "Fuente": "One Piece",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Ichigo Kurosaki",
+    "Imagen": "",
+    "Fuente": "Bleach",
+    "Valor": 210000
+  },
+  {
+    "Nombre": "Rukia Kuchiki",
+    "Imagen": "",
+    "Fuente": "Bleach",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Sosuke Aizen",
+    "Imagen": "",
+    "Fuente": "Bleach",
+    "Valor": 770000
+  },
+  {
+    "Nombre": "Kenpachi Zaraki",
+    "Imagen": "",
+    "Fuente": "Bleach",
+    "Valor": 340000
+  },
+  {
+    "Nombre": "Goku",
+    "Imagen": "",
+    "Fuente": "Dragon Ball",
+    "Valor": 1000000
+  },
+  {
+    "Nombre": "Vegeta",
+    "Imagen": "",
+    "Fuente": "Dragon Ball",
+    "Valor": 560000
+  },
+  {
+    "Nombre": "Gohan",
+    "Imagen": "",
+    "Fuente": "Dragon Ball",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Piccolo",
+    "Imagen": "",
+    "Fuente": "Dragon Ball",
+    "Valor": 14000
+  },
+  {
+    "Nombre": "Freezer",
+    "Imagen": "",
+    "Fuente": "Dragon Ball",
+    "Valor": 89000
+  },
+  {
+    "Nombre": "Bulma",
+    "Imagen": "",
+    "Fuente": "Dragon Ball",
+    "Valor": 2500
+  },
+  {
+    "Nombre": "Levi Ackerman",
+    "Imagen": "",
+    "Fuente": "Attack on Titan",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Eren Yeager",
+    "Imagen": "",
+    "Fuente": "Attack on Titan",
+    "Valor": 520000
+  },
+  {
+    "Nombre": "Mikasa Ackerman",
+    "Imagen": "",
+    "Fuente": "Attack on Titan",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Armin Arlert",
+    "Imagen": "",
+    "Fuente": "Attack on Titan",
+    "Valor": 9500
+  },
+  {
+    "Nombre": "Erwin Smith",
+    "Imagen": "",
+    "Fuente": "Attack on Titan",
+    "Valor": 42000
+  },
+  {
+    "Nombre": "Light Yagami",
+    "Imagen": "",
+    "Fuente": "Death Note",
+    "Valor": 250000
+  },
+  {
+    "Nombre": "L Lawliet",
+    "Imagen": "",
+    "Fuente": "Death Note",
+    "Valor": 230000
+  },
+  {
+    "Nombre": "Misa Amane",
+    "Imagen": "",
+    "Fuente": "Death Note",
+    "Valor": 3800
+  },
+  {
+    "Nombre": "Ryuk",
+    "Imagen": "",
+    "Fuente": "Death Note",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Edward Elric",
+    "Imagen": "",
+    "Fuente": "Fullmetal Alchemist",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Alphonse Elric",
+    "Imagen": "",
+    "Fuente": "Fullmetal Alchemist",
+    "Valor": 11000
+  },
+  {
+    "Nombre": "Roy Mustang",
+    "Imagen": "",
+    "Fuente": "Fullmetal Alchemist",
+    "Valor": 19000
+  },
+  {
+    "Nombre": "Gon Freecss",
+    "Imagen": "",
+    "Fuente": "Hunter x Hunter",
+    "Valor": 7500
+  },
+  {
+    "Nombre": "Killua Zoldyck",
+    "Imagen": "",
+    "Fuente": "Hunter x Hunter",
+    "Valor": 17000
+  },
+  {
+    "Nombre": "Kurapika",
+    "Imagen": "",
+    "Fuente": "Hunter x Hunter",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Hisoka Morow",
+    "Imagen": "",
+    "Fuente": "Hunter x Hunter",
+    "Valor": 85000
+  },
+  {
+    "Nombre": "Meruem",
+    "Imagen": "",
+    "Fuente": "Hunter x Hunter",
+    "Valor": 510000
+  },
+  {
+    "Nombre": "Saitama",
+    "Imagen": "",
+    "Fuente": "One Punch Man",
+    "Valor": 870000
+  },
+  {
+    "Nombre": "Genos",
+    "Imagen": "",
+    "Fuente": "One Punch Man",
+    "Valor": 9000
+  },
+  {
+    "Nombre": "Garou",
+    "Imagen": "",
+    "Fuente": "One Punch Man",
+    "Valor": 48000
+  },
+  {
+    "Nombre": "Tatsumaki",
+    "Imagen": "",
+    "Fuente": "One Punch Man",
+    "Valor": 190000
+  },
+  {
+    "Nombre": "Izuku Midoriya",
+    "Imagen": "",
+    "Fuente": "My Hero Academia",
+    "Valor": 5500
+  },
+  {
+    "Nombre": "Katsuki Bakugo",
+    "Imagen": "",
+    "Fuente": "My Hero Academia",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Shoto Todoroki",
+    "Imagen": "",
+    "Fuente": "My Hero Academia",
+    "Valor": 12500
+  },
+  {
+    "Nombre": "All Might",
+    "Imagen": "",
+    "Fuente": "My Hero Academia",
+    "Valor": 210000
+  },
+  {
+    "Nombre": "Tomura Shigaraki",
+    "Imagen": "",
+    "Fuente": "My Hero Academia",
+    "Valor": 88000
+  },
+  {
+    "Nombre": "Tanjiro Kamado",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 7200
+  },
+  {
+    "Nombre": "Nezuko Kamado",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 5200
+  },
+  {
+    "Nombre": "Zenitsu Agatsuma",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 6800
+  },
+  {
+    "Nombre": "Inosuke Hashibira",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 6400
+  },
+  {
+    "Nombre": "Kyojuro Rengoku",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 17000
+  },
+  {
+    "Nombre": "Muzan Kibutsuji",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 460000
+  },
+  {
+    "Nombre": "Anya Forger",
+    "Imagen": "",
+    "Fuente": "Spy x Family",
+    "Valor": 3500
+  },
+  {
+    "Nombre": "Loid Forger",
+    "Imagen": "",
+    "Fuente": "Spy x Family",
+    "Valor": 4200
+  },
+  {
+    "Nombre": "Yor Forger",
+    "Imagen": "",
+    "Fuente": "Spy x Family",
+    "Valor": 5100
   },
   {
     "Nombre": "Rem",
     "Imagen": "https://i.imgur.com/dDrFVAu.jpeg",
     "Fuente": "Re:Zero",
     "Valor": 7000
+  },
+  {
+    "Nombre": "Ram",
+    "Imagen": "",
+    "Fuente": "Re:Zero",
+    "Valor": 4500
+  },
+  {
+    "Nombre": "Emilia",
+    "Imagen": "",
+    "Fuente": "Re:Zero",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Subaru Natsuki",
+    "Imagen": "",
+    "Fuente": "Re:Zero",
+    "Valor": 9000
+  },
+  {
+    "Nombre": "Kazuma Satou",
+    "Imagen": "",
+    "Fuente": "KonoSuba",
+    "Valor": 3000
+  },
+  {
+    "Nombre": "Aqua",
+    "Imagen": "",
+    "Fuente": "KonoSuba",
+    "Valor": 4800
+  },
+  {
+    "Nombre": "Megumin",
+    "Imagen": "",
+    "Fuente": "KonoSuba",
+    "Valor": 11000
+  },
+  {
+    "Nombre": "Darkness",
+    "Imagen": "",
+    "Fuente": "KonoSuba",
+    "Valor": 5000
+  },
+  {
+    "Nombre": "Kirito",
+    "Imagen": "",
+    "Fuente": "Sword Art Online",
+    "Valor": 19000
+  },
+  {
+    "Nombre": "Asuna Yuuki",
+    "Imagen": "",
+    "Fuente": "Sword Art Online",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Alice Zuberg",
+    "Imagen": "",
+    "Fuente": "Sword Art Online",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Eugeo",
+    "Imagen": "",
+    "Fuente": "Sword Art Online",
+    "Valor": 10000
+  },
+  {
+    "Nombre": "Rimuru Tempest",
+    "Imagen": "",
+    "Fuente": "That Time I Got Reincarnated as a Slime",
+    "Valor": 250000
+  },
+  {
+    "Nombre": "Milim Nava",
+    "Imagen": "",
+    "Fuente": "That Time I Got Reincarnated as a Slime",
+    "Valor": 220000
+  },
+  {
+    "Nombre": "Veldora Tempest",
+    "Imagen": "",
+    "Fuente": "That Time I Got Reincarnated as a Slime",
+    "Valor": 200000
+  },
+  {
+    "Nombre": "Shion",
+    "Imagen": "",
+    "Fuente": "That Time I Got Reincarnated as a Slime",
+    "Valor": 6000
+  },
+  {
+    "Nombre": "Ainz Ooal Gown",
+    "Imagen": "",
+    "Fuente": "Overlord",
+    "Valor": 550000
+  },
+  {
+    "Nombre": "Albedo",
+    "Imagen": "",
+    "Fuente": "Overlord",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Shalltear Bloodfallen",
+    "Imagen": "",
+    "Fuente": "Overlord",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Demiurge",
+    "Imagen": "",
+    "Fuente": "Overlord",
+    "Valor": 14000
+  },
+  {
+    "Nombre": "Guts",
+    "Imagen": "",
+    "Fuente": "Berserk",
+    "Valor": 530000
+  },
+  {
+    "Nombre": "Griffith",
+    "Imagen": "",
+    "Fuente": "Berserk",
+    "Valor": 500000
+  },
+  {
+    "Nombre": "Casca",
+    "Imagen": "",
+    "Fuente": "Berserk",
+    "Valor": 4000
+  },
+  {
+    "Nombre": "Sung Jin-Woo",
+    "Imagen": "",
+    "Fuente": "Solo Leveling",
+    "Valor": 600000
+  },
+  {
+    "Nombre": "Cha Hae-In",
+    "Imagen": "",
+    "Fuente": "Solo Leveling",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Igris",
+    "Imagen": "",
+    "Fuente": "Solo Leveling",
+    "Valor": 19000
+  },
+  {
+    "Nombre": "Beru",
+    "Imagen": "",
+    "Fuente": "Solo Leveling",
+    "Valor": 17000
+  },
+  {
+    "Nombre": "Alice Von Ataraxia",
+    "Imagen": "https://i.imgur.com/19Vbbh5.jpeg",
+    "Fuente": "Max Level Newbie",
+    "Valor": 1000000
+  },
+  {
+    "Nombre": "Spike Spiegel",
+    "Imagen": "",
+    "Fuente": "Cowboy Bebop",
+    "Valor": 8000
+  },
+  {
+    "Nombre": "Faye Valentine",
+    "Imagen": "",
+    "Fuente": "Cowboy Bebop",
+    "Valor": 3500
+  },
+  {
+    "Nombre": "Vash the Stampede",
+    "Imagen": "",
+    "Fuente": "Trigun",
+    "Valor": 11000
+  },
+  {
+    "Nombre": "Nicholas D. Wolfwood",
+    "Imagen": "",
+    "Fuente": "Trigun",
+    "Valor": 8500
+  },
+  {
+    "Nombre": "Lelouch Lamperouge",
+    "Imagen": "",
+    "Fuente": "Code Geass",
+    "Valor": 240000
+  },
+  {
+    "Nombre": "Suzaku Kururugi",
+    "Imagen": "",
+    "Fuente": "Code Geass",
+    "Valor": 47000
+  },
+  {
+    "Nombre": "C.C.",
+    "Imagen": "",
+    "Fuente": "Code Geass",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Shiro",
+    "Imagen": "",
+    "Fuente": "No Game No Life",
+    "Valor": 9500
+  },
+  {
+    "Nombre": "Sora",
+    "Imagen": "",
+    "Fuente": "No Game No Life",
+    "Valor": 9000
   }
 ]
