@@ -355,25 +355,25 @@
   },
   {
     "Nombre": "Muzan Kibutsuji",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/384669.jpg",
     "Fuente": "Demon Slayer",
     "Valor": 460000
   },
   {
     "Nombre": "Anya Forger",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/457933.jpg",
     "Fuente": "Spy x Family",
     "Valor": 3500
   },
   {
     "Nombre": "Loid Forger",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/13/580250.jpg",
     "Fuente": "Spy x Family",
     "Valor": 4200
   },
   {
     "Nombre": "Yor Forger",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/457934.jpg",
     "Fuente": "Spy x Family",
     "Valor": 5100
   },
@@ -385,157 +385,157 @@
   },
   {
     "Nombre": "Ram",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/306390.jpg",
     "Fuente": "Re:Zero",
     "Valor": 4500
   },
   {
     "Nombre": "Emilia",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/16/551926.jpg",
     "Fuente": "Re:Zero",
     "Valor": 15000
   },
   {
     "Nombre": "Subaru Natsuki",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/315153.jpg",
     "Fuente": "Re:Zero",
     "Valor": 9000
   },
   {
     "Nombre": "Kazuma Satou",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/301302.jpg",
     "Fuente": "KonoSuba",
     "Valor": 3000
   },
   {
     "Nombre": "Aqua",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/282523.jpg",
     "Fuente": "KonoSuba",
     "Valor": 4800
   },
   {
     "Nombre": "Megumin",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/349249.jpg",
     "Fuente": "KonoSuba",
     "Valor": 11000
   },
   {
     "Nombre": "Darkness",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/266229.jpg",
     "Fuente": "KonoSuba",
     "Valor": 5000
   },
   {
     "Nombre": "Kirito",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/7/204821.jpg",
     "Fuente": "Sword Art Online",
     "Valor": 19000
   },
   {
     "Nombre": "Asuna Yuuki",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/262053.jpg",
     "Fuente": "Sword Art Online",
     "Valor": 16000
   },
   {
     "Nombre": "Alice Zuberg",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/453263.jpg",
     "Fuente": "Sword Art Online",
     "Valor": 13000
   },
   {
     "Nombre": "Eugeo",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/367313.jpg",
     "Fuente": "Sword Art Online",
     "Valor": 10000
   },
   {
     "Nombre": "Rimuru Tempest",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/495795.jpg",
     "Fuente": "That Time I Got Reincarnated as a Slime",
     "Valor": 250000
   },
   {
     "Nombre": "Milim Nava",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/447552.jpg",
     "Fuente": "That Time I Got Reincarnated as a Slime",
     "Valor": 220000
   },
   {
     "Nombre": "Veldora Tempest",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/381124.jpg",
     "Fuente": "That Time I Got Reincarnated as a Slime",
     "Valor": 200000
   },
   {
     "Nombre": "Shion",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/381150.jpg",
     "Fuente": "That Time I Got Reincarnated as a Slime",
     "Valor": 6000
   },
   {
     "Nombre": "Ainz Ooal Gown",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/508402.jpg",
     "Fuente": "Overlord",
     "Valor": 550000
   },
   {
     "Nombre": "Albedo",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/578183.jpg",
     "Fuente": "Overlord",
     "Valor": 18000
   },
   {
     "Nombre": "Shalltear Bloodfallen",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/512759.jpg",
     "Fuente": "Overlord",
     "Valor": 15000
   },
   {
     "Nombre": "Demiurge",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/512760.jpg",
     "Fuente": "Overlord",
     "Valor": 14000
   },
   {
     "Nombre": "Guts",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/13/284125.jpg",
     "Fuente": "Berserk",
     "Valor": 530000
   },
   {
     "Nombre": "Griffith",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/326322.jpg",
     "Fuente": "Berserk",
     "Valor": 500000
   },
   {
     "Nombre": "Casca",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/72697.jpg",
     "Fuente": "Berserk",
     "Valor": 4000
   },
   {
     "Nombre": "Sung Jin-Woo",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/540692.jpg",
     "Fuente": "Solo Leveling",
     "Valor": 600000
   },
   {
     "Nombre": "Cha Hae-In",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/536361.jpg",
     "Fuente": "Solo Leveling",
     "Valor": 13000
   },
   {
     "Nombre": "Igris",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/583246.jpg",
     "Fuente": "Solo Leveling",
     "Valor": 19000
   },
   {
     "Nombre": "Beru",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/588588.jpg",
     "Fuente": "Solo Leveling",
     "Valor": 17000
   },
@@ -547,55 +547,55 @@
   },
   {
     "Nombre": "Spike Spiegel",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/516853.jpg",
     "Fuente": "Cowboy Bebop",
     "Valor": 8000
   },
   {
     "Nombre": "Faye Valentine",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/264961.jpg",
     "Fuente": "Cowboy Bebop",
     "Valor": 3500
   },
   {
     "Nombre": "Vash the Stampede",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/89607.jpg",
     "Fuente": "Trigun",
     "Valor": 11000
   },
   {
     "Nombre": "Nicholas D. Wolfwood",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/89610.jpg",
     "Fuente": "Trigun",
     "Valor": 8500
   },
   {
     "Nombre": "Lelouch Lamperouge",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/406163.jpg",
     "Fuente": "Code Geass",
     "Valor": 240000
   },
   {
     "Nombre": "Suzaku Kururugi",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/31564.jpg",
     "Fuente": "Code Geass",
     "Valor": 47000
   },
   {
     "Nombre": "C.C.",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/13/33815.jpg",
     "Fuente": "Code Geass",
     "Valor": 15000
   },
   {
     "Nombre": "Shiro",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/16/246723.jpg",
     "Fuente": "No Game No Life",
     "Valor": 9500
   },
   {
     "Nombre": "Sora",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/12/274345.jpg",
     "Fuente": "No Game No Life",
     "Valor": 9000
   }
