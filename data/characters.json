@@ -91,6 +91,30 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/12/299406.jpg",
         "Fuente": "My Hero Academia",
         "Valor": 13000
+      },
+      {
+        "Nombre": "Faye Valentine",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/15/264961.jpg",
+        "Fuente": "Cowboy Bebop",
+        "Valor": 3500
+      },
+      {
+        "Nombre": "Sosuke Aizen",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/16/73909.jpg",
+        "Fuente": "Bleach",
+        "Valor": 770000
+      },
+      {
+        "Nombre": "Kyojuro Rengoku",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/10/423443.jpg",
+        "Fuente": "Demon Slayer",
+        "Valor": 17000
+      },
+      {
+        "Nombre": "Muzan Kibutsuji",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/4/384669.jpg",
+        "Fuente": "Demon Slayer",
+        "Valor": 460000
       }
     ]
   }
