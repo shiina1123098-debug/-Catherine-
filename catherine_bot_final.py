@@ -994,6 +994,10 @@ class GaleriaView(discord.ui.View):
         self._actualizar_botones()
         await interaction.response.edit_message(embed=self.construir_embed(), view=self)
 
+    @discord.ui.button(label="🔢 Ir a...", style=discord.ButtonStyle.primary)
+    async def ir_a_pagina(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(GaleriaIrAModal(self))
+
     @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.secondary)
     async def siguiente(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.indice += 1
@@ -1009,6 +1013,33 @@ class GaleriaView(discord.ui.View):
             await self.mensaje.edit(view=self)
         except discord.HTTPException:
             pass
+
+class GaleriaIrAModal(discord.ui.Modal):
+    def __init__(self, vista: GaleriaView):
+        super().__init__(title="Ir a un personaje")
+        self.vista = vista
+        self.numero = discord.ui.TextInput(
+            label=f"Número (1-{len(vista.personajes)})",
+            placeholder="Ej: 64",
+            required=True,
+            max_length=10,
+        )
+        self.add_item(self.numero)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        total = len(self.vista.personajes)
+        try:
+            numero = int(self.numero.value.strip())
+        except ValueError:
+            await interaction.response.send_message("Eso no es un número.", ephemeral=True)
+            return
+        if not (1 <= numero <= total):
+            await interaction.response.send_message(f"Tiene que ser un número entre 1 y {total}.", ephemeral=True)
+            return
+
+        self.vista.indice = numero - 1
+        self.vista._actualizar_botones()
+        await interaction.response.edit_message(embed=self.vista.construir_embed(), view=self.vista)
 
 @bot.command(name="galeria")
 async def galeria(ctx):
@@ -1228,6 +1259,10 @@ class ColeccionView(discord.ui.View):
         self._actualizar_botones()
         await interaction.response.edit_message(embed=self.construir_embed(), view=self)
 
+    @discord.ui.button(label="🔢 Ir a...", style=discord.ButtonStyle.primary)
+    async def ir_a_pagina(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(ColeccionIrAModal(self))
+
     @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.secondary)
     async def siguiente(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.pagina += 1
@@ -1243,6 +1278,32 @@ class ColeccionView(discord.ui.View):
             await self.mensaje.edit(view=self)
         except discord.HTTPException:
             pass
+
+class ColeccionIrAModal(discord.ui.Modal):
+    def __init__(self, vista: ColeccionView):
+        super().__init__(title="Ir a una página")
+        self.vista = vista
+        self.numero = discord.ui.TextInput(
+            label=f"Página (1-{vista.total_paginas})",
+            placeholder="Ej: 5",
+            required=True,
+            max_length=10,
+        )
+        self.add_item(self.numero)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            numero = int(self.numero.value.strip())
+        except ValueError:
+            await interaction.response.send_message("Eso no es un número.", ephemeral=True)
+            return
+        if not (1 <= numero <= self.vista.total_paginas):
+            await interaction.response.send_message(f"Tiene que ser un número entre 1 y {self.vista.total_paginas}.", ephemeral=True)
+            return
+
+        self.vista.pagina = numero - 1
+        self.vista._actualizar_botones()
+        await interaction.response.edit_message(embed=self.vista.construir_embed(), view=self.vista)
 
 @bot.command(name="coleccion", aliases=["harem"])
 async def coleccion(ctx, miembro: discord.Member = None):
