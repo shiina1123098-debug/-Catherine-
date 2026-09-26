@@ -1,0 +1,25 @@
+{
+  "1468974197895336151": {
+    "nombre": "Scarlett",
+    "personajes": [
+      {
+        "Nombre": "Rem",
+        "Imagen": "https://i.imgur.com/zzzzzzz.png",
+        "Fuente": "Re:Zero",
+        "Valor": 7000
+      },
+      {
+        "Nombre": "Rem",
+        "Imagen": "https://i.imgur.com/zzzzzzz.png",
+        "Fuente": "Re:Zero",
+        "Valor": 7000
+      },
+      {
+        "Nombre": "Alice Von Ataraxia",
+        "Imagen": "https://i.imgur.com/19Vbbh5.jpeg",
+        "Fuente": "Max Level Newbie",
+        "Valor": 1000000
+      }
+    ]
+  }
+}
