@@ -295,6 +295,138 @@
         "Imagen": "https://blacksouls.miraheze.org/images/thumb/8/8b/Miranda.png/300px-Miranda.png",
         "Fuente": "Black Souls 1",
         "Valor": 150000
+      },
+      {
+        "Nombre": "Yor Forger",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/11/457934.jpg",
+        "Fuente": "Spy x Family",
+        "Valor": 5100
+      },
+      {
+        "Nombre": "Aki Hayakawa",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/11/509949.jpg",
+        "Fuente": "Chainsaw Man",
+        "Valor": 17000
+      },
+      {
+        "Nombre": "Aqua",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/14/282523.jpg",
+        "Fuente": "KonoSuba",
+        "Valor": 4800
+      },
+      {
+        "Nombre": "C.C.",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/13/33815.jpg",
+        "Fuente": "Code Geass",
+        "Valor": 15000
+      },
+      {
+        "Nombre": "Red Hood",
+        "Imagen": "https://blacksouls.miraheze.org/images/thumb/4/4e/Red_Hood.png/300px-Red_Hood.png",
+        "Fuente": "Black Souls 1",
+        "Valor": 250000
+      },
+      {
+        "Nombre": "Megumin",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/14/349249.jpg",
+        "Fuente": "KonoSuba",
+        "Valor": 11000
+      },
+      {
+        "Nombre": "Kakashi Hatake",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/7/284129.jpg",
+        "Fuente": "Naruto",
+        "Valor": 120000
+      },
+      {
+        "Nombre": "Kaisel",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/7/540697.jpg",
+        "Fuente": "Solo Leveling",
+        "Valor": 9500
+      },
+      {
+        "Nombre": "Garou",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/9/381817.jpg",
+        "Fuente": "One Punch Man",
+        "Valor": 38000
+      },
+      {
+        "Nombre": "Terry Bogard",
+        "Imagen": "https://static.wikia.nocookie.net/snk/images/t/te/Terry.png",
+        "Fuente": "Fatal Fury",
+        "Valor": 110000
+      },
+      {
+        "Nombre": "A2",
+        "Imagen": "https://static.wikia.nocookie.net/nier/images/a/a2/A2.png",
+        "Fuente": "NieR: Automata",
+        "Valor": 120000
+      },
+      {
+        "Nombre": "Nico Robin",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/16/368420.jpg",
+        "Fuente": "One Piece",
+        "Valor": 15000
+      },
+      {
+        "Nombre": "Mikasa Ackerman",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/9/215563.jpg",
+        "Fuente": "Attack on Titan",
+        "Valor": 16000
+      },
+      {
+        "Nombre": "Sub-Zero",
+        "Imagen": "https://static.wikia.nocookie.net/mortalkombat/images/s/su/Sub_Zero.png",
+        "Fuente": "Mortal Kombat",
+        "Valor": 145000
+      },
+      {
+        "Nombre": "Aerith Gainsborough",
+        "Imagen": "https://static.wikia.nocookie.net/finalfantasy/images/a/ae/Aerith.png",
+        "Fuente": "Final Fantasy VII",
+        "Valor": 14000
+      },
+      {
+        "Nombre": "Gray Fullbuster",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/9/114114.jpg",
+        "Fuente": "Fairy Tail",
+        "Valor": 13000
+      },
+      {
+        "Nombre": "Erwin Smith",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/14/559023.jpg",
+        "Fuente": "Attack on Titan",
+        "Valor": 19000
+      },
+      {
+        "Nombre": "Shinobu Kocho",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/3/386736.jpg",
+        "Fuente": "Demon Slayer",
+        "Valor": 16000
+      },
+      {
+        "Nombre": "All Might",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/14/310613.jpg",
+        "Fuente": "My Hero Academia",
+        "Valor": 42000
+      },
+      {
+        "Nombre": "Iron",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/5/540695.jpg",
+        "Fuente": "Solo Leveling",
+        "Valor": 16000
+      },
+      {
+        "Nombre": "Goku",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/15/72546.jpg",
+        "Fuente": "Dragon Ball",
+        "Valor": 900000
+      },
+      {
+        "Nombre": "Rapunzel",
+        "Imagen": "https://blacksouls.miraheze.org/images/thumb/2/2f/Rapunzel.png/300px-Rapunzel.png",
+        "Fuente": "Black Souls 1",
+        "Valor": 72000
       }
     ]
   }
