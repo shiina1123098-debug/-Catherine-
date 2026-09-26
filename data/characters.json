@@ -4,13 +4,13 @@
     "personajes": [
       {
         "Nombre": "Rem",
-        "Imagen": "https://i.imgur.com/dDrFVAu.jpeg",
+        "Imagen": "https://i.imgur.com/zzzzzzz.png",
         "Fuente": "Re:Zero",
         "Valor": 7000
       },
       {
         "Nombre": "Rem",
-        "Imagen": "https://i.imgur.com/dDrFVAu.jpeg",
+        "Imagen": "https://i.imgur.com/zzzzzzz.png",
         "Fuente": "Re:Zero",
         "Valor": 7000
       },
@@ -19,6 +19,12 @@
         "Imagen": "https://i.imgur.com/19Vbbh5.jpeg",
         "Fuente": "Max Level Newbie",
         "Valor": 1000000
+      },
+      {
+        "Nombre": "Rem",
+        "Imagen": "https://i.imgur.com/dDrFVAu.jpeg",
+        "Fuente": "Re:Zero",
+        "Valor": 7000
       }
     ]
   }
