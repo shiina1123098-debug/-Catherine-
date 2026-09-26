@@ -951,6 +951,76 @@ async def rwreload(ctx):
     except Exception as e:
         await ctx.reply(embed=crear_embed(descripcion=f"❌ Hubo un error al recargar: {str(e)}"))
 
+class GaleriaView(discord.ui.View):
+    """Recorre personajes_cache de a uno: solo nombre + imagen, para poder
+    revisar rápido cuáles tienen la foto rota o mal puesta."""
+
+    def __init__(self, autor, personajes):
+        super().__init__(timeout=600)
+        self.autor = autor
+        self.personajes = personajes
+        self.indice = 0
+        self.mensaje = None
+        self._actualizar_botones()
+
+    def _actualizar_botones(self):
+        self.anterior.disabled = self.indice == 0
+        self.siguiente.disabled = self.indice >= len(self.personajes) - 1
+
+    def construir_embed(self):
+        personaje = self.personajes[self.indice]
+        nombre = campo_personaje(personaje, "Nombre", "nombre")
+        imagen = campo_personaje(personaje, "Imagen", "imagen", default=None)
+
+        embed = crear_embed(
+            titulo=nombre,
+            footer=f"{self.indice + 1}/{len(self.personajes)}",
+        )
+        if imagen:
+            embed.set_image(url=imagen)
+        else:
+            embed.description = "⚠️ No tiene imagen cargada."
+        return embed
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Solo quien pidió la galería puede pasar de página.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="◀ Previous", style=discord.ButtonStyle.secondary)
+    async def anterior(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.indice -= 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.secondary)
+    async def siguiente(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.indice += 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    async def on_timeout(self):
+        if self.mensaje is None:
+            return
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.mensaje.edit(view=self)
+        except discord.HTTPException:
+            pass
+
+@bot.command(name="galeria")
+async def galeria(ctx):
+    """Recorre uno por uno todos los personajes del rw.json: nombre + imagen, con Previous/Next"""
+    if not personajes_cache:
+        await ctx.reply(embed=crear_embed(descripcion="No hay personajes cargados. Probá `!rwreload` primero."))
+        return
+
+    view = GaleriaView(ctx.author, personajes_cache)
+    mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
+    view.mensaje = mensaje
+
 @bot.command(name="winfo")
 async def winfo(ctx, *, nombre_buscado: str = None):
     """Muestra la ficha de un personaje puntual del rw.json, sin botón de reclamar"""
@@ -1005,6 +1075,7 @@ async def ayuda(ctx):
         "`!rw` — tirar un personaje random (tenés 30s exclusivos para reclamarlo)",
         "`!rwreload` — recargar la lista de personajes desde GitHub",
         "`!checkimg` — revisar qué links de imagen de los personajes están rotos",
+        "`!galeria` — recorrer los personajes uno por uno (nombre + imagen) con Previous/Next",
         "`!winfo nombre` — ver la ficha de un personaje puntual (sin reclamo)",
         "`!coleccion` o `!harem` [@alguien] — ver los personajes reclamados",
         "`!mp3 búsqueda` o `!mp3 link` — te paso el audio de un video",
