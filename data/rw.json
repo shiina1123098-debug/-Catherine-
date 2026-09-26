@@ -67,7 +67,7 @@
   },
   {
     "Nombre": "Sakura Haruno",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/69275.jpg",
     "Fuente": "Naruto",
     "Valor": 3200
   },
@@ -91,265 +91,265 @@
   },
   {
     "Nombre": "Nami",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/59914.jpg",
     "Fuente": "One Piece",
     "Valor": 4500
   },
   {
     "Nombre": "Shanks",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/307639.jpg",
     "Fuente": "One Piece",
     "Valor": 680000
   },
   {
     "Nombre": "Portgas D. Ace",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/72220.jpg",
     "Fuente": "One Piece",
     "Valor": 15000
   },
   {
     "Nombre": "Ichigo Kurosaki",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/512788.jpg",
     "Fuente": "Bleach",
     "Valor": 210000
   },
   {
     "Nombre": "Rukia Kuchiki",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/78215.jpg",
     "Fuente": "Bleach",
     "Valor": 12000
   },
   {
     "Nombre": "Sosuke Aizen",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/16/73909.jpg",
     "Fuente": "Bleach",
     "Valor": 770000
   },
   {
     "Nombre": "Kenpachi Zaraki",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/150265.jpg",
     "Fuente": "Bleach",
     "Valor": 340000
   },
   {
     "Nombre": "Goku",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/72546.jpg",
     "Fuente": "Dragon Ball",
     "Valor": 1000000
   },
   {
     "Nombre": "Vegeta",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/86185.jpg",
     "Fuente": "Dragon Ball",
     "Valor": 560000
   },
   {
     "Nombre": "Gohan",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/72715.jpg",
     "Fuente": "Dragon Ball",
     "Valor": 18000
   },
   {
     "Nombre": "Piccolo",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/45628.jpg",
     "Fuente": "Dragon Ball",
     "Valor": 14000
   },
   {
     "Nombre": "Freezer",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/7/359258.jpg",
     "Fuente": "Dragon Ball",
     "Valor": 89000
   },
   {
     "Nombre": "Bulma",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/280893.jpg",
     "Fuente": "Dragon Ball",
     "Valor": 2500
   },
   {
     "Nombre": "Levi Ackerman",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/241413.jpg",
     "Fuente": "Attack on Titan",
     "Valor": 150000
   },
   {
     "Nombre": "Eren Yeager",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/216895.jpg",
     "Fuente": "Attack on Titan",
     "Valor": 520000
   },
   {
     "Nombre": "Mikasa Ackerman",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/215563.jpg",
     "Fuente": "Attack on Titan",
     "Valor": 16000
   },
   {
     "Nombre": "Armin Arlert",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/220267.jpg",
     "Fuente": "Attack on Titan",
     "Valor": 9500
   },
   {
     "Nombre": "Erwin Smith",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/559023.jpg",
     "Fuente": "Attack on Titan",
     "Valor": 42000
   },
   {
     "Nombre": "Light Yagami",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/63870.jpg",
     "Fuente": "Death Note",
     "Valor": 250000
   },
   {
     "Nombre": "L Lawliet",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/249647.jpg",
     "Fuente": "Death Note",
     "Valor": 230000
   },
   {
     "Nombre": "Misa Amane",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/5/30971.jpg",
     "Fuente": "Death Note",
     "Valor": 3800
   },
   {
     "Nombre": "Ryuk",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/59125.jpg",
     "Fuente": "Death Note",
     "Valor": 15000
   },
   {
     "Nombre": "Edward Elric",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/72533.jpg",
     "Fuente": "Fullmetal Alchemist",
     "Valor": 45000
   },
   {
     "Nombre": "Alphonse Elric",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/5/54265.jpg",
     "Fuente": "Fullmetal Alchemist",
     "Valor": 11000
   },
   {
     "Nombre": "Roy Mustang",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/510227.jpg",
     "Fuente": "Fullmetal Alchemist",
     "Valor": 19000
   },
   {
     "Nombre": "Gon Freecss",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/174517.jpg",
     "Fuente": "Hunter x Hunter",
     "Valor": 7500
   },
   {
     "Nombre": "Killua Zoldyck",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/327920.jpg",
     "Fuente": "Hunter x Hunter",
     "Valor": 17000
   },
   {
     "Nombre": "Kurapika",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/549312.jpg",
     "Fuente": "Hunter x Hunter",
     "Valor": 12000
   },
   {
     "Nombre": "Hisoka Morow",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/174561.jpg",
     "Fuente": "Hunter x Hunter",
     "Valor": 85000
   },
   {
     "Nombre": "Meruem",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/243861.jpg",
     "Fuente": "Hunter x Hunter",
     "Valor": 510000
   },
   {
     "Nombre": "Saitama",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/294388.jpg",
     "Fuente": "One Punch Man",
     "Valor": 870000
   },
   {
     "Nombre": "Genos",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/297329.jpg",
     "Fuente": "One Punch Man",
     "Valor": 9000
   },
   {
     "Nombre": "Garou",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/381817.jpg",
     "Fuente": "One Punch Man",
     "Valor": 48000
   },
   {
     "Nombre": "Tatsumaki",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/543830.jpg",
     "Fuente": "One Punch Man",
     "Valor": 190000
   },
   {
     "Nombre": "Izuku Midoriya",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/7/299404.jpg",
     "Fuente": "My Hero Academia",
     "Valor": 5500
   },
   {
     "Nombre": "Katsuki Bakugo",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/12/299406.jpg",
     "Fuente": "My Hero Academia",
     "Valor": 13000
   },
   {
     "Nombre": "Shoto Todoroki",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/12/332527.jpg",
     "Fuente": "My Hero Academia",
     "Valor": 12500
   },
   {
     "Nombre": "All Might",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/310613.jpg",
     "Fuente": "My Hero Academia",
     "Valor": 210000
   },
   {
     "Nombre": "Tomura Shigaraki",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/272139.jpg",
     "Fuente": "My Hero Academia",
     "Valor": 88000
   },
   {
     "Nombre": "Tanjiro Kamado",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/386735.jpg",
     "Fuente": "Demon Slayer",
     "Valor": 7200
   },
   {
     "Nombre": "Nezuko Kamado",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/378254.jpg",
     "Fuente": "Demon Slayer",
     "Valor": 5200
   },
   {
     "Nombre": "Zenitsu Agatsuma",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/459689.jpg",
     "Fuente": "Demon Slayer",
     "Valor": 6800
   },
   {
     "Nombre": "Inosuke Hashibira",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/329560.jpg",
     "Fuente": "Demon Slayer",
     "Valor": 6400
   },
   {
     "Nombre": "Kyojuro Rengoku",
-    "Imagen": "",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/423443.jpg",
     "Fuente": "Demon Slayer",
     "Valor": 17000
   },
