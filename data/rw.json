@@ -1,0 +1,134 @@
+[
+  {
+    "Nombre": "Cinderella",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Cinderella.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 85000
+  },
+  {
+    "Nombre": "Snow White",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Snow-White.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 78000
+  },
+  {
+    "Nombre": "Rapunzel",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Rapunzel.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 72000
+  },
+  {
+    "Nombre": "The Little Mermaid",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Little-Mermaid.jpg",
+    "Fuente": "Black Souls 1",
+    "Valor": 68000
+  },
+  {
+    "Nombre": "Frog Princess",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Princess-Frog.jpg",
+    "Fuente": "Black Souls 1",
+    "Valor": 65000
+  },
+  {
+    "Nombre": "Red Hood",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/10/Red-Hood.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 250000
+  },
+  {
+    "Nombre": "Dorothy",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2025/02/Witch-Dorothy.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 95000
+  },
+  {
+    "Nombre": "Jeanne d'Arc",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/05/Holy-Knight-Jeanne-1.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 88000
+  },
+  {
+    "Nombre": "Miranda",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Black-Condemner-Miranda-1.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Elma",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Match-Seller-Elma.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Victoria",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/05/Maid-Victoria.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 8500
+  },
+  {
+    "Nombre": "Goose",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Rich-Bird-Goose.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 6500
+  },
+  {
+    "Nombre": "Leaf",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Fairy-Leaf.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 420000
+  },
+  {
+    "Nombre": "Baphomet",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Black-Judge-Baphomet.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 380000
+  },
+  {
+    "Nombre": "Alice",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/12/Alice.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 950000
+  },
+  {
+    "Nombre": "Node",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/08/White-Rabbit-Node.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Mabel",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/05/Mabel.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Ezio Auditore",
+    "Imagen": "https://www.nicepng.com/png/full/200-2006969_images-ezio-auditore-assassins-creed-brotherhood.png",
+    "Fuente": "Assassin's Creed",
+    "Valor": 180000
+  },
+  {
+    "Nombre": "Geralt of Rivia",
+    "Imagen": "https://www.pngall.com/wp-content/uploads/20/Geralt-Of-Rivia-Witcher-Sword-Monster-Hunter-PNG.png",
+    "Fuente": "The Witcher",
+    "Valor": 190000
+  },
+  {
+    "Nombre": "Kratos",
+    "Imagen": "https://www.pngkit.com/png/full/68-688041_kratos-god-of-war-4-render.png",
+    "Fuente": "God of War",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Doom Slayer",
+    "Imagen": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2324cc19-4033-40bf-84c8-1ea35d4e50f2/djekb1g-f1aaf798-36b7-456d-af9f-4b235350cb2c.png",
+    "Fuente": "DOOM",
+    "Valor": 490000
+  },
+  {
+    "Nombre": "2B",
+    "Imagen": "https://cdn.pidgi.net/images/9/9b/2B_-_Soulcalibur_VI.jpg",
+    "Fuente": "NieR: Automata",
+    "Valor": 140000
+  }
+]
