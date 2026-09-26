@@ -25,6 +25,12 @@
         "Imagen": "https://i.imgur.com/dDrFVAu.jpeg",
         "Fuente": "Re:Zero",
         "Valor": 7000
+      },
+      {
+        "Nombre": "Faye Valentine",
+        "Imagen": "",
+        "Fuente": "Cowboy Bebop",
+        "Valor": 3500
       }
     ]
   }
