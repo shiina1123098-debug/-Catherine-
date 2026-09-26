@@ -427,6 +427,18 @@
         "Imagen": "https://blacksouls.miraheze.org/images/thumb/2/2f/Rapunzel.png/300px-Rapunzel.png",
         "Fuente": "Black Souls 1",
         "Valor": 72000
+      },
+      {
+        "Nombre": "Hinata Hyuga",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/6/278736.jpg",
+        "Fuente": "Naruto",
+        "Valor": 6800
+      },
+      {
+        "Nombre": "Eugeo",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/4/367313.jpg",
+        "Fuente": "Sword Art Online",
+        "Valor": 10000
       }
     ]
   }
