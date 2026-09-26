@@ -730,10 +730,12 @@ async def blackjack(ctx, cantidad: int = None):
 # Rangos de rareza para !rw: cuanto más vale el personaje, menos peso tiene
 # a la hora de salir sorteado. (mínimo, máximo, peso, nombre)
 RANGOS_RAREZA = [
-    (0, 7999, 60, "⚪ Común"),
+    (1000, 7999, 60, "⚪ Común"),
     (8000, 19999, 25, "🟢 Poco común"),
-    (20000, 499999, 12, "🔵 Raro"),
-    (500000, float("inf"), 3, "🟡 Legendario"),
+    (20000, 49999, 7, "🔵 Raro"),
+    (50000, 199999, 4, "🟣 Épico"),
+    (200000, 499999, 3, "🟡 Legendario"),
+    (500000, 1000000, 1, "🔴 Mítico"),
 ]
 
 def parsear_valor(valor):
@@ -746,13 +748,27 @@ def parsear_valor(valor):
 
 def info_rareza(valor):
     """Devuelve (peso, nombre_rareza) según el valor del personaje."""
+    peso, nombre, _indice = indice_rareza(valor)
+    return peso, nombre
+
+def indice_rareza(valor):
+    """Devuelve (peso, nombre_rareza, indice_en_RANGOS_RAREZA) según el valor del personaje."""
     numero = parsear_valor(valor)
     if numero is None:
-        return RANGOS_RAREZA[0][2], RANGOS_RAREZA[0][3]
-    for minimo, maximo, peso, nombre in RANGOS_RAREZA:
+        return RANGOS_RAREZA[0][2], RANGOS_RAREZA[0][3], 0
+    for i, (minimo, maximo, peso, nombre) in enumerate(RANGOS_RAREZA):
         if minimo <= numero <= maximo:
-            return peso, nombre
-    return RANGOS_RAREZA[0][2], RANGOS_RAREZA[0][3]
+            return peso, nombre, i
+    return RANGOS_RAREZA[0][2], RANGOS_RAREZA[0][3], 0
+
+def agrupar_personajes_por_rareza():
+    """Agrupa personajes_cache según a qué rango de RANGOS_RAREZA pertenece cada uno.
+    Devuelve una lista paralela a RANGOS_RAREZA: grupos[i] = lista de personajes en ese rango."""
+    grupos = [[] for _ in RANGOS_RAREZA]
+    for p in personajes_cache:
+        _, _, i = indice_rareza(campo_personaje(p, "Valor", "valor"))
+        grupos[i].append(p)
+    return grupos
 
 class RWClaimView(discord.ui.View):
     """Botón de reclamo: 30s exclusivos para quien usó !rw, 60s más libres para
@@ -822,12 +838,21 @@ async def rw(ctx):
         ))
         return
 
-    pesos_y_rarezas = [info_rareza(campo_personaje(p, "Valor", "valor")) for p in personajes_cache]
-    pesos = [pr[0] for pr in pesos_y_rarezas]
+    # 1) Agrupamos los personajes por rango de rareza
+    grupos = agrupar_personajes_por_rareza()
 
-    indice = random.choices(range(len(personajes_cache)), weights=pesos, k=1)[0]
-    personaje = personajes_cache[indice]
-    rareza = pesos_y_rarezas[indice][1]
+    # 2) Sorteamos la RAREZA (no el personaje) según el % de la tabla.
+    #    Solo entran en el sorteo los rangos que tengan al menos 1 personaje cargado.
+    indices_disponibles = [i for i, grupo in enumerate(grupos) if grupo]
+    if not indices_disponibles:
+        await ctx.reply(embed=crear_embed(descripcion="No hay personajes con un valor válido cargado."))
+        return
+    pesos_disponibles = [RANGOS_RAREZA[i][2] for i in indices_disponibles]
+    indice_rango = random.choices(indices_disponibles, weights=pesos_disponibles, k=1)[0]
+
+    # 3) Dentro de esa rareza, elegimos un personaje al azar (todos con la misma chance)
+    personaje = random.choice(grupos[indice_rango])
+    rareza = RANGOS_RAREZA[indice_rango][3]
 
     nombre = campo_personaje(personaje, "Nombre", "nombre")
     imagen = campo_personaje(personaje, "Imagen", "imagen", default=None)
@@ -853,7 +878,14 @@ async def rwreload(ctx):
         return
     try:
         await cargar_personajes_desde_github()
-        await ctx.reply(embed=crear_embed(descripcion=f"🔄 Listo, cargué **{len(personajes_cache)}** personajes desde GitHub."))
+        grupos = agrupar_personajes_por_rareza()
+        desglose = "\n".join(
+            f"{RANGOS_RAREZA[i][3]}: **{len(grupos[i])}** personaje(s)"
+            for i in range(len(RANGOS_RAREZA))
+        )
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"🔄 Listo, cargué **{len(personajes_cache)}** personajes desde GitHub.\n\n{desglose}"
+        ))
     except Exception as e:
         await ctx.reply(embed=crear_embed(descripcion=f"❌ Hubo un error al recargar: {str(e)}"))
 
