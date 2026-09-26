@@ -61,6 +61,36 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/9/297329.jpg",
         "Fuente": "One Punch Man",
         "Valor": 9000
+      },
+      {
+        "Nombre": "Misa Amane",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/5/30971.jpg",
+        "Fuente": "Death Note",
+        "Valor": 3800
+      },
+      {
+        "Nombre": "Nezuko Kamado",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/378254.jpg",
+        "Fuente": "Demon Slayer",
+        "Valor": 5200
+      },
+      {
+        "Nombre": "Nami",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/6/59914.jpg",
+        "Fuente": "One Piece",
+        "Valor": 4500
+      },
+      {
+        "Nombre": "Tanjiro Kamado",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/6/386735.jpg",
+        "Fuente": "Demon Slayer",
+        "Valor": 7200
+      },
+      {
+        "Nombre": "Katsuki Bakugo",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/12/299406.jpg",
+        "Fuente": "My Hero Academia",
+        "Valor": 13000
       }
     ]
   }
