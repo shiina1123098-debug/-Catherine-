@@ -163,6 +163,138 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/12/422313.jpg",
         "Fuente": "Jujutsu Kaisen",
         "Valor": 6500
+      },
+      {
+        "Nombre": "Roy Mustang",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/11/510227.jpg",
+        "Fuente": "Fullmetal Alchemist",
+        "Valor": 19000
+      },
+      {
+        "Nombre": "Subaru Natsuki",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/15/315153.jpg",
+        "Fuente": "Re:Zero",
+        "Valor": 9000
+      },
+      {
+        "Nombre": "Ban",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/9/287912.jpg",
+        "Fuente": "Seven Deadly Sins",
+        "Valor": 110000
+      },
+      {
+        "Nombre": "2B",
+        "Imagen": "https://static.wikia.nocookie.net/nier/images/2/2b/2B.png",
+        "Fuente": "NieR: Automata",
+        "Valor": 140000
+      },
+      {
+        "Nombre": "Elizabeth Bathory",
+        "Imagen": "https://blacksouls.miraheze.org/images/thumb/d/d4/Elisabeth.png/300px-Elisabeth.png",
+        "Fuente": "Black Souls 1",
+        "Valor": 7800
+      },
+      {
+        "Nombre": "Ellie Williams",
+        "Imagen": "https://static.wikia.nocookie.net/thelastofus/images/8/8a/Ellie.png",
+        "Fuente": "The Last of Us",
+        "Valor": 13000
+      },
+      {
+        "Nombre": "Inosuke Hashibira",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/3/329560.jpg",
+        "Fuente": "Demon Slayer",
+        "Valor": 6400
+      },
+      {
+        "Nombre": "Elma",
+        "Imagen": "https://blacksouls.miraheze.org/images/thumb/a/a1/Elma.png/300px-Elma.png",
+        "Fuente": "Black Souls 1",
+        "Valor": 12000
+      },
+      {
+        "Nombre": "Sakura Haruno",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/9/69275.jpg",
+        "Fuente": "Naruto",
+        "Valor": 3200
+      },
+      {
+        "Nombre": "Armin Arlert",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/8/220267.jpg",
+        "Fuente": "Attack on Titan",
+        "Valor": 9500
+      },
+      {
+        "Nombre": "Anya Forger",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/4/457933.jpg",
+        "Fuente": "Spy x Family",
+        "Valor": 3500
+      },
+      {
+        "Nombre": "Goose",
+        "Imagen": "https://blacksouls.miraheze.org/images/thumb/c/c3/Goose.png/300px-Goose.png",
+        "Fuente": "Black Souls 1",
+        "Valor": 6500
+      },
+      {
+        "Nombre": "Edward Elric",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/9/72533.jpg",
+        "Fuente": "Fullmetal Alchemist",
+        "Valor": 19000
+      },
+      {
+        "Nombre": "Loid Forger",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/13/580250.jpg",
+        "Fuente": "Spy x Family",
+        "Valor": 4200
+      },
+      {
+        "Nombre": "Tsunade",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/9/131323.jpg",
+        "Fuente": "Naruto",
+        "Valor": 14000
+      },
+      {
+        "Nombre": "Freezer",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/7/359258.jpg",
+        "Fuente": "Dragon Ball",
+        "Valor": 42000
+      },
+      {
+        "Nombre": "Albedo",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/14/578183.jpg",
+        "Fuente": "Overlord",
+        "Valor": 18000
+      },
+      {
+        "Nombre": "Piccolo",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/8/45628.jpg",
+        "Fuente": "Dragon Ball",
+        "Valor": 14000
+      },
+      {
+        "Nombre": "Alice",
+        "Imagen": "https://blacksouls.miraheze.org/images/thumb/f/f6/Alice.png/300px-Alice.png",
+        "Fuente": "Black Souls 2",
+        "Valor": 950000
+      },
+      {
+        "Nombre": "Shikamaru Nara",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/9/131322.jpg",
+        "Fuente": "Naruto",
+        "Valor": 12000
+      },
+      {
+        "Nombre": "Vash the Stampede",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/10/89607.jpg",
+        "Fuente": "Trigun",
+        "Valor": 11000
+      },
+      {
+        "Nombre": "Miranda",
+        "Imagen": "https://blacksouls.miraheze.org/images/thumb/8/8b/Miranda.png/300px-Miranda.png",
+        "Fuente": "Black Souls 1",
+        "Valor": 150000
       }
     ]
   }
