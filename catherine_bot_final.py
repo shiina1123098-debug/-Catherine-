@@ -1004,6 +1004,7 @@ async def ayuda(ctx):
         "`!rt rojo/negro cantidad` o `!roulette rojo/negro cantidad` — jugar a la ruleta",
         "`!rw` — tirar un personaje random (tenés 30s exclusivos para reclamarlo)",
         "`!rwreload` — recargar la lista de personajes desde GitHub",
+        "`!checkimg` — revisar qué links de imagen de los personajes están rotos",
         "`!winfo nombre` — ver la ficha de un personaje puntual (sin reclamo)",
         "`!coleccion` o `!harem` [@alguien] — ver los personajes reclamados",
         "`!mp3 búsqueda` o `!mp3 link` — te paso el audio de un video",
@@ -1011,6 +1012,71 @@ async def ayuda(ctx):
     ]
     embed = crear_embed(titulo="Comandos de Catherine", descripcion="\n".join(lineas))
     await ctx.reply(embed=embed)
+
+async def _chequear_una_imagen(session, semaforo, nombre, url):
+    """Devuelve (nombre, ok, motivo) para un link de imagen puntual."""
+    if not url:
+        return (nombre, False, "sin link cargado")
+    async with semaforo:
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10), allow_redirects=True) as resp:
+                if resp.status != 200:
+                    return (nombre, False, f"código {resp.status}")
+                content_type = resp.headers.get("Content-Type", "")
+                if "image" not in content_type.lower():
+                    return (nombre, False, f"no es una imagen ({content_type or 'sin content-type'})")
+                return (nombre, True, "")
+        except Exception as e:
+            return (nombre, False, f"error de conexión ({type(e).__name__})")
+
+@bot.command(name="checkimg")
+async def checkimg(ctx):
+    """Revisa todos los links de imagen de rw.json y avisa cuáles están rotos"""
+    if not personajes_cache:
+        await ctx.reply(embed=crear_embed(descripcion="No hay personajes cargados. Probá `!rwreload` primero."))
+        return
+
+    aviso = await ctx.reply(embed=crear_embed(
+        descripcion=f"🔎 Revisando {len(personajes_cache)} links de imagen, dame un toque..."
+    ))
+
+    semaforo = asyncio.Semaphore(10)  # no golpear 101 links todos a la vez
+    async with aiohttp.ClientSession() as session:
+        tareas = [
+            _chequear_una_imagen(
+                session, semaforo,
+                campo_personaje(p, "Nombre", "nombre"),
+                campo_personaje(p, "Imagen", "imagen", default=None),
+            )
+            for p in personajes_cache
+        ]
+        resultados = await asyncio.gather(*tareas)
+
+    rotas = [(nombre, motivo) for nombre, ok, motivo in resultados if not ok]
+
+    if not rotas:
+        await aviso.edit(embed=crear_embed(
+            titulo="🔎 Chequeo de imágenes",
+            descripcion=f"Revisé los **{len(personajes_cache)}** personajes y están todos los links bien. Ninguno roto 🎉"
+        ))
+        return
+
+    lineas = [f"❌ **{nombre}** — {motivo}" for nombre, motivo in rotas]
+    resumen = f"De {len(personajes_cache)} personajes, **{len(rotas)}** tienen la imagen rota:\n\n"
+
+    # Discord no deja más de 4096 caracteres en la descripción, así que partimos en varios embeds si hace falta
+    bloque_actual = resumen
+    bloques = []
+    for linea in lineas:
+        if len(bloque_actual) + len(linea) + 1 > 4000:
+            bloques.append(bloque_actual)
+            bloque_actual = ""
+        bloque_actual += linea + "\n"
+    bloques.append(bloque_actual)
+
+    await aviso.edit(embed=crear_embed(titulo="🔎 Chequeo de imágenes", descripcion=bloques[0]))
+    for bloque in bloques[1:]:
+        await ctx.send(embed=crear_embed(descripcion=bloque))
 
 @bot.command(name="datasave")
 async def datasave(ctx):
