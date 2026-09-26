@@ -1013,18 +1013,31 @@ async def ayuda(ctx):
     embed = crear_embed(titulo="Comandos de Catherine", descripcion="\n".join(lineas))
     await ctx.reply(embed=embed)
 
+_HEADERS_NAVEGADOR = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+}
+
 async def _chequear_una_imagen(session, semaforo, nombre, url):
     """Devuelve (nombre, ok, motivo) para un link de imagen puntual."""
     if not url:
         return (nombre, False, "sin link cargado")
     async with semaforo:
         try:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10), allow_redirects=True) as resp:
+            async with session.get(
+                url,
+                timeout=aiohttp.ClientTimeout(total=12),
+                allow_redirects=True,
+                headers=_HEADERS_NAVEGADOR,
+            ) as resp:
                 if resp.status != 200:
                     return (nombre, False, f"código {resp.status}")
-                content_type = resp.headers.get("Content-Type", "")
-                if "image" not in content_type.lower():
-                    return (nombre, False, f"no es una imagen ({content_type or 'sin content-type'})")
+                content_type = resp.headers.get("Content-Type", "").lower()
+                # Solo lo marcamos roto si claramente devolvió una página web en vez de la imagen.
+                # Muchos hosts (Imgur, CDNs) no mandan un Content-Type prolijo con imagen/*.
+                if "text/html" in content_type:
+                    return (nombre, False, "el link redirige a una página, no a la imagen")
                 return (nombre, True, "")
         except Exception as e:
             return (nombre, False, f"error de conexión ({type(e).__name__})")
