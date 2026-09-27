@@ -10,6 +10,7 @@ import base64
 import asyncio
 import time
 import aiohttp
+import difflib
 from collections import defaultdict
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
@@ -89,6 +90,10 @@ RAPIDAPI_HOST = "youtube-mp36.p.rapidapi.com"
 
 # Config de YouTube Data API v3 (oficial de Google) para buscar por texto
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
+
+# Config de Serper.dev (API real de Google Imágenes, no scraping) para !buscarimagenes.
+# Capa gratis: 2500 consultas de una sola vez, sin tarjeta. https://serper.dev
+SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 
 # Config de GitHub para guardar los balances en un JSON dentro del repo
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
@@ -1029,7 +1034,7 @@ async def _consultar_safebooru(tags, cantidad):
             break
     return resultado
 
-async def buscar_imagenes_booru(nombre, fuente=None, cantidad=2):
+async def buscar_imagenes_booru(nombre, fuente=None, cantidad=3):
     """Busca en Safebooru (versión SFW de Danbooru) por el tag del personaje.
     Primero prueba nombre+fuente combinados (ej: "gojo_satoru jujutsu_kaisen"),
     que es mucho más preciso, porque muchos nombres de personajes se repiten
@@ -1051,16 +1056,115 @@ async def buscar_imagenes_booru(nombre, fuente=None, cantidad=2):
         print(f"[buscar_imagenes_booru] 0 resultados para el tag '{tag_nombre}'", flush=True)
     return resultado
 
-async def buscar_candidatas_imagen(nombre, fuente, cantidad=2):
-    """Primero prueba Bing Imágenes con nombre+fuente (motor de búsqueda
-    general, el más estable de los que probamos); si no encuentra nada, cae de
-    fallback a Safebooru (útil para tags de anime/manga puntuales)."""
-    candidatas = await buscar_imagenes_bing(f"{nombre} {fuente}", cantidad=cantidad)
+async def buscar_imagenes_jikan(nombre, cantidad=3):
+    """Busca el personaje en Jikan (API no oficial de MyAnimeList) y devuelve
+    hasta `cantidad` imágenes oficiales de fichas de personaje que matchean el
+    nombre. A diferencia de scrapear un buscador de imágenes genérico, acá no
+    hay ambigüedad: es la base de datos de MAL buscando por nombre de
+    personaje, así que el resultado es mucho más confiable para anime/manga.
+    No sirve para personajes de videojuegos u otras fuentes que MAL no
+    catalogue — para eso están los fallbacks de Safebooru/Bing."""
+    headers = {"User-Agent": "Mozilla/5.0"}
+    params = {"q": nombre, "limit": min(max(cantidad * 3, 5), 10)}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://api.jikan.moe/v4/characters", params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                if resp.status != 200:
+                    print(f"[buscar_imagenes_jikan] Jikan respondió {resp.status} para '{nombre}'", flush=True)
+                    return []
+                data = await resp.json(content_type=None)
+    except Exception as e:
+        print(f"[buscar_imagenes_jikan] Error de conexión buscando '{nombre}': {e}", flush=True)
+        return []
+
+    items = data.get("data", []) if isinstance(data, dict) else []
+    if not items:
+        print(f"[buscar_imagenes_jikan] 0 resultados para '{nombre}'", flush=True)
+        return []
+
+    nombre_norm = nombre.strip().lower()
+
+    def similitud(item):
+        nombre_item = str(item.get("name", "")).strip().lower()
+        return difflib.SequenceMatcher(None, nombre_norm, nombre_item).ratio()
+
+    # Ordenamos por qué tan parecido es el nombre devuelto al que buscamos,
+    # porque Jikan hace búsqueda difusa y puede traer personajes de nombre
+    # parecido pero distinto.
+    items_ordenados = sorted(items, key=similitud, reverse=True)
+
+    resultado = []
+    for item in items_ordenados:
+        # Si el nombre no se parece casi nada, mejor no arriesgar a traer un
+        # personaje completamente distinto solo porque Jikan lo sugirió.
+        if similitud(item) < 0.4:
+            continue
+        imagen = ((item.get("images") or {}).get("jpg") or {}).get("image_url")
+        if imagen and imagen not in resultado:
+            resultado.append(imagen)
+        if len(resultado) >= cantidad:
+            break
+    return resultado
+
+async def buscar_imagenes_serper(query, cantidad=3):
+    """Busca en Serper.dev (API real de Google Imágenes vía JSON, no scraping).
+    Esta es la fuente principal: a diferencia de Jikan (solo cubre anime/manga)
+    o de scrapear buscadores a mano (Safebooru con tags puede devolver algo
+    "válido" pero totalmente ajeno al personaje; Google/Bing/DuckDuckGo desde
+    un servidor como Render suelen chocar con antibot y tirar contenido
+    genérico/publicidad en vez de resultados reales), esto te da exactamente
+    lo que buscarías vos a mano en Google Imágenes. Requiere SERPER_API_KEY;
+    si no está configurada, devuelve vacío y el llamador cae a los fallbacks."""
+    if not SERPER_API_KEY:
+        return []
+
+    headers = {"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"}
+    body = {"q": query, "num": cantidad}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://google.serper.dev/images", headers=headers, json=body, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                if resp.status != 200:
+                    texto_error = await resp.text()
+                    print(f"[buscar_imagenes_serper] Serper respondió {resp.status} para '{query}': {texto_error}", flush=True)
+                    return []
+                data = await resp.json(content_type=None)
+    except Exception as e:
+        print(f"[buscar_imagenes_serper] Error de conexión buscando '{query}': {e}", flush=True)
+        return []
+
+    items = data.get("images", []) if isinstance(data, dict) else []
+    if not items:
+        print(f"[buscar_imagenes_serper] 0 resultados para '{query}'", flush=True)
+
+    resultado = []
+    for item in items:
+        url_img = item.get("imageUrl")
+        if url_img and url_img not in resultado:
+            resultado.append(url_img)
+        if len(resultado) >= cantidad:
+            break
+    return resultado
+
+async def buscar_candidatas_imagen(nombre, fuente, cantidad=3):
+    """Serper (Google Imágenes real, vía API) es la fuente principal: es la
+    única que devuelve resultados genuinamente relevantes en vez de "algo, lo
+    que sea". Si no hay SERPER_API_KEY configurada todavía, o esa consulta
+    puntual no trae nada, cae a la cadena vieja (Jikan → Safebooru → Bing)
+    para que el bot siga funcionando mientras tanto."""
+    candidatas = await buscar_imagenes_serper(f"{nombre} {fuente}", cantidad=cantidad)
     if candidatas:
         return candidatas
-    return await buscar_imagenes_booru(nombre, fuente=fuente, cantidad=cantidad)
+    candidatas = await buscar_imagenes_jikan(nombre, cantidad=cantidad)
+    if candidatas:
+        return candidatas
+    candidatas = await buscar_imagenes_booru(nombre, fuente=fuente, cantidad=cantidad)
+    if candidatas:
+        return candidatas
+    return await buscar_imagenes_bing(f"{nombre} {fuente}", cantidad=cantidad)
 
-async def buscar_imagenes_bing(query, cantidad=2):
+async def buscar_imagenes_bing(query, cantidad=3):
     """Scrapea Bing Imágenes y devuelve hasta `cantidad` links directos de imagen.
     A diferencia de DuckDuckGo, no necesita conseguir un token aparte (eso era
     lo que fallaba en silencio), y a diferencia de Google, no exige aceptar
@@ -1128,7 +1232,7 @@ class BusquedaImagenesView(discord.ui.View):
             personaje = self.pendientes[self.indice_personaje]
             nombre = campo_personaje(personaje, "Nombre", "nombre")
             fuente = campo_personaje(personaje, "Fuente", "fuente")
-            self.candidatos = await buscar_candidatas_imagen(nombre, fuente, cantidad=2)
+            self.candidatos = await buscar_candidatas_imagen(nombre, fuente, cantidad=3)
             self.indice_candidato = 0
             if self.candidatos:
                 return self.embed_candidato_actual()
@@ -1217,7 +1321,7 @@ class BusquedaImagenesView(discord.ui.View):
             personaje = self.pendientes[self.indice_personaje]
             nombre = campo_personaje(personaje, "Nombre", "nombre")
             fuente = campo_personaje(personaje, "Fuente", "fuente")
-            nuevas = await buscar_candidatas_imagen(nombre, fuente, cantidad=2)
+            nuevas = await buscar_candidatas_imagen(nombre, fuente, cantidad=3)
             if nuevas:
                 self.candidatos = nuevas
                 self.indice_candidato = 0
