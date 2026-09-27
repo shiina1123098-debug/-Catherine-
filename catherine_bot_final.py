@@ -36,6 +36,12 @@ threading.Thread(target=run_fake_server, daemon=True).start()
 # Configuración del bot
 intents = discord.Intents.default()
 intents.message_content = True
+# Estos dos son "privilegiados": hay que activarlos también en el Developer
+# Portal de Discord (Bot > Privileged Gateway Intents) o el bot no arranca.
+# Los necesitamos para !robar: sin members no hay caché de estado de los
+# usuarios, y sin presences no llegan los eventos de online/offline.
+intents.members = True
+intents.presences = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.remove_command("help")
 
@@ -53,6 +59,26 @@ def formatear_numero(numero):
         return f"{int(numero):,}".replace(",", ".")
     except (TypeError, ValueError):
         return str(numero)
+
+def formatear_tiempo_restante(segundos):
+    """1h 30m / 45m / 12s, para mensajes de cooldown."""
+    segundos = max(int(segundos), 0)
+    horas, resto = divmod(segundos, 3600)
+    minutos, segs = divmod(resto, 60)
+    if horas > 0:
+        return f"{horas}h {minutos}m"
+    if minutos > 0:
+        return f"{minutos}m {segs}s"
+    return f"{segs}s"
+
+# user_id (str) -> time.time() del último reclamo exitoso en !rw (cooldown de reclamo)
+ultimo_reclamo_por_usuario = {}
+
+# user_id (str) -> time.time() de desde cuándo está offline (para !robar).
+# Solo trackea desconexiones que pasan MIENTRAS el bot está corriendo: alguien
+# que ya estaba offline antes de que el bot arrancara no cuenta hasta que se
+# reconecte y se vuelva a desconectar.
+usuarios_desconectados_desde = {}
 
 # Configurar Gemini (nueva Interactions API)
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
@@ -338,6 +364,44 @@ async def guardado_periodico():
     if guardado_personajes:
         print("🖼️ rw.json sincronizado con GitHub (guardado periódico)")
 
+INTERES_BANCO_DIARIO = 0.05
+SEGUNDOS_POR_DIA = 24 * 60 * 60
+
+@tasks.loop(hours=1)
+async def interes_banco():
+    """Le suma 5% compuesto por día a lo que cada usuario tenga en el banco.
+    Se chequea cada hora, pero el interés en sí se calcula por 'usuario', con
+    su propio reloj de 24hs desde el último interés que cobró (no un reloj
+    global), así que da lo mismo cuándo depositó cada uno."""
+    global hubo_cambios_sin_guardar
+    ahora = time.time()
+    hubo_interes = False
+
+    for datos in balances_cache.values():
+        banco = datos.get("banco", 0)
+        if banco <= 0:
+            continue
+
+        ultimo = datos.get("ultimo_interes")
+        if ultimo is None:
+            # Primera vez que vemos plata en este banco con este sistema activo:
+            # arranca el reloj ahora, no le regalamos interés retroactivo.
+            datos["ultimo_interes"] = ahora
+            continue
+
+        transcurrido = ahora - ultimo
+        if transcurrido < SEGUNDOS_POR_DIA:
+            continue
+
+        dias = int(transcurrido // SEGUNDOS_POR_DIA)
+        datos["banco"] = round(banco * ((1 + INTERES_BANCO_DIARIO) ** dias))
+        datos["ultimo_interes"] = ultimo + dias * SEGUNDOS_POR_DIA
+        hubo_interes = True
+
+    if hubo_interes:
+        hubo_cambios_sin_guardar = True
+        print("🏦 Interés diario aplicado a bancos", flush=True)
+
 @bot.event
 async def on_ready():
     print(f"✨ {bot.user} está conectada y lista")
@@ -347,6 +411,8 @@ async def on_ready():
         print(f"💰 Balances cargados desde GitHub ({len(balances_cache)} cuentas)")
         if not guardado_periodico.is_running():
             guardado_periodico.start()
+        if not interes_banco.is_running():
+            interes_banco.start()
 
     global personajes_cargados
     if not personajes_cargados and GITHUB_TOKEN and GITHUB_REPO:
@@ -357,6 +423,20 @@ async def on_ready():
     if not characters_cargados and GITHUB_TOKEN and GITHUB_REPO:
         await cargar_characters_desde_github()
         print(f"📚 Colecciones cargadas desde GitHub ({len(characters_cache)} usuarios)")
+
+@bot.event
+async def on_presence_update(before, after):
+    """Trackea cuándo se desconecta/reconecta cada usuario, para el cooldown
+    de !robar (necesita 6hs offline). Solo detecta cambios que pasan mientras
+    el bot está corriendo: alguien ya offline antes de que arrancara el bot
+    no cuenta hasta que se reconecte y se vuelva a desconectar."""
+    if before.status == after.status:
+        return
+    user_id = str(after.id)
+    if after.status == discord.Status.offline:
+        usuarios_desconectados_desde[user_id] = time.time()
+    elif before.status == discord.Status.offline:
+        usuarios_desconectados_desde.pop(user_id, None)
 
 async def generar_resumen(channel_id):
     """Genera un resumen de los últimos mensajes"""
@@ -459,22 +539,31 @@ async def on_message(message):
 
 @bot.event
 async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"⏳ Todavía no. Probá de nuevo en **{formatear_tiempo_restante(error.retry_after)}**."
+        ))
+        return
     await ctx.reply(embed=crear_embed(descripcion=f"❌ Error al ejecutar el comando: {error}"))
 
-@bot.command(name="saldo")
-async def saldo(ctx):
-    """Muestra (y crea si no existe) el balance del usuario, todo desde RAM"""
+@bot.command(name="balance", aliases=["saldo"])
+async def balance(ctx, miembro: discord.Member = None):
+    """Muestra el balance (afuera del banco), lo bancado, y el total de vos o de otro usuario"""
     global hubo_cambios_sin_guardar
 
     if not GITHUB_TOKEN or not GITHUB_REPO:
         await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
         return
 
-    user_id = str(ctx.author.id)
+    objetivo = miembro or ctx.author
+    user_id = str(objetivo.id)
 
     try:
         if user_id not in balances_cache:
-            balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+            if objetivo.id != ctx.author.id:
+                await ctx.reply(embed=crear_embed(descripcion=f"**{objetivo.display_name}** todavía no tiene cuenta."))
+                return
+            balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
             hubo_cambios_sin_guardar = True
             embed = crear_embed(
                 titulo="✨ Cuenta nueva",
@@ -485,13 +574,25 @@ async def saldo(ctx):
                 footer=ctx.author.display_name,
             )
             embed.add_field(name="🪙 Balance", value=formatear_numero(0), inline=True)
+            embed.add_field(name="🏦 Banco", value=formatear_numero(0), inline=True)
         else:
-            balance_actual = balances_cache[user_id]["balance"]
-            ranking_ordenado = sorted(balances_cache.items(), key=lambda item: item[1].get("balance", 0), reverse=True)
+            datos = balances_cache[user_id]
+            datos.setdefault("banco", 0)
+            balance_actual = datos.get("balance", 0)
+            banco_actual = datos.get("banco", 0)
+            total = balance_actual + banco_actual
+
+            ranking_ordenado = sorted(
+                balances_cache.items(),
+                key=lambda item: item[1].get("balance", 0) + item[1].get("banco", 0),
+                reverse=True,
+            )
             posicion = next((i for i, (uid, _) in enumerate(ranking_ordenado, start=1) if uid == user_id), None)
 
-            embed = crear_embed(titulo=f"🪙 Balance de {ctx.author.display_name}", footer=f"{len(balances_cache)} cuentas registradas")
+            embed = crear_embed(titulo=f"🪙 Balance de {objetivo.display_name}", footer=f"{len(balances_cache)} cuentas registradas")
             embed.add_field(name="Balance", value=f"**{formatear_numero(balance_actual)}**", inline=True)
+            embed.add_field(name="🏦 Banco", value=f"**{formatear_numero(banco_actual)}**", inline=True)
+            embed.add_field(name="Total", value=f"**{formatear_numero(total)}**", inline=True)
             if posicion:
                 embed.add_field(name="Puesto local", value=f"#{posicion}", inline=True)
 
@@ -501,24 +602,190 @@ async def saldo(ctx):
 
 @bot.command(name="top")
 async def top(ctx):
-    """Muestra el top 10 de usuarios con más balance"""
+    """Muestra el top 10 de usuarios con más plata en total (balance + banco)"""
     if not balances_cache:
-        await ctx.reply(embed=crear_embed(descripcion="Todavía nadie tiene cuenta. Usá `!saldo` para abrir la tuya."))
+        await ctx.reply(embed=crear_embed(descripcion="Todavía nadie tiene cuenta. Usá `!balance` para abrir la tuya."))
         return
 
-    ranking_ordenado = sorted(balances_cache.items(), key=lambda item: item[1].get("balance", 0), reverse=True)[:10]
+    ranking_ordenado = sorted(
+        balances_cache.items(),
+        key=lambda item: item[1].get("balance", 0) + item[1].get("banco", 0),
+        reverse=True,
+    )[:10]
     medallas = ["🥇", "🥈", "🥉"]
 
     lineas = []
     for i, (uid, datos) in enumerate(ranking_ordenado):
         posicion = medallas[i] if i < 3 else f"`#{i+1}`"
         nombre = datos.get("nombre", "???")
-        lineas.append(f"{posicion} **{nombre}** — {formatear_numero(datos.get('balance', 0))}")
+        total = datos.get("balance", 0) + datos.get("banco", 0)
+        lineas.append(f"{posicion} **{nombre}** — {formatear_numero(total)}")
 
     embed = crear_embed(titulo="🏆 Top de balances", descripcion="\n".join(lineas))
     await ctx.reply(embed=embed)
 
+@bot.command(name="depositar")
+async def depositar(ctx, cantidad: int = None):
+    """Guarda plata en el banco: no se la pueden robar con !robar"""
+    global hubo_cambios_sin_guardar
+    user_id = str(ctx.author.id)
+
+    if cantidad is None or cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="Decime cuánto. Ejemplo: `!depositar 5000`"))
+        return
+
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+    balances_cache[user_id].setdefault("banco", 0)
+
+    if balances_cache[user_id]["balance"] < cantidad:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"No tenés esa plata afuera del banco. Tenés **{formatear_numero(balances_cache[user_id]['balance'])}**."
+        ))
+        return
+
+    # Si el banco estaba en 0, este depósito arranca el reloj de interés de cero.
+    if balances_cache[user_id]["banco"] == 0:
+        balances_cache[user_id]["ultimo_interes"] = time.time()
+
+    balances_cache[user_id]["balance"] -= cantidad
+    balances_cache[user_id]["banco"] += cantidad
+    hubo_cambios_sin_guardar = True
+
+    await ctx.reply(embed=crear_embed(
+        titulo="🏦 Depositado",
+        descripcion=(
+            f"Guardaste **{formatear_numero(cantidad)}** en el banco.\n"
+            f"Balance: **{formatear_numero(balances_cache[user_id]['balance'])}** — "
+            f"Banco: **{formatear_numero(balances_cache[user_id]['banco'])}**"
+        ),
+    ))
+
+@bot.command(name="retirar")
+async def retirar(ctx, cantidad: int = None):
+    """Saca plata del banco de vuelta al balance"""
+    global hubo_cambios_sin_guardar
+    user_id = str(ctx.author.id)
+
+    if cantidad is None or cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="Decime cuánto. Ejemplo: `!retirar 5000`"))
+        return
+
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+    balances_cache[user_id].setdefault("banco", 0)
+
+    if balances_cache[user_id]["banco"] < cantidad:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"No tenés esa plata en el banco. Tenés **{formatear_numero(balances_cache[user_id]['banco'])}**."
+        ))
+        return
+
+    balances_cache[user_id]["banco"] -= cantidad
+    balances_cache[user_id]["balance"] += cantidad
+    if balances_cache[user_id]["banco"] == 0:
+        balances_cache[user_id].pop("ultimo_interes", None)
+    hubo_cambios_sin_guardar = True
+
+    await ctx.reply(embed=crear_embed(
+        titulo="🏦 Retirado",
+        descripcion=(
+            f"Sacaste **{formatear_numero(cantidad)}** del banco.\n"
+            f"Balance: **{formatear_numero(balances_cache[user_id]['balance'])}** — "
+            f"Banco: **{formatear_numero(balances_cache[user_id]['banco'])}**"
+        ),
+    ))
+
+COOLDOWN_ROBO_DESCONEXION_SEGUNDOS = 6 * 60 * 60
+PROBABILIDAD_ROBO_EXITO = 0.10
+PROBABILIDAD_ROBO_PENALIZACION = 0.10  # además del 10% de éxito (roll único de 0 a 1)
+PENALIZACION_ROBO_FALLIDO = 0.05  # 5% de la plata del ladrón
+
+@bot.command(name="robar")
+@commands.cooldown(1, 600, commands.BucketType.user)  # sin esto, spamear el comando garantiza el 10% tarde o temprano
+async def robar(ctx, objetivo: discord.Member = None):
+    """10% de robarle todo el balance (lo que NO tenga en el banco) a alguien
+    desconectado hace 6hs o más; 10% de perder vos el 5% de tu plata si te
+    agarran; 80% no pasa nada."""
+    global hubo_cambios_sin_guardar
+
+    if objetivo is None:
+        await ctx.reply(embed=crear_embed(descripcion="Decime a quién. Ejemplo: `!robar @usuario`"))
+        return
+    if objetivo.id == ctx.author.id:
+        await ctx.reply(embed=crear_embed(descripcion="No te podés robar a vos mismo."))
+        return
+    if objetivo.bot:
+        await ctx.reply(embed=crear_embed(descripcion="No le podés robar a un bot."))
+        return
+
+    desde = usuarios_desconectados_desde.get(str(objetivo.id))
+    if objetivo.status != discord.Status.offline or desde is None:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"**{objetivo.display_name}** no está desconectado hace 6hs o más ahora mismo."
+        ))
+        return
+
+    tiempo_offline = time.time() - desde
+    if tiempo_offline < COOLDOWN_ROBO_DESCONEXION_SEGUNDOS:
+        restante = COOLDOWN_ROBO_DESCONEXION_SEGUNDOS - tiempo_offline
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"**{objetivo.display_name}** está desconectado, pero todavía no pasaron las 6hs. Faltan **{formatear_tiempo_restante(restante)}**."
+        ))
+        return
+
+    ladron_id = str(ctx.author.id)
+    objetivo_id = str(objetivo.id)
+
+    if ladron_id not in balances_cache:
+        balances_cache[ladron_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+    if objetivo_id not in balances_cache:
+        balances_cache[objetivo_id] = {"nombre": objetivo.display_name, "balance": 0, "banco": 0}
+    balances_cache[ladron_id].setdefault("banco", 0)
+    balances_cache[objetivo_id].setdefault("banco", 0)
+
+    balance_objetivo = balances_cache[objetivo_id].get("balance", 0)
+    roll = random.random()
+
+    if roll < PROBABILIDAD_ROBO_EXITO:
+        if balance_objetivo <= 0:
+            embed = crear_embed(
+                titulo="🥷 Casi",
+                descripcion=f"Tuviste suerte, pero **{objetivo.display_name}** no tiene plata afuera del banco para robarle.",
+            )
+        else:
+            balances_cache[objetivo_id]["balance"] = 0
+            balances_cache[ladron_id]["balance"] = balances_cache[ladron_id].get("balance", 0) + balance_objetivo
+            hubo_cambios_sin_guardar = True
+            embed = crear_embed(
+                titulo="🥷 Robo exitoso",
+                descripcion=(
+                    f"Le afanaste **{formatear_numero(balance_objetivo)}** a **{objetivo.display_name}**.\n"
+                    f"Tu balance actual: **{formatear_numero(balances_cache[ladron_id]['balance'])}**"
+                ),
+            )
+    elif roll < PROBABILIDAD_ROBO_EXITO + PROBABILIDAD_ROBO_PENALIZACION:
+        balance_ladron = balances_cache[ladron_id].get("balance", 0)
+        perdida = int(balance_ladron * PENALIZACION_ROBO_FALLIDO)
+        balances_cache[ladron_id]["balance"] = balance_ladron - perdida
+        hubo_cambios_sin_guardar = True
+        embed = crear_embed(
+            titulo="🚨 Te agarraron",
+            descripcion=(
+                f"Te descubrieron intentando robarle a **{objetivo.display_name}** y perdiste **{formatear_numero(perdida)}** vos.\n"
+                f"Tu balance actual: **{formatear_numero(balances_cache[ladron_id]['balance'])}**"
+            ),
+        )
+    else:
+        embed = crear_embed(
+            titulo="🕵️ Nada",
+            descripcion=f"Lo intentaste, pero no pasó nada. **{objetivo.display_name}** ni se enteró.",
+        )
+
+    await ctx.reply(embed=embed)
+
 @bot.command(name="w")
+@commands.cooldown(1, 5 * 60, commands.BucketType.user)
 async def work(ctx):
     """Da una cantidad random de monedas (1.5k a 3k)"""
     global hubo_cambios_sin_guardar
@@ -872,9 +1139,12 @@ def agrupar_personajes_por_rareza():
         grupos[i].append(p)
     return grupos
 
+COOLDOWN_RECLAMO_SEGUNDOS = 4 * 60 * 60
+
 class RWClaimView(discord.ui.View):
     """Botón de reclamo: 30s exclusivos para quien usó !rw, 60s más libres para
-    cualquiera, y después de esos 90s totales se vence sin que nadie lo reclame."""
+    cualquiera, y después de esos 90s totales se vence sin que nadie lo reclame.
+    Además, cada usuario solo puede reclamar (no tirar) una vez cada 4hs."""
 
     SEGUNDOS_EXCLUSIVOS = 30
     SEGUNDOS_TOTALES = 90
@@ -907,6 +1177,17 @@ class RWClaimView(discord.ui.View):
             )
             return
 
+        ultimo_reclamo = ultimo_reclamo_por_usuario.get(str(interaction.user.id))
+        if ultimo_reclamo is not None:
+            transcurrido_reclamo = time.time() - ultimo_reclamo
+            if transcurrido_reclamo < COOLDOWN_RECLAMO_SEGUNDOS:
+                restante_reclamo = COOLDOWN_RECLAMO_SEGUNDOS - transcurrido_reclamo
+                await interaction.response.send_message(
+                    f"Ya reclamaste uno hace poco. Podés volver a reclamar en **{formatear_tiempo_restante(restante_reclamo)}**.",
+                    ephemeral=True,
+                )
+                return
+
         if usuario_ya_tiene_personaje(interaction.user, self.personaje):
             await interaction.response.send_message(
                 f"Ya tenés a **{self.nombre}** en tu colección, no podés repetirlo.",
@@ -916,6 +1197,7 @@ class RWClaimView(discord.ui.View):
 
         self.reclamado_por = interaction.user
         agregar_personaje_a_coleccion(interaction.user, self.personaje)
+        ultimo_reclamo_por_usuario[str(interaction.user.id)] = time.time()
 
         button.disabled = True
         button.label = f"Reclamado por {interaction.user.display_name}"
@@ -939,6 +1221,7 @@ class RWClaimView(discord.ui.View):
             pass
 
 @bot.command(name="rw")
+@commands.cooldown(1, 6 * 60 * 60, commands.BucketType.user)
 async def rw(ctx):
     """Sacá un personaje random del rw.json (los de más valor son más difíciles de sacar)"""
     if not personajes_cache:
@@ -1512,13 +1795,16 @@ async def winfo(ctx, *, nombre_buscado: str = None):
 async def ayuda(ctx):
     """Lista los comandos de Catherine"""
     lineas = [
-        "`!saldo` — ver tu balance",
-        "`!top` — top 10 de balances",
-        "`!w` — trabajar, ganás entre 1.5k y 3k",
+        "`!balance [@alguien]` — ver tu balance (o el de otro), lo bancado y el total",
+        "`!top` — top 10 de plata total (balance + banco)",
+        "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
+        "`!retirar cantidad` — saca plata del banco",
+        "`!robar @usuario` — si está desconectado hace 6hs+: 10% de afanarle todo, 10% de perder vos el 5%, 80% nada",
+        "`!w` — trabajar, ganás entre 1.5k y 3k (cooldown: 5 min)",
         "`!cf cara/cruz cantidad` — apostar a cara o cruz",
         "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
         "`!rt rojo/negro cantidad` o `!roulette rojo/negro cantidad` — jugar a la ruleta",
-        "`!rw` — tirar un personaje random (tenés 30s exclusivos para reclamarlo)",
+        "`!rw` — tirar un personaje random (cooldown: 6hs; reclamar tiene su propio cooldown de 4hs)",
         "`!rwreload` — recargar la lista de personajes desde GitHub",
         "`!checkimg` — revisar qué links de imagen de los personajes están rotos",
         "`!buscarimagenes [cantidad]` — busca fotos para los personajes sin imagen (Guardar/Rechazar/Recargar)",
