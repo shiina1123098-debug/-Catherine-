@@ -1010,17 +1010,17 @@ async def buscar_imagenes_google(query, cantidad=2):
         async with aiohttp.ClientSession() as session:
             async with session.get("https://www.google.com/search", params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
-                    print(f"[buscar_imagenes_google] Google respondió {resp.status} para '{query}'")
+                    print(f"[buscar_imagenes_google] Google respondió {resp.status} para '{query}'", flush=True)
                     return []
                 html = await resp.text()
     except Exception as e:
-        print(f"[buscar_imagenes_google] Error de conexión buscando '{query}': {e}")
+        print(f"[buscar_imagenes_google] Error de conexión buscando '{query}': {e}", flush=True)
         return []
 
     encontrados = re.findall(r'https://encrypted-tbn0\.gstatic\.com/images\?q=tbn:[^"\\]+', html)
 
     if not encontrados:
-        print(f"[buscar_imagenes_google] 0 resultados para '{query}' (largo del HTML recibido: {len(html)})")
+        print(f"[buscar_imagenes_google] 0 resultados para '{query}' (largo del HTML recibido: {len(html)})", flush=True)
 
     vistos = set()
     resultado = []
