@@ -805,7 +805,7 @@
   },
   {
     "Nombre": "Johan Liebert",
-    "Imagen": "",
+    "Imagen": "https://safebooru.org/images/1105/4bae156f098070298f8165f3ef5579cfb20bed69.jpg",
     "Fuente": "Monster",
     "Valor": 450000
   },
@@ -823,7 +823,7 @@
   },
   {
     "Nombre": "Makima",
-    "Imagen": "",
+    "Imagen": "https://safebooru.org/images/325/3cc95b08b676488762d75bf40d422cbab492fb62.jpg",
     "Fuente": "Chainsaw Man",
     "Valor": 490000
   },
@@ -925,7 +925,7 @@
   },
   {
     "Nombre": "Meliodas",
-    "Imagen": "",
+    "Imagen": "https://safebooru.org/images/574/fe1713d3975cc8db70b8cf9f780f41cfca2f9d67.jpg",
     "Fuente": "Seven Deadly Sins",
     "Valor": 160000
   },
@@ -943,7 +943,7 @@
   },
   {
     "Nombre": "Erza Scarlet",
-    "Imagen": "",
+    "Imagen": "https://safebooru.org/images/1356/d5aac7fc7b19cc90d7a97a2754309bcfbd322681.jpg",
     "Fuente": "Fairy Tail",
     "Valor": 140000
   },
@@ -967,7 +967,7 @@
   },
   {
     "Nombre": "Yami Sukehiro",
-    "Imagen": "",
+    "Imagen": "https://safebooru.org/images/810/f54ec8cf08c11b63637c6ba42d571236ba1754f6.jpg",
     "Fuente": "Black Clover",
     "Valor": 190000
   },
@@ -1057,7 +1057,7 @@
   },
   {
     "Nombre": "John Marston",
-    "Imagen": "",
+    "Imagen": "https://safebooru.org/images/333/99fc7ae2ace201e40f94b3ca049f8854ce206bdc.jpg",
     "Fuente": "Red Dead Redemption",
     "Valor": 45000
   },
@@ -1069,7 +1069,7 @@
   },
   {
     "Nombre": "A2",
-    "Imagen": "",
+    "Imagen": "https://safebooru.org/images/2397/8b3eeced6f02bbe9442efa582bc27a47.jpeg",
     "Fuente": "NieR: Automata",
     "Valor": 120000
   },
@@ -1081,7 +1081,7 @@
   },
   {
     "Nombre": "Sephiroth",
-    "Imagen": "",
+    "Imagen": "https://safebooru.org/images/593/5e0eee6f136bea0e667c5f51acc0d0c2f3ffbbd5.jpg",
     "Fuente": "Final Fantasy VII",
     "Valor": 470000
   },
@@ -1159,7 +1159,7 @@
   },
   {
     "Nombre": "Vergil",
-    "Imagen": "",
+    "Imagen": "https://safebooru.org/images/9/a611b95e517c193715e7db4ea8a45bf8.jpeg",
     "Fuente": "Devil May Cry",
     "Valor": 490000
   },
