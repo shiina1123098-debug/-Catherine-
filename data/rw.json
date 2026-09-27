@@ -728,7 +728,469 @@
   {
     "Nombre": "Queen of Hearts",
     "Imagen": "https://fgguides.com/wp-content/uploads/2024/09/Queen-of-the-Heart-Lorina.png",
-    "Fuente": "Black Souls 2
+    "Fuente": "Black Souls 2",
+    "Valor": 120000
   },
   {
+    "Nombre": "Meryphillia",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2025/02/Meryphillia-the-Ghoul.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Ezio Auditore",
+    "Imagen": "https://www.nicepng.com/png/full/200-2006969_images-ezio-auditore-assassins-creed-brotherhood.png",
+    "Fuente": "Assassin's Creed",
+    "Valor": 180000
+  },
+  {
+    "Nombre": "Geralt of Rivia",
+    "Imagen": "https://www.pngall.com/wp-content/uploads/20/Geralt-Of-Rivia-Witcher-Sword-Monster-Hunter-PNG.png",
+    "Fuente": "The Witcher",
+    "Valor": 190000
+  },
+  {
+    "Nombre": "Kratos",
+    "Imagen": "https://www.pngkit.com/png/full/68-688041_kratos-god-of-war-4-render.png",
+    "Fuente": "God of War",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Doom Slayer",
+    "Imagen": "https://toppng.com/uploads/preview/doomguy-png-transparent-with-clear-background-id-82931-11563275210qg5g5g5g5g.png",
+    "Fuente": "DOOM",
+    "Valor": 490000
+  },
+  {
+    "Nombre": "2B",
+    "Imagen": "https://cdn.pidgi.net/images/9/9b/2B_-_Soulcalibur_VI.jpg",
+    "Fuente": "NieR: Automata",
+    "Valor": 140000
+  },
+  {
+    "Nombre": "Catherine",
+    "Imagen": "",
+    "Fuente": "Black Souls 1",
+    "Valor": 9200
+  },
+  {
+    "Nombre": "The White Rabbit",
+    "Imagen": "",
+    "Fuente": "Black Souls 2",
+    "Valor": 110000
+  },
+  {
+    "Nombre": "The Hatter",
+    "Imagen": "",
+    "Fuente": "Black Souls 2",
+    "Valor": 85000
+  },
+  {
+    "Nombre": "Red Queen",
+    "Imagen": "",
+    "Fuente": "Black Souls 2",
+    "Valor": 135000
+  },
+  {
+    "Nombre": "Dio Brando",
+    "Imagen": "",
+    "Fuente": "JoJo's Bizarre Adventure",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Jotaro Kujo",
+    "Imagen": "",
+    "Fuente": "JoJo's Bizarre Adventure",
+    "Valor": 180000
+  },
+  {
+    "Nombre": "Johan Liebert",
+    "Imagen": "",
+    "Fuente": "Monster",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Ken Kaneki",
+    "Imagen": "",
+    "Fuente": "Tokyo Ghoul",
+    "Valor": 160000
+  },
+  {
+    "Nombre": "Touka Kirishima",
+    "Imagen": "",
+    "Fuente": "Tokyo Ghoul",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Makima",
+    "Imagen": "",
+    "Fuente": "Chainsaw Man",
+    "Valor": 490000
+  },
+  {
+    "Nombre": "Denji",
+    "Imagen": "",
+    "Fuente": "Chainsaw Man",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Power",
+    "Imagen": "",
+    "Fuente": "Chainsaw Man",
+    "Valor": 11000
+  },
+  {
+    "Nombre": "Aki Hayakawa",
+    "Imagen": "",
+    "Fuente": "Chainsaw Man",
+    "Valor": 17000
+  },
+  {
+    "Nombre": "Doflamingo",
+    "Imagen": "",
+    "Fuente": "One Piece",
+    "Valor": 470000
+  },
+  {
+    "Nombre": "Nico Robin",
+    "Imagen": "",
+    "Fuente": "One Piece",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Trafalgar Law",
+    "Imagen": "",
+    "Fuente": "One Piece",
+    "Valor": 120000
+  },
+  {
+    "Nombre": "Pain (Nagato)",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 440000
+  },
+  {
+    "Nombre": "Obito Uchiha",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 130000
+  },
+  {
+    "Nombre": "Minato Namikaze",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 190000
+  },
+  {
+    "Nombre": "Jiraiya",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 42000
+  },
+  {
+    "Nombre": "Hinata Hyuga",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 6800
+  },
+  {
+    "Nombre": "Gaara",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 38000
+  },
+  {
+    "Nombre": "Rock Lee",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Shikamaru Nara",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Tsunade",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 14000
+  },
+  {
+    "Nombre": "Might Guy",
+    "Imagen": "",
+    "Fuente": "Naruto",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Meliodas",
+    "Imagen": "",
+    "Fuente": "Seven Deadly Sins",
+    "Valor": 160000
+  },
+  {
+    "Nombre": "Escanor",
+    "Imagen": "",
+    "Fuente": "Seven Deadly Sins",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Ban",
+    "Imagen": "",
+    "Fuente": "Seven Deadly Sins",
+    "Valor": 110000
+  },
+  {
+    "Nombre": "Erza Scarlet",
+    "Imagen": "",
+    "Fuente": "Fairy Tail",
+    "Valor": 140000
+  },
+  {
+    "Nombre": "Natsu Dragneel",
+    "Imagen": "",
+    "Fuente": "Fairy Tail",
+    "Valor": 180000
+  },
+  {
+    "Nombre": "Gray Fullbuster",
+    "Imagen": "",
+    "Fuente": "Fairy Tail",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Asta",
+    "Imagen": "",
+    "Fuente": "Black Clover",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Yami Sukehiro",
+    "Imagen": "",
+    "Fuente": "Black Clover",
+    "Valor": 190000
+  },
+  {
+    "Nombre": "Shinobu Kocho",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Akaza",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Kokushibo",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 470000
+  },
+  {
+    "Nombre": "Douma",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 460000
+  },
+  {
+    "Nombre": "Giyu Tomioka",
+    "Imagen": "",
+    "Fuente": "Demon Slayer",
+    "Valor": 170000
+  },
+  {
+    "Nombre": "Go Gunhee",
+    "Imagen": "",
+    "Fuente": "Solo Leveling",
+    "Valor": 120000
+  },
+  {
+    "Nombre": "Tusk",
+    "Imagen": "",
+    "Fuente": "Solo Leveling",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Iron",
+    "Imagen": "",
+    "Fuente": "Solo Leveling",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Tank",
+    "Imagen": "",
+    "Fuente": "Solo Leveling",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Kaisel",
+    "Imagen": "",
+    "Fuente": "Solo Leveling",
+    "Valor": 9500
+  },
+  {
+    "Nombre": "Master Chief",
+    "Imagen": "",
+    "Fuente": "Halo",
+    "Valor": 160000
+  },
+  {
+    "Nombre": "Joel Miller",
+    "Imagen": "",
+    "Fuente": "The Last of Us",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Ellie Williams",
+    "Imagen": "",
+    "Fuente": "The Last of Us",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Arthur Morgan",
+    "Imagen": "",
+    "Fuente": "Red Dead Redemption",
+    "Valor": 170000
+  },
+  {
+    "Nombre": "John Marston",
+    "Imagen": "",
+    "Fuente": "Red Dead Redemption",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "9S",
+    "Imagen": "",
+    "Fuente": "NieR: Automata",
+    "Valor": 19000
+  },
+  {
+    "Nombre": "A2",
+    "Imagen": "",
+    "Fuente": "NieR: Automata",
+    "Valor": 120000
+  },
+  {
+    "Nombre": "Cloud Strife",
+    "Imagen": "",
+    "Fuente": "Final Fantasy VII",
+    "Valor": 160000
+  },
+  {
+    "Nombre": "Sephiroth",
+    "Imagen": "",
+    "Fuente": "Final Fantasy VII",
+    "Valor": 470000
+  },
+  {
+    "Nombre": "Tifa Lockhart",
+    "Imagen": "",
+    "Fuente": "Final Fantasy VII",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Aerith Gainsborough",
+    "Imagen": "",
+    "Fuente": "Final Fantasy VII",
+    "Valor": 14000
+  },
+  {
+    "Nombre": "Kyo Kusanagi",
+    "Imagen": "",
+    "Fuente": "The King of Fighters",
+    "Valor": 130000
+  },
+  {
+    "Nombre": "Iori Yagami",
+    "Imagen": "",
+    "Fuente": "The King of Fighters",
+    "Valor": 125000
+  },
+  {
+    "Nombre": "Terry Bogard",
+    "Imagen": "",
+    "Fuente": "Fatal Fury",
+    "Valor": 110000
+  },
+  {
+    "Nombre": "Ryu",
+    "Imagen": "",
+    "Fuente": "Street Fighter",
+    "Valor": 180000
+  },
+  {
+    "Nombre": "Chun-Li",
+    "Imagen": "",
+    "Fuente": "Street Fighter",
+    "Valor": 170000
+  },
+  {
+    "Nombre": "Akuma",
+    "Imagen": "",
+    "Fuente": "Street Fighter",
+    "Valor": 460000
+  },
+  {
+    "Nombre": "Scorpion",
+    "Imagen": "",
+    "Fuente": "Mortal Kombat",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Sub-Zero",
+    "Imagen": "",
+    "Fuente": "Mortal Kombat",
+    "Valor": 145000
+  },
+  {
+    "Nombre": "Raiden",
+    "Imagen": "",
+    "Fuente": "Mortal Kombat",
+    "Valor": 440000
+  },
+  {
+    "Nombre": "Dante",
+    "Imagen": "",
+    "Fuente": "Devil May Cry",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Vergil",
+    "Imagen": "",
+    "Fuente": "Devil May Cry",
+    "Valor": 490000
+  },
+  {
+    "Nombre": "Nero",
+    "Imagen": "",
+    "Fuente": "Devil May Cry",
+    "Valor": 130000
+  },
+  {
+    "Nombre": "Guts (Berserker Armor)",
+    "Imagen": "",
+    "Fuente": "Berserk",
+    "Valor": 490000
+  },
+  {
+    "Nombre": "Griffith (Femto)",
+    "Imagen": "",
+    "Fuente": "Berserk",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Skull Knight",
+    "Imagen": "",
+    "Fuente": "Berserk",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Void",
+    "Imagen": "",
+    "Fuente": "Berserk",
+    "Valor": 500000
+  }
 ]
