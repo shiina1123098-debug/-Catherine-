@@ -993,6 +993,56 @@ async def rwreload(ctx):
     except Exception as e:
         await ctx.reply(embed=crear_embed(descripcion=f"❌ Hubo un error al recargar: {str(e)}"))
 
+async def buscar_imagenes_booru(nombre, cantidad=2):
+    """Busca en Safebooru (versión SFW de Danbooru) por el tag del personaje.
+    Es una API pública real hecha para esto, no scraping — mucho más confiable
+    que Google para personajes de anime/manga/videojuegos."""
+    tag = re.sub(r"[^a-z0-9\s\-']", "", nombre.strip().lower()).replace(" ", "_")
+    if not tag:
+        return []
+
+    url = "https://safebooru.org/index.php"
+    params = {"page": "dapi", "s": "post", "q": "index", "json": "1", "limit": str(cantidad), "tags": tag}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                if resp.status != 200:
+                    print(f"[buscar_imagenes_booru] safebooru respondió {resp.status} para '{tag}'", flush=True)
+                    return []
+                try:
+                    data = await resp.json(content_type=None)
+                except Exception:
+                    return []
+    except Exception as e:
+        print(f"[buscar_imagenes_booru] Error buscando '{tag}': {e}", flush=True)
+        return []
+
+    if not isinstance(data, list):
+        return []
+
+    resultado = []
+    for post in data:
+        file_url = post.get("file_url")
+        if not file_url and post.get("directory") and post.get("image"):
+            file_url = f"https://safebooru.org//images/{post['directory']}/{post['image']}"
+        if file_url:
+            resultado.append(file_url)
+        if len(resultado) >= cantidad:
+            break
+
+    if not resultado:
+        print(f"[buscar_imagenes_booru] 0 resultados para el tag '{tag}'", flush=True)
+    return resultado
+
+async def buscar_candidatas_imagen(nombre, fuente, cantidad=2):
+    """Primero prueba Safebooru (mejor para anime/manga); si no encuentra nada,
+    cae de fallback al scraping de Google (más frágil, pero cubre lo que Safebooru no tenga)."""
+    candidatas = await buscar_imagenes_booru(nombre, cantidad=cantidad)
+    if candidatas:
+        return candidatas
+    return await buscar_imagenes_google(f"{nombre} {fuente}", cantidad=cantidad)
+
 async def buscar_imagenes_google(query, cantidad=2):
     """Scrapea Google Imágenes y devuelve hasta `cantidad` links directos de imagen.
     Es frágil (como el scraping de YouTube para !mp3): si Google cambia el HTML
@@ -1060,7 +1110,7 @@ class BusquedaImagenesView(discord.ui.View):
             personaje = self.pendientes[self.indice_personaje]
             nombre = campo_personaje(personaje, "Nombre", "nombre")
             fuente = campo_personaje(personaje, "Fuente", "fuente")
-            self.candidatos = await buscar_imagenes_google(f"{nombre} {fuente}", cantidad=2)
+            self.candidatos = await buscar_candidatas_imagen(nombre, fuente, cantidad=2)
             self.indice_candidato = 0
             if self.candidatos:
                 return self.embed_candidato_actual()
