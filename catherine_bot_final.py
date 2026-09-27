@@ -1052,14 +1052,13 @@ async def buscar_imagenes_booru(nombre, fuente=None, cantidad=2):
     return resultado
 
 async def buscar_candidatas_imagen(nombre, fuente, cantidad=2):
-    """Primero prueba Safebooru (mejor para anime/manga, y más preciso con
-    nombre+fuente combinados); si no encuentra nada, cae de fallback a
-    DuckDuckGo Imágenes (cubre lo que Safebooru no tenga, ej. personajes de
-    juegos o series que no son anime)."""
-    candidatas = await buscar_imagenes_booru(nombre, fuente=fuente, cantidad=cantidad)
+    """Primero prueba DuckDuckGo Imágenes con nombre+fuente (motor de búsqueda
+    general, más confiable para esto); si no encuentra nada, cae de fallback a
+    Safebooru (útil para tags de anime/manga que a veces DuckDuckGo no trae bien)."""
+    candidatas = await buscar_imagenes_duckduckgo(f"{nombre} {fuente}", cantidad=cantidad)
     if candidatas:
         return candidatas
-    return await buscar_imagenes_duckduckgo(f"{nombre} {fuente}", cantidad=cantidad)
+    return await buscar_imagenes_booru(nombre, fuente=fuente, cantidad=cantidad)
 
 async def _obtener_vqd_duckduckgo(session, query, headers):
     """DuckDuckGo exige un token 'vqd' (sacado de la página de resultados normal)
