@@ -999,19 +999,28 @@ async def buscar_imagenes_google(query, cantidad=2):
     o empieza a bloquear, esto deja de traer resultados de un día para el otro."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        "Accept-Language": "es-419,es;q=0.9,en;q=0.8",
+        # Sin esto, Google devuelve la pantalla de "antes de continuar, acepta las
+        # cookies" en vez de los resultados, y el regex no encuentra nada.
+        "Cookie": "CONSENT=YES+1",
     }
-    params = {"q": query, "tbm": "isch"}
+    params = {"q": query, "tbm": "isch", "hl": "es"}
 
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get("https://www.google.com/search", params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
+                    print(f"[buscar_imagenes_google] Google respondió {resp.status} para '{query}'")
                     return []
                 html = await resp.text()
-    except Exception:
+    except Exception as e:
+        print(f"[buscar_imagenes_google] Error de conexión buscando '{query}': {e}")
         return []
 
     encontrados = re.findall(r'https://encrypted-tbn0\.gstatic\.com/images\?q=tbn:[^"\\]+', html)
+
+    if not encontrados:
+        print(f"[buscar_imagenes_google] 0 resultados para '{query}' (largo del HTML recibido: {len(html)})")
 
     vistos = set()
     resultado = []
