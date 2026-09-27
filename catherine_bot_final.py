@@ -993,29 +993,26 @@ async def rwreload(ctx):
     except Exception as e:
         await ctx.reply(embed=crear_embed(descripcion=f"❌ Hubo un error al recargar: {str(e)}"))
 
-async def buscar_imagenes_booru(nombre, cantidad=2):
-    """Busca en Safebooru (versión SFW de Danbooru) por el tag del personaje.
-    Es una API pública real hecha para esto, no scraping — mucho más confiable
-    que Google para personajes de anime/manga/videojuegos."""
-    tag = re.sub(r"[^a-z0-9\s\-']", "", nombre.strip().lower()).replace(" ", "_")
-    if not tag:
+def _tag_booru(texto):
+    return re.sub(r"[^a-z0-9\s\-']", "", texto.strip().lower()).replace(" ", "_")
+
+async def _consultar_safebooru(tags, cantidad):
+    if not tags:
         return []
-
     url = "https://safebooru.org/index.php"
-    params = {"page": "dapi", "s": "post", "q": "index", "json": "1", "limit": str(cantidad), "tags": tag}
-
+    params = {"page": "dapi", "s": "post", "q": "index", "json": "1", "limit": str(cantidad), "tags": tags}
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
-                    print(f"[buscar_imagenes_booru] safebooru respondió {resp.status} para '{tag}'", flush=True)
+                    print(f"[buscar_imagenes_booru] safebooru respondió {resp.status} para '{tags}'", flush=True)
                     return []
                 try:
                     data = await resp.json(content_type=None)
                 except Exception:
                     return []
     except Exception as e:
-        print(f"[buscar_imagenes_booru] Error buscando '{tag}': {e}", flush=True)
+        print(f"[buscar_imagenes_booru] Error buscando '{tags}': {e}", flush=True)
         return []
 
     if not isinstance(data, list):
@@ -1030,59 +1027,89 @@ async def buscar_imagenes_booru(nombre, cantidad=2):
             resultado.append(file_url)
         if len(resultado) >= cantidad:
             break
+    return resultado
 
+async def buscar_imagenes_booru(nombre, fuente=None, cantidad=2):
+    """Busca en Safebooru (versión SFW de Danbooru) por el tag del personaje.
+    Primero prueba nombre+fuente combinados (ej: "gojo_satoru jujutsu_kaisen"),
+    que es mucho más preciso, porque muchos nombres de personajes se repiten
+    entre series distintas y buscar solo por nombre trae al personaje equivocado.
+    Si esa combinación no da nada, cae a buscar solo por el nombre."""
+    tag_nombre = _tag_booru(nombre)
+    if not tag_nombre:
+        return []
+
+    if fuente:
+        tag_fuente = _tag_booru(str(fuente))
+        if tag_fuente:
+            combinado = await _consultar_safebooru(f"{tag_nombre} {tag_fuente}", cantidad)
+            if combinado:
+                return combinado
+
+    resultado = await _consultar_safebooru(tag_nombre, cantidad)
     if not resultado:
-        print(f"[buscar_imagenes_booru] 0 resultados para el tag '{tag}'", flush=True)
+        print(f"[buscar_imagenes_booru] 0 resultados para el tag '{tag_nombre}'", flush=True)
     return resultado
 
 async def buscar_candidatas_imagen(nombre, fuente, cantidad=2):
-    """Primero prueba Safebooru (mejor para anime/manga); si no encuentra nada,
-    cae de fallback al scraping de Google (más frágil, pero cubre lo que Safebooru no tenga)."""
-    candidatas = await buscar_imagenes_booru(nombre, cantidad=cantidad)
+    """Primero prueba Safebooru (mejor para anime/manga, y más preciso con
+    nombre+fuente combinados); si no encuentra nada, cae de fallback a
+    DuckDuckGo Imágenes (cubre lo que Safebooru no tenga, ej. personajes de
+    juegos o series que no son anime)."""
+    candidatas = await buscar_imagenes_booru(nombre, fuente=fuente, cantidad=cantidad)
     if candidatas:
         return candidatas
-    return await buscar_imagenes_google(f"{nombre} {fuente}", cantidad=cantidad)
+    return await buscar_imagenes_duckduckgo(f"{nombre} {fuente}", cantidad=cantidad)
 
-async def buscar_imagenes_google(query, cantidad=2):
-    """Scrapea Google Imágenes y devuelve hasta `cantidad` links directos de imagen.
-    Es frágil (como el scraping de YouTube para !mp3): si Google cambia el HTML
-    o empieza a bloquear, esto deja de traer resultados de un día para el otro."""
+async def _obtener_vqd_duckduckgo(session, query, headers):
+    """DuckDuckGo exige un token 'vqd' (sacado de la página de resultados normal)
+    antes de dejarte pegarle a su endpoint de imágenes. Sin esto, i.js devuelve error."""
+    async with session.get("https://duckduckgo.com/", params={"q": query}, headers=headers) as resp:
+        html = await resp.text()
+    coincidencia = re.search(r"vqd=['\"]?([\d-]+)", html)
+    return coincidencia.group(1) if coincidencia else None
+
+async def buscar_imagenes_duckduckgo(query, cantidad=2):
+    """Usa el endpoint no oficial de imágenes de DuckDuckGo (i.js). A diferencia
+    del scraping de Google, esto devuelve URLs directas de imagen alojadas en
+    la página original (no links de caché temporales de Google), así que hay
+    menos chance de que la imagen "muera" antes de que la veas en Discord.
+    Como todo scraping no oficial, es frágil: si DuckDuckGo cambia su HTML o
+    empieza a bloquear, esto deja de traer resultados de un día para el otro."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
         "Accept-Language": "es-419,es;q=0.9,en;q=0.8",
-        # Sin esto, Google devuelve la pantalla de "antes de continuar, acepta las
-        # cookies" en vez de los resultados, y el regex no encuentra nada.
-        "Cookie": "CONSENT=YES+1",
+        "Referer": "https://duckduckgo.com/",
     }
-    params = {"q": query, "tbm": "isch", "hl": "es"}
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get("https://www.google.com/search", params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+            vqd = await _obtener_vqd_duckduckgo(session, query, headers)
+            if not vqd:
+                print(f"[buscar_imagenes_duckduckgo] No se pudo obtener vqd para '{query}'", flush=True)
+                return []
+
+            params = {"l": "us-en", "o": "json", "q": query, "vqd": vqd, "f": ",,,", "p": "1"}
+            async with session.get("https://duckduckgo.com/i.js", params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
-                    print(f"[buscar_imagenes_google] Google respondió {resp.status} para '{query}'", flush=True)
+                    print(f"[buscar_imagenes_duckduckgo] DuckDuckGo respondió {resp.status} para '{query}'", flush=True)
                     return []
-                html = await resp.text()
+                try:
+                    data = await resp.json(content_type=None)
+                except Exception:
+                    return []
     except Exception as e:
-        print(f"[buscar_imagenes_google] Error de conexión buscando '{query}': {e}", flush=True)
+        print(f"[buscar_imagenes_duckduckgo] Error de conexión buscando '{query}': {e}", flush=True)
         return []
 
-    # Google mete estos links adentro de bloques JSON incrustados en <script>,
-    # donde las barras vienen escapadas como \/ en vez de /. Sin esto el regex
-    # no matcheaba nada aunque el HTML llegara bien.
-    html_normalizado = html.replace("\\/", "/")
+    items = data.get("results", []) if isinstance(data, dict) else []
+    if not items:
+        print(f"[buscar_imagenes_duckduckgo] 0 resultados para '{query}'", flush=True)
 
-    encontrados = re.findall(r'https://encrypted-tbn0\.gstatic\.com/images\?q=tbn:[^"\\]+', html_normalizado)
-
-    if not encontrados:
-        crudos = html.count("gstatic.com")
-        print(f"[buscar_imagenes_google] 0 resultados para '{query}' (largo HTML: {len(html)}, apariciones de 'gstatic.com': {crudos})", flush=True)
-
-    vistos = set()
     resultado = []
-    for url_img in encontrados:
-        if url_img not in vistos:
-            vistos.add(url_img)
+    for item in items:
+        url_img = item.get("image")
+        if url_img and url_img not in resultado:
             resultado.append(url_img)
         if len(resultado) >= cantidad:
             break
@@ -1136,7 +1163,7 @@ class BusquedaImagenesView(discord.ui.View):
         for item in self.children:
             item.disabled = True
 
-        texto = f"Guardé imagen a **{self.guardados}** personaje(s). Salteé **{self.saltados}** por falta de resultados en Google."
+        texto = f"Guardé imagen a **{self.guardados}** personaje(s). Salteé **{self.saltados}** por falta de resultados."
         if hubo_cambios_personajes_sin_guardar:
             try:
                 await guardar_personajes_en_github()
@@ -1176,6 +1203,23 @@ class BusquedaImagenesView(discord.ui.View):
             embed = self.embed_candidato_actual()
         await interaction.response.edit_message(embed=embed, view=self)
 
+    @discord.ui.button(label="🔄 Recargar", style=discord.ButtonStyle.secondary)
+    async def recargar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Vuelve a buscar candidatas frescas para el personaje actual, en vez
+        de solo re-mostrar el mismo link (que puede ser el que ya murió/no cargó)."""
+        await interaction.response.defer()
+        personaje = self.pendientes[self.indice_personaje]
+        nombre = campo_personaje(personaje, "Nombre", "nombre")
+        fuente = campo_personaje(personaje, "Fuente", "fuente")
+        nuevas = await buscar_candidatas_imagen(nombre, fuente, cantidad=2)
+        if nuevas:
+            self.candidatos = nuevas
+            self.indice_candidato = 0
+            embed = self.embed_candidato_actual()
+        else:
+            embed = self.embed_candidato_actual()
+        await interaction.edit_original_response(embed=embed, view=self)
+
     async def on_timeout(self):
         if self.terminado or self.mensaje is None:
             return
@@ -1187,7 +1231,7 @@ class BusquedaImagenesView(discord.ui.View):
 
 @bot.command(name="buscarimagenes", aliases=["imgsearch"])
 async def buscarimagenes(ctx, cantidad: int = None):
-    """Busca en Google Imágenes una foto para los personajes de rw.json que no tienen (Guardar/Rechazar, sube a GitHub al final)"""
+    """Busca una foto (Safebooru + DuckDuckGo) para los personajes de rw.json que no tienen (Guardar/Rechazar/Recargar, sube a GitHub al final)"""
     if not GITHUB_TOKEN or not GITHUB_REPO:
         await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
         return
@@ -1367,7 +1411,7 @@ async def ayuda(ctx):
         "`!rw` — tirar un personaje random (tenés 30s exclusivos para reclamarlo)",
         "`!rwreload` — recargar la lista de personajes desde GitHub",
         "`!checkimg` — revisar qué links de imagen de los personajes están rotos",
-        "`!buscarimagenes [cantidad]` — busca fotos en Google para los personajes sin imagen (Guardar/Rechazar)",
+        "`!buscarimagenes [cantidad]` — busca fotos para los personajes sin imagen (Guardar/Rechazar/Recargar)",
         "`!galeria` — recorrer los personajes uno por uno (nombre + imagen) con Previous/Next",
         "`!winfo nombre` — ver la ficha de un personaje puntual (sin reclamo)",
         "`!coleccion` o `!harem` [@alguien] — ver los personajes reclamados",
