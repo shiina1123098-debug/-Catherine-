@@ -439,6 +439,24 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/4/367313.jpg",
         "Fuente": "Sword Art Online",
         "Valor": 10000
+      },
+      {
+        "Nombre": "Sung Jin-Woo",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/540692.jpg",
+        "Fuente": "Solo Leveling",
+        "Valor": 850000
+      },
+      {
+        "Nombre": "Shalltear Bloodfallen",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/512759.jpg",
+        "Fuente": "Overlord",
+        "Valor": 15000
+      },
+      {
+        "Nombre": "Frog Princess",
+        "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Princess-Frog.jpg",
+        "Fuente": "Black Souls 1",
+        "Valor": 65000
       }
     ]
   }
