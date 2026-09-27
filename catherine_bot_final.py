@@ -1017,10 +1017,16 @@ async def buscar_imagenes_google(query, cantidad=2):
         print(f"[buscar_imagenes_google] Error de conexión buscando '{query}': {e}", flush=True)
         return []
 
-    encontrados = re.findall(r'https://encrypted-tbn0\.gstatic\.com/images\?q=tbn:[^"\\]+', html)
+    # Google mete estos links adentro de bloques JSON incrustados en <script>,
+    # donde las barras vienen escapadas como \/ en vez de /. Sin esto el regex
+    # no matcheaba nada aunque el HTML llegara bien.
+    html_normalizado = html.replace("\\/", "/")
+
+    encontrados = re.findall(r'https://encrypted-tbn0\.gstatic\.com/images\?q=tbn:[^"\\]+', html_normalizado)
 
     if not encontrados:
-        print(f"[buscar_imagenes_google] 0 resultados para '{query}' (largo del HTML recibido: {len(html)})", flush=True)
+        crudos = html.count("gstatic.com")
+        print(f"[buscar_imagenes_google] 0 resultados para '{query}' (largo HTML: {len(html)}, apariciones de 'gstatic.com': {crudos})", flush=True)
 
     vistos = set()
     resultado = []
