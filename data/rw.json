@@ -1,0 +1,731 @@
+[
+  {
+    "Nombre": "Gojo Satoru",
+    "Imagen": "https://i.imgur.com/WzRHR8D.jpeg",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 950000
+  },
+  {
+    "Nombre": "Sukuna Ryomen",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/487680.jpg",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Yuji Itadori",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/467646.jpg",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 35000
+  },
+  {
+    "Nombre": "Megumi Fushiguro",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/12/621887.jpg",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Nobara Kugisaki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/12/422313.jpg",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 6500
+  },
+  {
+    "Nombre": "Toji Fushiguro",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/517123.jpg",
+    "Fuente": "Jujutsu Kaisen",
+    "Valor": 180000
+  },
+  {
+    "Nombre": "Naruto Uzumaki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/284121.jpg",
+    "Fuente": "Naruto",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Sasuke Uchiha",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/131317.jpg",
+    "Fuente": "Naruto",
+    "Valor": 420000
+  },
+  {
+    "Nombre": "Kakashi Hatake",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/7/284129.jpg",
+    "Fuente": "Naruto",
+    "Valor": 120000
+  },
+  {
+    "Nombre": "Itachi Uchiha",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/284122.jpg",
+    "Fuente": "Naruto",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Madara Uchiha",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/12/450359.jpg",
+    "Fuente": "Naruto",
+    "Valor": 490000
+  },
+  {
+    "Nombre": "Sakura Haruno",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/69275.jpg",
+    "Fuente": "Naruto",
+    "Valor": 3200
+  },
+  {
+    "Nombre": "Monkey D. Luffy",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/310307.jpg",
+    "Fuente": "One Piece",
+    "Valor": 460000
+  },
+  {
+    "Nombre": "Roronoa Zoro",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/100534.jpg",
+    "Fuente": "One Piece",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Sanji",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/5/136769.jpg",
+    "Fuente": "One Piece",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Nami",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/59914.jpg",
+    "Fuente": "One Piece",
+    "Valor": 4500
+  },
+  {
+    "Nombre": "Shanks",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/307639.jpg",
+    "Fuente": "One Piece",
+    "Valor": 400000
+  },
+  {
+    "Nombre": "Portgas D. Ace",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/72220.jpg",
+    "Fuente": "One Piece",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Ichigo Kurosaki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/512788.jpg",
+    "Fuente": "Bleach",
+    "Valor": 40000
+  },
+  {
+    "Nombre": "Rukia Kuchiki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/78215.jpg",
+    "Fuente": "Bleach",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Sosuke Aizen",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/16/73909.jpg",
+    "Fuente": "Bleach",
+    "Valor": 470000
+  },
+  {
+    "Nombre": "Kenpachi Zaraki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/150265.jpg",
+    "Fuente": "Bleach",
+    "Valor": 130000
+  },
+  {
+    "Nombre": "Goku",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/72546.jpg",
+    "Fuente": "Dragon Ball",
+    "Valor": 900000
+  },
+  {
+    "Nombre": "Vegeta",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/86185.jpg",
+    "Fuente": "Dragon Ball",
+    "Valor": 380000
+  },
+  {
+    "Nombre": "Gohan",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/72715.jpg",
+    "Fuente": "Dragon Ball",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Piccolo",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/45628.jpg",
+    "Fuente": "Dragon Ball",
+    "Valor": 14000
+  },
+  {
+    "Nombre": "Freezer",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/7/359258.jpg",
+    "Fuente": "Dragon Ball",
+    "Valor": 42000
+  },
+  {
+    "Nombre": "Bulma",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/280893.jpg",
+    "Fuente": "Dragon Ball",
+    "Valor": 2500
+  },
+  {
+    "Nombre": "Levi Ackerman",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/241413.jpg",
+    "Fuente": "Attack on Titan",
+    "Valor": 35000
+  },
+  {
+    "Nombre": "Eren Yeager",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/216895.jpg",
+    "Fuente": "Attack on Titan",
+    "Valor": 160000
+  },
+  {
+    "Nombre": "Mikasa Ackerman",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/215563.jpg",
+    "Fuente": "Attack on Titan",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Armin Arlert",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/220267.jpg",
+    "Fuente": "Attack on Titan",
+    "Valor": 9500
+  },
+  {
+    "Nombre": "Erwin Smith",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/559023.jpg",
+    "Fuente": "Attack on Titan",
+    "Valor": 19000
+  },
+  {
+    "Nombre": "Light Yagami",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/63870.jpg",
+    "Fuente": "Death Note",
+    "Valor": 48000
+  },
+  {
+    "Nombre": "L Lawliet",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/249647.jpg",
+    "Fuente": "Death Note",
+    "Valor": 47000
+  },
+  {
+    "Nombre": "Misa Amane",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/5/30971.jpg",
+    "Fuente": "Death Note",
+    "Valor": 3800
+  },
+  {
+    "Nombre": "Ryuk",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/59125.jpg",
+    "Fuente": "Death Note",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Edward Elric",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/72533.jpg",
+    "Fuente": "Fullmetal Alchemist",
+    "Valor": 19000
+  },
+  {
+    "Nombre": "Alphonse Elric",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/5/54265.jpg",
+    "Fuente": "Fullmetal Alchemist",
+    "Valor": 11000
+  },
+  {
+    "Nombre": "Roy Mustang",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/510227.jpg",
+    "Fuente": "Fullmetal Alchemist",
+    "Valor": 19000
+  },
+  {
+    "Nombre": "Gon Freecss",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/174517.jpg",
+    "Fuente": "Hunter x Hunter",
+    "Valor": 7500
+  },
+  {
+    "Nombre": "Killua Zoldyck",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/327920.jpg",
+    "Fuente": "Hunter x Hunter",
+    "Valor": 17000
+  },
+  {
+    "Nombre": "Kurapika",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/549312.jpg",
+    "Fuente": "Hunter x Hunter",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Hisoka Morow",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/174561.jpg",
+    "Fuente": "Hunter x Hunter",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Meruem",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/243861.jpg",
+    "Fuente": "Hunter x Hunter",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Saitama",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/294388.jpg",
+    "Fuente": "One Punch Man",
+    "Valor": 500000
+  },
+  {
+    "Nombre": "Genos",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/297329.jpg",
+    "Fuente": "One Punch Man",
+    "Valor": 9000
+  },
+  {
+    "Nombre": "Garou",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/381817.jpg",
+    "Fuente": "One Punch Man",
+    "Valor": 38000
+  },
+  {
+    "Nombre": "Tatsumaki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/543830.jpg",
+    "Fuente": "One Punch Man",
+    "Valor": 120000
+  },
+  {
+    "Nombre": "Izuku Midoriya",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/7/299404.jpg",
+    "Fuente": "My Hero Academia",
+    "Valor": 5500
+  },
+  {
+    "Nombre": "Katsuki Bakugo",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/12/299406.jpg",
+    "Fuente": "My Hero Academia",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Shoto Todoroki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/12/332527.jpg",
+    "Fuente": "My Hero Academia",
+    "Valor": 12500
+  },
+  {
+    "Nombre": "All Might",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/310613.jpg",
+    "Fuente": "My Hero Academia",
+    "Valor": 42000
+  },
+  {
+    "Nombre": "Tomura Shigaraki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/272139.jpg",
+    "Fuente": "My Hero Academia",
+    "Valor": 46000
+  },
+  {
+    "Nombre": "Tanjiro Kamado",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/386735.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 7200
+  },
+  {
+    "Nombre": "Nezuko Kamado",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/378254.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 5200
+  },
+  {
+    "Nombre": "Zenitsu Agatsuma",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/459689.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 6800
+  },
+  {
+    "Nombre": "Inosuke Hashibira",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/3/329560.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 6400
+  },
+  {
+    "Nombre": "Kyojuro Rengoku",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/423443.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 17000
+  },
+  {
+    "Nombre": "Muzan Kibutsuji",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/384669.jpg",
+    "Fuente": "Demon Slayer",
+    "Valor": 440000
+  },
+  {
+    "Nombre": "Anya Forger",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/457933.jpg",
+    "Fuente": "Spy x Family",
+    "Valor": 3500
+  },
+  {
+    "Nombre": "Loid Forger",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/13/580250.jpg",
+    "Fuente": "Spy x Family",
+    "Valor": 4200
+  },
+  {
+    "Nombre": "Yor Forger",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/457934.jpg",
+    "Fuente": "Spy x Family",
+    "Valor": 5100
+  },
+  {
+    "Nombre": "Rem",
+    "Imagen": "https://i.imgur.com/dDrFVAu.jpeg",
+    "Fuente": "Re:Zero",
+    "Valor": 7000
+  },
+  {
+    "Nombre": "Ram",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/306390.jpg",
+    "Fuente": "Re:Zero",
+    "Valor": 4500
+  },
+  {
+    "Nombre": "Emilia",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/16/551926.jpg",
+    "Fuente": "Re:Zero",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Subaru Natsuki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/315153.jpg",
+    "Fuente": "Re:Zero",
+    "Valor": 9000
+  },
+  {
+    "Nombre": "Kazuma Satou",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/301302.jpg",
+    "Fuente": "KonoSuba",
+    "Valor": 3000
+  },
+  {
+    "Nombre": "Aqua",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/282523.jpg",
+    "Fuente": "KonoSuba",
+    "Valor": 4800
+  },
+  {
+    "Nombre": "Megumin",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/349249.jpg",
+    "Fuente": "KonoSuba",
+    "Valor": 11000
+  },
+  {
+    "Nombre": "Darkness",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/266229.jpg",
+    "Fuente": "KonoSuba",
+    "Valor": 5000
+  },
+  {
+    "Nombre": "Kirito",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/7/204821.jpg",
+    "Fuente": "Sword Art Online",
+    "Valor": 19000
+  },
+  {
+    "Nombre": "Asuna Yuuki",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/262053.jpg",
+    "Fuente": "Sword Art Online",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Alice Zuberg",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/453263.jpg",
+    "Fuente": "Sword Art Online",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Eugeo",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/367313.jpg",
+    "Fuente": "Sword Art Online",
+    "Valor": 10000
+  },
+  {
+    "Nombre": "Rimuru Tempest",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/4/495795.jpg",
+    "Fuente": "That Time I Got Reincarnated as a Slime",
+    "Valor": 110000
+  },
+  {
+    "Nombre": "Milim Nava",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/6/447552.jpg",
+    "Fuente": "That Time I Got Reincarnated as a Slime",
+    "Valor": 100000
+  },
+  {
+    "Nombre": "Veldora Tempest",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/381124.jpg",
+    "Fuente": "That Time I Got Reincarnated as a Slime",
+    "Valor": 90000
+  },
+  {
+    "Nombre": "Shion",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/381150.jpg",
+    "Fuente": "That Time I Got Reincarnated as a Slime",
+    "Valor": 6000
+  },
+  {
+    "Nombre": "Ainz Ooal Gown",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/508402.jpg",
+    "Fuente": "Overlord",
+    "Valor": 410000
+  },
+  {
+    "Nombre": "Albedo",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/578183.jpg",
+    "Fuente": "Overlord",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Shalltear Bloodfallen",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/512759.jpg",
+    "Fuente": "Overlord",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Demiurge",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/512760.jpg",
+    "Fuente": "Overlord",
+    "Valor": 14000
+  },
+  {
+    "Nombre": "Guts",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/13/284125.jpg",
+    "Fuente": "Berserk",
+    "Valor": 460000
+  },
+  {
+    "Nombre": "Griffith",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/326322.jpg",
+    "Fuente": "Berserk",
+    "Valor": 390000
+  },
+  {
+    "Nombre": "Casca",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/14/72697.jpg",
+    "Fuente": "Berserk",
+    "Valor": 4000
+  },
+  {
+    "Nombre": "Sung Jin-Woo",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/540692.jpg",
+    "Fuente": "Solo Leveling",
+    "Valor": 850000
+  },
+  {
+    "Nombre": "Cha Hae-In",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/9/536361.jpg",
+    "Fuente": "Solo Leveling",
+    "Valor": 13000
+  },
+  {
+    "Nombre": "Igris",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/583246.jpg",
+    "Fuente": "Solo Leveling",
+    "Valor": 19000
+  },
+  {
+    "Nombre": "Beru",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/588588.jpg",
+    "Fuente": "Solo Leveling",
+    "Valor": 17000
+  },
+  {
+    "Nombre": "Alice Von Ataraxia",
+    "Imagen": "https://i.imgur.com/19Vbbh5.jpeg",
+    "Fuente": "Max Level Newbie",
+    "Valor": 1000000
+  },
+  {
+    "Nombre": "Spike Spiegel",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/11/516853.jpg",
+    "Fuente": "Cowboy Bebop",
+    "Valor": 8000
+  },
+  {
+    "Nombre": "Faye Valentine",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/15/264961.jpg",
+    "Fuente": "Cowboy Bebop",
+    "Valor": 3500
+  },
+  {
+    "Nombre": "Vash the Stampede",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/10/89607.jpg",
+    "Fuente": "Trigun",
+    "Valor": 11000
+  },
+  {
+    "Nombre": "Nicholas D. Wolfwood",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/89610.jpg",
+    "Fuente": "Trigun",
+    "Valor": 8500
+  },
+  {
+    "Nombre": "Lelouch Lamperouge",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/8/406163.jpg",
+    "Fuente": "Code Geass",
+    "Valor": 110000
+  },
+  {
+    "Nombre": "Suzaku Kururugi",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/2/31564.jpg",
+    "Fuente": "Code Geass",
+    "Valor": 47000
+  },
+  {
+    "Nombre": "C.C.",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/13/33815.jpg",
+    "Fuente": "Code Geass",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Shiro",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/16/246723.jpg",
+    "Fuente": "No Game No Life",
+    "Valor": 9500
+  },
+  {
+    "Nombre": "Sora",
+    "Imagen": "https://cdn.myanimelist.net/images/characters/12/274345.jpg",
+    "Fuente": "No Game No Life",
+    "Valor": 9000
+  },
+  {
+    "Nombre": "Cinderella",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Cinderella.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 85000
+  },
+  {
+    "Nombre": "Snow White",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Snow-White.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 78000
+  },
+  {
+    "Nombre": "Rapunzel",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Rapunzel.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 72000
+  },
+  {
+    "Nombre": "The Little Mermaid",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Little-Mermaid.jpg",
+    "Fuente": "Black Souls 1",
+    "Valor": 68000
+  },
+  {
+    "Nombre": "Frog Princess",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Princess-Frog.jpg",
+    "Fuente": "Black Souls 1",
+    "Valor": 65000
+  },
+  {
+    "Nombre": "Red Hood",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/10/Red-Hood.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 250000
+  },
+  {
+    "Nombre": "Dorothy",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2025/02/Witch-Dorothy.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 95000
+  },
+  {
+    "Nombre": "Jeanne d'Arc",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/05/Holy-Knight-Jeanne-1.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 88000
+  },
+  {
+    "Nombre": "Miranda",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Black-Condemner-Miranda-1.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 150000
+  },
+  {
+    "Nombre": "Leaf",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Fairy-Leaf.jpg",
+    "Fuente": "Black Souls 1",
+    "Valor": 420000
+  },
+  {
+    "Nombre": "Baphomet",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Black-Judge-Baphomet.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 380000
+  },
+  {
+    "Nombre": "Elma",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Match-Seller-Elma.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Victoria",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/05/Maid-Victoria.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 8500
+  },
+  {
+    "Nombre": "Goose",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Rich-Bird-Goose.png",
+    "Fuente": "Black Souls 1",
+    "Valor": 6500
+  },
+  {
+    "Nombre": "Elizabeth Bathory",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Soul-Lady-Elisabeth.jpg",
+    "Fuente": "Black Souls 1",
+    "Valor": 7800
+  },
+  {
+    "Nombre": "Alice",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/12/Alice.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 950000
+  },
+  {
+    "Nombre": "Node",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/08/White-Rabbit-Node.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 480000
+  },
+  {
+    "Nombre": "Mabel",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/10/Mabel-Girl-of-Nihility.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 450000
+  },
+  {
+    "Nombre": "Priket",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/09/Red-Idol-Prickett.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 430000
+  },
+  {
+    "Nombre": "Mary Ann",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Prostitute-Marianna.jpg",
+    "Fuente": "Black Souls 2",
+    "Valor": 380000
+  },
+  {
+    "Nombre": "Cheshire Cat",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/05/Cheshire-Cat-2.png",
+    "Fuente": "Black Souls 2",
+    "Valor": 98000
+  },
+  {
+    "Nombre": "Queen of Hearts",
+    "Imagen": "https://fgguides.com/wp-content/uploads/2024/09/Queen-of-the-Heart-Lorina.png",
+    "Fuente": "Black Souls 2
