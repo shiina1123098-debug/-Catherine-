@@ -104,11 +104,12 @@ balances_sha = None
 balances_cargados = False
 hubo_cambios_sin_guardar = False
 
-# Personajes para !rw: se cargan (solo lectura) desde data/rw.json en el repo.
-# Vos editás ese JSON a mano en GitHub (subiendo las fotos a Imgur primero) y
-# corrés !rwreload para que el bot los tome sin necesidad de reiniciarse.
+# Personajes para !rw: se cargan desde data/rw.json en el repo. Normalmente lo
+# editás a mano en GitHub, pero !buscarimagenes también puede escribirlo.
 personajes_cache = []
+personajes_sha = None
 personajes_cargados = False
+hubo_cambios_personajes_sin_guardar = False
 
 def campo_personaje(personaje, *claves, default="???"):
     for clave in claves:
@@ -117,7 +118,7 @@ def campo_personaje(personaje, *claves, default="???"):
     return default
 
 async def cargar_personajes_desde_github():
-    global personajes_cache, personajes_cargados
+    global personajes_cache, personajes_sha, personajes_cargados
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_PERSONAJES}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
@@ -126,7 +127,7 @@ async def cargar_personajes_desde_github():
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             if resp.status == 404:
-                personajes_cache = []
+                personajes_cache, personajes_sha = [], None
             else:
                 resp.raise_for_status()
                 data = await resp.json()
@@ -139,7 +140,45 @@ async def cargar_personajes_desde_github():
                     personajes_cache = next((v for v in bruto.values() if isinstance(v, list)), [])
                 else:
                     personajes_cache = []
+                personajes_sha = data["sha"]
     personajes_cargados = True
+
+async def guardar_personajes_en_github():
+    """Sube el estado actual de personajes_cache (rw.json) a GitHub. Devuelve True si guardó algo."""
+    global personajes_sha, hubo_cambios_personajes_sin_guardar
+    if not hubo_cambios_personajes_sin_guardar:
+        return False
+
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_PERSONAJES}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp_get:
+            if resp_get.status == 200:
+                data_actual = await resp_get.json()
+                personajes_sha = data_actual["sha"]
+            elif resp_get.status == 404:
+                personajes_sha = None
+            else:
+                resp_get.raise_for_status()
+
+        contenido_b64 = base64.b64encode(json.dumps(personajes_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+        body = {"message": "Actualizar imágenes de rw.json", "content": contenido_b64}
+        if personajes_sha:
+            body["sha"] = personajes_sha
+
+        async with session.put(url, headers=headers, json=body) as resp:
+            if resp.status not in (200, 201):
+                texto_error = await resp.text()
+                raise RuntimeError(f"{resp.status}: {texto_error}")
+            data = await resp.json()
+            personajes_sha = data["content"]["sha"]
+
+    hubo_cambios_personajes_sin_guardar = False
+    return True
 
 # Colección de personajes reclamados por cada usuario (characters.json)
 characters_cache = {}
@@ -290,6 +329,9 @@ async def guardado_periodico():
     guardado_characters = await guardar_characters_en_github()
     if guardado_characters:
         print("📚 Colecciones sincronizadas con GitHub (guardado periódico)")
+    guardado_personajes = await guardar_personajes_en_github()
+    if guardado_personajes:
+        print("🖼️ rw.json sincronizado con GitHub (guardado periódico)")
 
 @bot.event
 async def on_ready():
@@ -951,6 +993,160 @@ async def rwreload(ctx):
     except Exception as e:
         await ctx.reply(embed=crear_embed(descripcion=f"❌ Hubo un error al recargar: {str(e)}"))
 
+async def buscar_imagenes_google(query, cantidad=2):
+    """Scrapea Google Imágenes y devuelve hasta `cantidad` links directos de imagen.
+    Es frágil (como el scraping de YouTube para !mp3): si Google cambia el HTML
+    o empieza a bloquear, esto deja de traer resultados de un día para el otro."""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    }
+    params = {"q": query, "tbm": "isch"}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://www.google.com/search", params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                if resp.status != 200:
+                    return []
+                html = await resp.text()
+    except Exception:
+        return []
+
+    encontrados = re.findall(r'https://encrypted-tbn0\.gstatic\.com/images\?q=tbn:[^"\\]+', html)
+
+    vistos = set()
+    resultado = []
+    for url_img in encontrados:
+        if url_img not in vistos:
+            vistos.add(url_img)
+            resultado.append(url_img)
+        if len(resultado) >= cantidad:
+            break
+    return resultado
+
+class BusquedaImagenesView(discord.ui.View):
+    """Recorre los personajes sin Imagen en rw.json, busca 2 candidatas por
+    Google Imágenes para cada uno, y deja que vos elijas Guardar/Rechazar.
+    rw.json recién se sube a GitHub una sola vez, al terminar todo."""
+
+    def __init__(self, autor, pendientes):
+        super().__init__(timeout=600)
+        self.autor = autor
+        self.pendientes = pendientes  # referencias directas a dicts de personajes_cache
+        self.indice_personaje = 0
+        self.candidatos = []
+        self.indice_candidato = 0
+        self.guardados = 0
+        self.saltados = 0
+        self.terminado = False
+        self.mensaje = None
+
+    async def cargar_siguiente_pendiente(self):
+        while self.indice_personaje < len(self.pendientes):
+            personaje = self.pendientes[self.indice_personaje]
+            nombre = campo_personaje(personaje, "Nombre", "nombre")
+            fuente = campo_personaje(personaje, "Fuente", "fuente")
+            self.candidatos = await buscar_imagenes_google(f"{nombre} {fuente}", cantidad=2)
+            self.indice_candidato = 0
+            if self.candidatos:
+                return self.embed_candidato_actual()
+            self.saltados += 1
+            self.indice_personaje += 1
+        return await self.finalizar()
+
+    def embed_candidato_actual(self):
+        personaje = self.pendientes[self.indice_personaje]
+        nombre = campo_personaje(personaje, "Nombre", "nombre")
+        fuente = campo_personaje(personaje, "Fuente", "fuente")
+        embed = crear_embed(
+            titulo=nombre,
+            footer=f"Personaje {self.indice_personaje + 1}/{len(self.pendientes)} — opción {self.indice_candidato + 1}/{len(self.candidatos)}",
+        )
+        embed.add_field(name="Fuente", value=str(fuente), inline=False)
+        embed.set_image(url=self.candidatos[self.indice_candidato])
+        return embed
+
+    async def finalizar(self):
+        global hubo_cambios_personajes_sin_guardar
+        self.terminado = True
+        for item in self.children:
+            item.disabled = True
+
+        texto = f"Guardé imagen a **{self.guardados}** personaje(s). Salteé **{self.saltados}** por falta de resultados en Google."
+        if hubo_cambios_personajes_sin_guardar:
+            try:
+                await guardar_personajes_en_github()
+                texto += "\n💾 Ya quedó subido a `rw.json` en GitHub."
+            except Exception as e:
+                texto += f"\n❌ Pero hubo un error al subirlo a GitHub: {e}"
+        else:
+            texto += "\n(No guardaste ninguna, así que no hizo falta tocar GitHub.)"
+
+        return crear_embed(titulo="🖼️ Búsqueda de imágenes terminada", descripcion=texto)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Solo quien inició la búsqueda puede decidir esto.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="✅ Guardar", style=discord.ButtonStyle.success)
+    async def guardar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        global hubo_cambios_personajes_sin_guardar
+        personaje = self.pendientes[self.indice_personaje]
+        personaje["Imagen"] = self.candidatos[self.indice_candidato]
+        hubo_cambios_personajes_sin_guardar = True
+        self.guardados += 1
+        self.indice_personaje += 1
+        embed = await self.cargar_siguiente_pendiente()
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="❌ Rechazar", style=discord.ButtonStyle.danger)
+    async def rechazar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.indice_candidato += 1
+        if self.indice_candidato >= len(self.candidatos):
+            self.saltados += 1
+            self.indice_personaje += 1
+            embed = await self.cargar_siguiente_pendiente()
+        else:
+            embed = self.embed_candidato_actual()
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    async def on_timeout(self):
+        if self.terminado or self.mensaje is None:
+            return
+        embed = await self.finalizar()
+        try:
+            await self.mensaje.edit(embed=embed, view=self)
+        except discord.HTTPException:
+            pass
+
+@bot.command(name="buscarimagenes", aliases=["imgsearch"])
+async def buscarimagenes(ctx, cantidad: int = None):
+    """Busca en Google Imágenes una foto para los personajes de rw.json que no tienen (Guardar/Rechazar, sube a GitHub al final)"""
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
+        return
+    if not personajes_cache:
+        await ctx.reply(embed=crear_embed(descripcion="No hay personajes cargados. Corré `!rwreload` primero."))
+        return
+
+    pendientes = [p for p in personajes_cache if not str(campo_personaje(p, "Imagen", "imagen", default="")).strip()]
+    if not pendientes:
+        await ctx.reply(embed=crear_embed(descripcion="Ningún personaje de `rw.json` está sin imagen. 🎉"))
+        return
+
+    if cantidad is not None and cantidad > 0:
+        pendientes = pendientes[:cantidad]
+
+    aviso = await ctx.reply(embed=crear_embed(
+        descripcion=f"🔎 Buscando imágenes para **{len(pendientes)}** personaje(s) sin foto. Puede tardar un toque por cada uno..."
+    ))
+
+    vista = BusquedaImagenesView(ctx.author, pendientes)
+    embed_inicial = await vista.cargar_siguiente_pendiente()
+    await aviso.edit(embed=embed_inicial, view=vista)
+    vista.mensaje = aviso
+
 class GaleriaView(discord.ui.View):
     """Recorre personajes_cache de a uno: solo nombre + imagen, para poder
     revisar rápido cuáles tienen la foto rota o mal puesta."""
@@ -1106,6 +1302,7 @@ async def ayuda(ctx):
         "`!rw` — tirar un personaje random (tenés 30s exclusivos para reclamarlo)",
         "`!rwreload` — recargar la lista de personajes desde GitHub",
         "`!checkimg` — revisar qué links de imagen de los personajes están rotos",
+        "`!buscarimagenes [cantidad]` — busca fotos en Google para los personajes sin imagen (Guardar/Rechazar)",
         "`!galeria` — recorrer los personajes uno por uno (nombre + imagen) con Previous/Next",
         "`!winfo nombre` — ver la ficha de un personaje puntual (sin reclamo)",
         "`!coleccion` o `!harem` [@alguien] — ver los personajes reclamados",
@@ -1204,7 +1401,8 @@ async def datasave(ctx):
     try:
         guardado_balances = await guardar_balances_en_github()
         guardado_characters = await guardar_characters_en_github()
-        if guardado_balances or guardado_characters:
+        guardado_personajes = await guardar_personajes_en_github()
+        if guardado_balances or guardado_characters or guardado_personajes:
             await aviso.edit(embed=crear_embed(descripcion="💾 Listo, quedó todo guardado en GitHub. Podés estar tranquilo/a."))
         else:
             await aviso.edit(embed=crear_embed(descripcion="No había cambios nuevos desde el último guardado, así que no hizo falta tocar nada."))
