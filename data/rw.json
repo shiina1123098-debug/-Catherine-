@@ -769,25 +769,25 @@
   },
   {
     "Nombre": "Catherine",
-    "Imagen": "",
+    "Imagen": "https://static.wikitide.net/blacksoulswiki/d/dc/Catherine_Main.png",
     "Fuente": "Black Souls 1",
     "Valor": 9200
   },
   {
     "Nombre": "The White Rabbit",
-    "Imagen": "",
+    "Imagen": "https://static.wikitide.net/blacksoulswiki/7/7e/Node_Dialogue_HD.png",
     "Fuente": "Black Souls 2",
     "Valor": 110000
   },
   {
     "Nombre": "The Hatter",
-    "Imagen": "",
+    "Imagen": "https://static.wikitide.net/blacksoulswiki/1/10/Hatta_Dialogue_HD.png",
     "Fuente": "Black Souls 2",
     "Valor": 85000
   },
   {
     "Nombre": "Red Queen",
-    "Imagen": "",
+    "Imagen": "https://static.wikitide.net/blacksoulswiki/e/e2/Lorina.png.png",
     "Fuente": "Black Souls 2",
     "Valor": 135000
   },
@@ -799,7 +799,7 @@
   },
   {
     "Nombre": "Jotaro Kujo",
-    "Imagen": "",
+    "Imagen": "https://static.jojowiki.com/images/6/69/latest/20201130220440/Jotaro_SC_Infobox_Manga.png",
     "Fuente": "JoJo's Bizarre Adventure",
     "Valor": 180000
   },
@@ -811,13 +811,13 @@
   },
   {
     "Nombre": "Ken Kaneki",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/omniversal-battlefield/images/0/0a/Ken_Kaneki.jpg/revision/latest/scale-to-width-down/340?cb=20171031101134",
     "Fuente": "Tokyo Ghoul",
     "Valor": 160000
   },
   {
     "Nombre": "Touka Kirishima",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/tokyoghoul/images/f/f9/Touka_Kirishima.png/revision/latest?cb=20140202181308",
     "Fuente": "Tokyo Ghoul",
     "Valor": 13000
   },
@@ -829,97 +829,97 @@
   },
   {
     "Nombre": "Denji",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/chainsaw-man/images/b/b0/Denji_Reze_Arc_anime_design.png/revision/latest?cb=20250324010006",
     "Fuente": "Chainsaw Man",
     "Valor": 150000
   },
   {
     "Nombre": "Power",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/chainsaw-man/images/5/59/Volume_2_%28Textless%29.png/revision/latest?cb=20230523200057",
     "Fuente": "Chainsaw Man",
     "Valor": 11000
   },
   {
     "Nombre": "Aki Hayakawa",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/chainsaw-man/images/3/3f/Volume_4_%28Textless%29.png/revision/latest?cb=20230523200140",
     "Fuente": "Chainsaw Man",
     "Valor": 17000
   },
   {
     "Nombre": "Doflamingo",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/onepiece/images/7/7e/Donquixote_Doflamingo_Anime_Infobox.png/revision/latest?cb=20231017082245",
     "Fuente": "One Piece",
     "Valor": 470000
   },
   {
     "Nombre": "Nico Robin",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/characters/images/a/a0/Nico_Robin_Image.jpg/revision/latest?cb=20251228090054",
     "Fuente": "One Piece",
     "Valor": 15000
   },
   {
     "Nombre": "Trafalgar Law",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/onepiece/images/d/d4/Trafalgar_D._Water_Law_Manga_Post_Timeskip_Infobox.png/revision/latest/scale-to-width/360?cb=20250730000146",
     "Fuente": "One Piece",
     "Valor": 120000
   },
   {
     "Nombre": "Pain (Nagato)",
-    "Imagen": "",
+    "Imagen": "https://i.redd.it/nb03crd3vxje1.jpeg",
     "Fuente": "Naruto",
     "Valor": 440000
   },
   {
     "Nombre": "Obito Uchiha",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/1/1c/Obitounmasked.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Naruto",
     "Valor": 130000
   },
   {
     "Nombre": "Minato Namikaze",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/naruto/images/e/eb/Minato_Jonin.png/revision/latest?cb=20230510153913",
     "Fuente": "Naruto",
     "Valor": 190000
   },
   {
     "Nombre": "Jiraiya",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/f/f2/JiraiyaNarutomanga.jpg?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Naruto",
     "Valor": 42000
   },
   {
     "Nombre": "Hinata Hyuga",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/anime-cinematic-universe/images/9/9a/Hinata.jpg/revision/latest?cb=20180801050606",
     "Fuente": "Naruto",
     "Valor": 6800
   },
   {
     "Nombre": "Gaara",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/3/36/GaaraKishimoto.jpg?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Naruto",
     "Valor": 38000
   },
   {
     "Nombre": "Rock Lee",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/9/9e/RockLee.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Naruto",
     "Valor": 16000
   },
   {
     "Nombre": "Shikamaru Nara",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/9/9f/ShikamaruNarapartone.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Naruto",
     "Valor": 12000
   },
   {
     "Nombre": "Tsunade",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/5/5a/8-83829_senju-tsunade-random-pinterest-boruto-and-naruto-png.png/revision/latest/scale-to-width-down/606?cb=20190502024736",
     "Fuente": "Naruto",
     "Valor": 14000
   },
   {
     "Nombre": "Might Guy",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/characterprofile/images/a/a8/Might_guy_render_by_xuzumaki-d49bixs.png/revision/latest?cb=20161105081703",
     "Fuente": "Naruto",
     "Valor": 45000
   },
@@ -931,13 +931,13 @@
   },
   {
     "Nombre": "Escanor",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/nanatsu-no-taizai/images/7/7e/Escanor_Anime_Season_3_Design.png/revision/latest?cb=20190809211543",
     "Fuente": "Seven Deadly Sins",
     "Valor": 480000
   },
   {
     "Nombre": "Ban",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/nanatsu-no-taizai/images/3/32/Ban_Anime_Season_3_Design.png/revision/latest?cb=20190809211311",
     "Fuente": "Seven Deadly Sins",
     "Valor": 110000
   },
@@ -949,19 +949,19 @@
   },
   {
     "Nombre": "Natsu Dragneel",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/fairytail/images/6/66/Natsu_2018.png/revision/latest?cb=20180821153623",
     "Fuente": "Fairy Tail",
     "Valor": 180000
   },
   {
     "Nombre": "Gray Fullbuster",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/fairytail/images/c/c6/Gray_in_Alvarez_Empire_arc.png/revision/latest?cb=20190519091455",
     "Fuente": "Fairy Tail",
     "Valor": 13000
   },
   {
     "Nombre": "Asta",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/8/8a/AstaWSJIssue362015.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Black Clover",
     "Valor": 150000
   },
@@ -973,19 +973,19 @@
   },
   {
     "Nombre": "Shinobu Kocho",
-    "Imagen": "",
+    "Imagen": "https://images.surferseo.art/3ef064fa-ff45-41cc-baac-d1d394fac5a0.png",
     "Fuente": "Demon Slayer",
     "Valor": 16000
   },
   {
     "Nombre": "Akaza",
-    "Imagen": "",
+    "Imagen": "https://preview.redd.it/akazas-lengthy-backstory-v0-65qtydjy5yqf1.jpeg?auto=webp&s=770c426889d7bad456fe6dd51e98e36ad86ca3c0",
     "Fuente": "Demon Slayer",
     "Valor": 450000
   },
   {
     "Nombre": "Kokushibo",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/5/5f/Kokushibo_back_facing.png/revision/latest?cb=20260812005024",
     "Fuente": "Demon Slayer",
     "Valor": 470000
   },
@@ -997,61 +997,61 @@
   },
   {
     "Nombre": "Giyu Tomioka",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/4/43/Giyu_anime_design.png/revision/latest?cb=20190831073602",
     "Fuente": "Demon Slayer",
     "Valor": 170000
   },
   {
     "Nombre": "Go Gunhee",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/solo-leveling/images/c/c3/Gunhee1.jpg/revision/latest?cb=20210310223812",
     "Fuente": "Solo Leveling",
     "Valor": 120000
   },
   {
     "Nombre": "Tusk",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/solo-leveling/images/d/d9/Tusk0.jpg/revision/latest?cb=20250205103358",
     "Fuente": "Solo Leveling",
     "Valor": 18000
   },
   {
     "Nombre": "Iron",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/solo-leveling-arise/images/6/69/Iron_General.png/revision/latest/scale-to-width/360?cb=20241219040105",
     "Fuente": "Solo Leveling",
     "Valor": 16000
   },
   {
     "Nombre": "Tank",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/solo-leveling/images/b/bd/Tank4.jpg/revision/latest?cb=20250130135752",
     "Fuente": "Solo Leveling",
     "Valor": 15000
   },
   {
     "Nombre": "Kaisel",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/solo-leveling/images/9/90/Kaisel1.jpg/revision/latest?cb=20210922223323",
     "Fuente": "Solo Leveling",
     "Valor": 9500
   },
   {
     "Nombre": "Master Chief",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/4/42/Master_chief_halo_infinite.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Halo",
     "Valor": 160000
   },
   {
     "Nombre": "Joel Miller",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/9/94/Joel_in_The_Last_of_Us.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "The Last of Us",
     "Valor": 15000
   },
   {
     "Nombre": "Ellie Williams",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/thelastofus/images/e/e3/Part_I_Ellie_infobox.png/revision/latest/scale-to-width/360?cb=20230215221635",
     "Fuente": "The Last of Us",
     "Valor": 13000
   },
   {
     "Nombre": "Arthur Morgan",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/reddeadredemption/images/3/30/Arthur_Morgan_Level_2.jpg/revision/latest?cb=20250123181952",
     "Fuente": "Red Dead Redemption",
     "Valor": 170000
   },
@@ -1063,7 +1063,7 @@
   },
   {
     "Nombre": "9S",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/nier/images/8/84/YoRHa_No.9_Type_S.png/revision/latest?cb=20220205191546",
     "Fuente": "NieR: Automata",
     "Valor": 19000
   },
@@ -1075,7 +1075,7 @@
   },
   {
     "Nombre": "Cloud Strife",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/9/9e/Cloud_Strife.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Final Fantasy VII",
     "Valor": 160000
   },
@@ -1087,55 +1087,55 @@
   },
   {
     "Nombre": "Tifa Lockhart",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/6/61/Tifa_Lockhart_art.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Final Fantasy VII",
     "Valor": 15000
   },
   {
     "Nombre": "Aerith Gainsborough",
-    "Imagen": "",
+    "Imagen": "https://oyster.ignimgs.com/mediawiki/apis.ign.com/final-fantasy-7-rebirth/9/97/Aerith_Gainsborough_Final_Fantasy_7_Rebirth.png",
     "Fuente": "Final Fantasy VII",
     "Valor": 14000
   },
   {
     "Nombre": "Kyo Kusanagi",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/snk/images/9/99/Ngbc-kyo-kusanagi.png/revision/latest/scale-to-width/360?cb=20250430202236",
     "Fuente": "The King of Fighters",
     "Valor": 130000
   },
   {
     "Nombre": "Iori Yagami",
-    "Imagen": "",
+    "Imagen": "https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/character_iori.png",
     "Fuente": "The King of Fighters",
     "Valor": 125000
   },
   {
     "Nombre": "Terry Bogard",
-    "Imagen": "",
+    "Imagen": "https://www.snk-corp.co.jp/us/games/fatalfury-cotw/characters/img/character_main_terry.png",
     "Fuente": "Fatal Fury",
     "Valor": 110000
   },
   {
     "Nombre": "Ryu",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/5/50/RyuStreetFighterTwoHadoken.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Street Fighter",
     "Valor": 180000
   },
   {
     "Nombre": "Chun-Li",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/5/53/Chun-Li.png?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail_unscaled",
     "Fuente": "Street Fighter",
     "Valor": 170000
   },
   {
     "Nombre": "Akuma",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/f/f0/Akuma_%28Street_Fighter%29.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Street Fighter",
     "Valor": 460000
   },
   {
     "Nombre": "Scorpion",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/near-pure-good-hero/images/0/03/20950_1.jpg/revision/latest?cb=20231018164405",
     "Fuente": "Mortal Kombat",
     "Valor": 150000
   },
@@ -1147,13 +1147,13 @@
   },
   {
     "Nombre": "Raiden",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/mkwikia/images/c/cd/Raiden_%28MK1%29_Render.png/revision/latest?cb=20240517202601",
     "Fuente": "Mortal Kombat",
     "Valor": 440000
   },
   {
     "Nombre": "Dante",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/devilmaycry/images/c/c2/Dante_DMC5.png/revision/latest/scale-to-width-down/1200?cb=20260807221548",
     "Fuente": "Devil May Cry",
     "Valor": 480000
   },
@@ -1165,31 +1165,31 @@
   },
   {
     "Nombre": "Nero",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/0/01/NeroDevilMayCry5.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Devil May Cry",
     "Valor": 130000
   },
   {
     "Nombre": "Guts (Berserker Armor)",
-    "Imagen": "",
+    "Imagen": "https://i.redd.it/z4b4m7ywdgz81.jpg",
     "Fuente": "Berserk",
     "Valor": 490000
   },
   {
     "Nombre": "Griffith (Femto)",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/pure-evil-wiki/images/f/fd/Femto_render.webp/revision/latest/scale-to-width-down/1200?cb=20221214184806",
     "Fuente": "Berserk",
     "Valor": 480000
   },
   {
     "Nombre": "Skull Knight",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/berserk/images/6/65/Manga_E88_Skull_Knight_Attacks_Void.png/revision/latest?cb=20160819045259",
     "Fuente": "Berserk",
     "Valor": 450000
   },
   {
     "Nombre": "Void",
-    "Imagen": "",
+    "Imagen": "https://i.redd.it/e40jk0lgllnb1.png",
     "Fuente": "Berserk",
     "Valor": 500000
   }
