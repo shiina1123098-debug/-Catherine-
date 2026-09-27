@@ -1052,63 +1052,54 @@ async def buscar_imagenes_booru(nombre, fuente=None, cantidad=2):
     return resultado
 
 async def buscar_candidatas_imagen(nombre, fuente, cantidad=2):
-    """Primero prueba DuckDuckGo Imágenes con nombre+fuente (motor de búsqueda
-    general, más confiable para esto); si no encuentra nada, cae de fallback a
-    Safebooru (útil para tags de anime/manga que a veces DuckDuckGo no trae bien)."""
-    candidatas = await buscar_imagenes_duckduckgo(f"{nombre} {fuente}", cantidad=cantidad)
+    """Primero prueba Bing Imágenes con nombre+fuente (motor de búsqueda
+    general, el más estable de los que probamos); si no encuentra nada, cae de
+    fallback a Safebooru (útil para tags de anime/manga puntuales)."""
+    candidatas = await buscar_imagenes_bing(f"{nombre} {fuente}", cantidad=cantidad)
     if candidatas:
         return candidatas
     return await buscar_imagenes_booru(nombre, fuente=fuente, cantidad=cantidad)
 
-async def _obtener_vqd_duckduckgo(session, query, headers):
-    """DuckDuckGo exige un token 'vqd' (sacado de la página de resultados normal)
-    antes de dejarte pegarle a su endpoint de imágenes. Sin esto, i.js devuelve error."""
-    async with session.get("https://duckduckgo.com/", params={"q": query}, headers=headers) as resp:
-        html = await resp.text()
-    coincidencia = re.search(r"vqd=['\"]?([\d-]+)", html)
-    return coincidencia.group(1) if coincidencia else None
-
-async def buscar_imagenes_duckduckgo(query, cantidad=2):
-    """Usa el endpoint no oficial de imágenes de DuckDuckGo (i.js). A diferencia
-    del scraping de Google, esto devuelve URLs directas de imagen alojadas en
-    la página original (no links de caché temporales de Google), así que hay
-    menos chance de que la imagen "muera" antes de que la veas en Discord.
-    Como todo scraping no oficial, es frágil: si DuckDuckGo cambia su HTML o
-    empieza a bloquear, esto deja de traer resultados de un día para el otro."""
+async def buscar_imagenes_bing(query, cantidad=2):
+    """Scrapea Bing Imágenes y devuelve hasta `cantidad` links directos de imagen.
+    A diferencia de DuckDuckGo, no necesita conseguir un token aparte (eso era
+    lo que fallaba en silencio), y a diferencia de Google, no exige aceptar
+    cookies para mostrar resultados. Sigue siendo scraping no oficial: si Bing
+    cambia el HTML esto puede dejar de andar, pero hoy es la opción más estable
+    de las tres que probamos."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
         "Accept-Language": "es-419,es;q=0.9,en;q=0.8",
-        "Referer": "https://duckduckgo.com/",
     }
+    params = {"q": query, "form": "HDRSC2", "first": "1"}
 
     try:
         async with aiohttp.ClientSession() as session:
-            vqd = await _obtener_vqd_duckduckgo(session, query, headers)
-            if not vqd:
-                print(f"[buscar_imagenes_duckduckgo] No se pudo obtener vqd para '{query}'", flush=True)
-                return []
-
-            params = {"l": "us-en", "o": "json", "q": query, "vqd": vqd, "f": ",,,", "p": "1"}
-            async with session.get("https://duckduckgo.com/i.js", params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+            async with session.get("https://www.bing.com/images/search", params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
-                    print(f"[buscar_imagenes_duckduckgo] DuckDuckGo respondió {resp.status} para '{query}'", flush=True)
+                    print(f"[buscar_imagenes_bing] Bing respondió {resp.status} para '{query}'", flush=True)
                     return []
-                try:
-                    data = await resp.json(content_type=None)
-                except Exception:
-                    return []
+                html = await resp.text()
     except Exception as e:
-        print(f"[buscar_imagenes_duckduckgo] Error de conexión buscando '{query}': {e}", flush=True)
+        print(f"[buscar_imagenes_bing] Error de conexión buscando '{query}': {e}", flush=True)
         return []
 
-    items = data.get("results", []) if isinstance(data, dict) else []
-    if not items:
-        print(f"[buscar_imagenes_duckduckgo] 0 resultados para '{query}'", flush=True)
+    # Bing mete la metadata de cada resultado (incluida "murl", la imagen
+    # original) en un atributo m="{...}" con el JSON escapado como entidades
+    # HTML (&quot; en vez de "), por eso el regex busca ese patrón puntual.
+    encontrados = re.findall(r'murl&quot;:&quot;(https?://[^&]+?)&quot;', html)
+    if not encontrados:
+        # A veces Bing no escapa el atributo; probamos también la variante cruda.
+        encontrados = re.findall(r'"murl":"(https?://[^"]+?)"', html.replace("\\/", "/"))
 
+    if not encontrados:
+        print(f"[buscar_imagenes_bing] 0 resultados para '{query}' (largo HTML: {len(html)})", flush=True)
+
+    vistos = set()
     resultado = []
-    for item in items:
-        url_img = item.get("image")
-        if url_img and url_img not in resultado:
+    for url_img in encontrados:
+        if url_img not in vistos:
+            vistos.add(url_img)
             resultado.append(url_img)
         if len(resultado) >= cantidad:
             break
@@ -1129,6 +1120,7 @@ class BusquedaImagenesView(discord.ui.View):
         self.guardados = 0
         self.saltados = 0
         self.terminado = False
+        self.procesando = False
         self.mensaje = None
 
     async def cargar_siguiente_pendiente(self):
@@ -1178,45 +1170,60 @@ class BusquedaImagenesView(discord.ui.View):
         if interaction.user.id != self.autor.id:
             await interaction.response.send_message("Solo quien inició la búsqueda puede decidir esto.", ephemeral=True)
             return False
+        if self.procesando:
+            await interaction.response.send_message("Esperá, todavía estoy buscando la imagen anterior.", ephemeral=True)
+            return False
         return True
 
     @discord.ui.button(label="✅ Guardar", style=discord.ButtonStyle.success)
     async def guardar(self, interaction: discord.Interaction, button: discord.ui.Button):
         global hubo_cambios_personajes_sin_guardar
-        personaje = self.pendientes[self.indice_personaje]
-        personaje["Imagen"] = self.candidatos[self.indice_candidato]
-        hubo_cambios_personajes_sin_guardar = True
-        self.guardados += 1
-        self.indice_personaje += 1
-        embed = await self.cargar_siguiente_pendiente()
-        await interaction.response.edit_message(embed=embed, view=self)
+        await interaction.response.defer()
+        self.procesando = True
+        try:
+            personaje = self.pendientes[self.indice_personaje]
+            personaje["Imagen"] = self.candidatos[self.indice_candidato]
+            hubo_cambios_personajes_sin_guardar = True
+            self.guardados += 1
+            self.indice_personaje += 1
+            embed = await self.cargar_siguiente_pendiente()
+        finally:
+            self.procesando = False
+        await interaction.edit_original_response(embed=embed, view=self)
 
     @discord.ui.button(label="❌ Rechazar", style=discord.ButtonStyle.danger)
     async def rechazar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.indice_candidato += 1
-        if self.indice_candidato >= len(self.candidatos):
-            self.saltados += 1
-            self.indice_personaje += 1
-            embed = await self.cargar_siguiente_pendiente()
-        else:
-            embed = self.embed_candidato_actual()
-        await interaction.response.edit_message(embed=embed, view=self)
+        await interaction.response.defer()
+        self.procesando = True
+        try:
+            self.indice_candidato += 1
+            if self.indice_candidato >= len(self.candidatos):
+                self.saltados += 1
+                self.indice_personaje += 1
+                embed = await self.cargar_siguiente_pendiente()
+            else:
+                embed = self.embed_candidato_actual()
+        finally:
+            self.procesando = False
+        await interaction.edit_original_response(embed=embed, view=self)
 
     @discord.ui.button(label="🔄 Recargar", style=discord.ButtonStyle.secondary)
     async def recargar(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Vuelve a buscar candidatas frescas para el personaje actual, en vez
         de solo re-mostrar el mismo link (que puede ser el que ya murió/no cargó)."""
         await interaction.response.defer()
-        personaje = self.pendientes[self.indice_personaje]
-        nombre = campo_personaje(personaje, "Nombre", "nombre")
-        fuente = campo_personaje(personaje, "Fuente", "fuente")
-        nuevas = await buscar_candidatas_imagen(nombre, fuente, cantidad=2)
-        if nuevas:
-            self.candidatos = nuevas
-            self.indice_candidato = 0
+        self.procesando = True
+        try:
+            personaje = self.pendientes[self.indice_personaje]
+            nombre = campo_personaje(personaje, "Nombre", "nombre")
+            fuente = campo_personaje(personaje, "Fuente", "fuente")
+            nuevas = await buscar_candidatas_imagen(nombre, fuente, cantidad=2)
+            if nuevas:
+                self.candidatos = nuevas
+                self.indice_candidato = 0
             embed = self.embed_candidato_actual()
-        else:
-            embed = self.embed_candidato_actual()
+        finally:
+            self.procesando = False
         await interaction.edit_original_response(embed=embed, view=self)
 
     async def on_timeout(self):
