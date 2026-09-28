@@ -47,6 +47,18 @@ bot.remove_command("help")
 
 COLOR_CATHERINE = 0xF5F4F0  # blanco hueso, discord no deja el blanco puro (#FFFFFF) como color de embed
 
+ID_BANCA = "1468974197895336151"  # a este usuario le entra toda la plata que se pierde en apuestas (!cf, !roulette, !bj)
+
+def sumar_a_banca(cantidad):
+    """Le suma al dueño de la banca lo que cualquiera pierde apostando."""
+    global hubo_cambios_sin_guardar
+    if cantidad <= 0:
+        return
+    if ID_BANCA not in balances_cache:
+        balances_cache[ID_BANCA] = {"nombre": "Banca", "balance": 0}
+    balances_cache[ID_BANCA]["balance"] += cantidad
+    hubo_cambios_sin_guardar = True
+
 def crear_embed(titulo=None, descripcion=None, footer=None):
     embed = discord.Embed(title=titulo, description=descripcion, color=COLOR_CATHERINE)
     if footer:
@@ -988,6 +1000,7 @@ async def coinflip(ctx, opcion: str = None, cantidad: int = None):
         descripcion = f"Salió **{resultado}**. Ganaste **{formatear_pesos(cantidad)}**.\nBalance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
     else:
         balances_cache[user_id]["balance"] -= cantidad
+        sumar_a_banca(cantidad)
         descripcion = f"Salió **{resultado}**. Perdiste **{formatear_pesos(cantidad)}**.\nBalance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
 
     hubo_cambios_sin_guardar = True
@@ -1031,6 +1044,7 @@ async def roulette(ctx, color: str = None, cantidad: int = None):
         descripcion = f"Salió {emoji_resultado} **{resultado}**. Ganaste **{formatear_pesos(cantidad)}**.\nBalance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
     else:
         balances_cache[user_id]["balance"] -= cantidad
+        sumar_a_banca(cantidad)
         descripcion = f"Salió {emoji_resultado} **{resultado}**. Perdiste **{formatear_pesos(cantidad)}**.\nBalance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
 
     hubo_cambios_sin_guardar = True
@@ -1140,6 +1154,7 @@ class BlackjackView(discord.ui.View):
             texto = f"¡Blackjack! Ganaste **{formatear_pesos(ganancia)}**."
         elif resultado_tipo == "pierde":
             balances_cache[user_id]["balance"] -= self.apuesta
+            sumar_a_banca(self.apuesta)
             texto = f"Perdiste **{formatear_pesos(self.apuesta)}**."
         else:
             texto = "Empate, recuperás tu apuesta."
