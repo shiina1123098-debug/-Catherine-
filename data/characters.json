@@ -457,6 +457,24 @@
         "Imagen": "https://fgguides.com/wp-content/uploads/2024/06/Princess-Frog.jpg",
         "Fuente": "Black Souls 1",
         "Valor": 65000
+      },
+      {
+        "Nombre": "Catherine",
+        "Imagen": "https://static.wikitide.net/blacksoulswiki/d/dc/Catherine_Main.png",
+        "Fuente": "Black Souls 1",
+        "Valor": 9200
+      },
+      {
+        "Nombre": "Izuku Midoriya",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/7/299404.jpg",
+        "Fuente": "My Hero Academia",
+        "Valor": 5500
+      },
+      {
+        "Nombre": "Cinderella",
+        "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Cinderella.png",
+        "Fuente": "Black Souls 1",
+        "Valor": 85000
       }
     ]
   }
