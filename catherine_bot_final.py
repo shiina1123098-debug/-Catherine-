@@ -700,6 +700,123 @@ async def retirar(ctx, cantidad: int = None):
         ),
     ))
 
+@bot.command(name="pay")
+async def pay(ctx, cantidad: int = None, miembro: discord.Member = None):
+    """Le pasás plata de tu balance (no del banco) a otro usuario"""
+    global hubo_cambios_sin_guardar
+
+    if cantidad is None or miembro is None:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!pay 5000 @usuario`"))
+        return
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="La cantidad tiene que ser mayor a 0."))
+        return
+    if miembro.id == ctx.author.id:
+        await ctx.reply(embed=crear_embed(descripcion="No te podés pagar a vos mismo."))
+        return
+    if miembro.bot:
+        await ctx.reply(embed=crear_embed(descripcion="No le podés pagar a un bot."))
+        return
+
+    emisor_id = str(ctx.author.id)
+    receptor_id = str(miembro.id)
+
+    if emisor_id not in balances_cache:
+        balances_cache[emisor_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+    if receptor_id not in balances_cache:
+        balances_cache[receptor_id] = {"nombre": miembro.display_name, "balance": 0, "banco": 0}
+
+    balance_emisor = balances_cache[emisor_id].get("balance", 0)
+    if balance_emisor < cantidad:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"No tenés esa plata afuera del banco. Tenés **{formatear_pesos(balance_emisor)}**."
+        ))
+        return
+
+    balances_cache[emisor_id]["balance"] = balance_emisor - cantidad
+    balances_cache[receptor_id]["balance"] = balances_cache[receptor_id].get("balance", 0) + cantidad
+    hubo_cambios_sin_guardar = True
+
+    await ctx.reply(embed=crear_embed(
+        titulo="💸 Pago enviado",
+        descripcion=(
+            f"Le pagaste **{formatear_pesos(cantidad)}** a **{miembro.display_name}**.\n"
+            f"Tu balance actual: **{formatear_pesos(balances_cache[emisor_id]['balance'])}**"
+        ),
+    ))
+
+@bot.command(name="givechar")
+async def givechar(ctx, *, texto: str = None):
+    """Le regalás a otro usuario un personaje de tu colección (solo uno que tengas)"""
+    global hubo_cambios_characters_sin_guardar
+
+    uso = "Usalo así: `!givechar nombre del personaje @usuario`"
+    if not texto:
+        await ctx.reply(embed=crear_embed(descripcion=uso))
+        return
+
+    # El nombre puede tener espacios, así que sacamos la mención del texto y el resto es el nombre.
+    menciones = re.findall(r"<@!?(\d+)>", texto)
+    if not menciones:
+        await ctx.reply(embed=crear_embed(descripcion=uso))
+        return
+    miembro = ctx.guild.get_member(int(menciones[-1])) if ctx.guild else None
+    if miembro is None:
+        await ctx.reply(embed=crear_embed(descripcion="No encontré a ese usuario en el server."))
+        return
+    nombre_buscado = re.sub(r"<@!?\d+>", "", texto).strip()
+    if not nombre_buscado:
+        await ctx.reply(embed=crear_embed(descripcion=uso))
+        return
+
+    if miembro.id == ctx.author.id:
+        await ctx.reply(embed=crear_embed(descripcion="No te podés dar un personaje a vos mismo."))
+        return
+    if miembro.bot:
+        await ctx.reply(embed=crear_embed(descripcion="No le podés dar un personaje a un bot."))
+        return
+
+    mis_personajes = characters_cache.get(str(ctx.author.id), {}).get("personajes", [])
+
+    # Primero nombre exacto (sin importar mayúsculas); si no, un único nombre que lo contenga.
+    buscado = nombre_buscado.casefold()
+    exactos = [p for p in mis_personajes if str(campo_personaje(p, "Nombre", "nombre")).casefold() == buscado]
+    if exactos:
+        elegido = exactos[0]
+    else:
+        parciales = [p for p in mis_personajes if buscado in str(campo_personaje(p, "Nombre", "nombre")).casefold()]
+        if len(parciales) == 1:
+            elegido = parciales[0]
+        elif len(parciales) > 1:
+            nombres = ", ".join(f"**{campo_personaje(p, 'Nombre', 'nombre')}**" for p in parciales[:10])
+            await ctx.reply(embed=crear_embed(descripcion=f"Hay varios que coinciden: {nombres}. Poné el nombre completo."))
+            return
+        else:
+            await ctx.reply(embed=crear_embed(descripcion=f"No tenés ningún personaje llamado **{nombre_buscado}** en tu colección."))
+            return
+
+    nombre_personaje = campo_personaje(elegido, "Nombre", "nombre")
+
+    if usuario_ya_tiene_personaje(miembro, elegido):
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"**{miembro.display_name}** ya tiene a **{nombre_personaje}**, no puede repetirlo."
+        ))
+        return
+
+    # Sacamos ese personaje puntual (por identidad) de tu lista y se lo pasamos al otro.
+    mis_personajes[:] = [p for p in mis_personajes if p is not elegido]
+    agregar_personaje_a_coleccion(miembro, elegido)
+    hubo_cambios_characters_sin_guardar = True
+
+    embed = crear_embed(
+        titulo="🎁 Personaje regalado",
+        descripcion=f"**{ctx.author.display_name}** le dio a **{miembro.display_name}** el personaje **{nombre_personaje}**.",
+    )
+    imagen = campo_personaje(elegido, "Imagen", "imagen", default=None)
+    if imagen:
+        embed.set_thumbnail(url=imagen)
+    await ctx.reply(embed=embed)
+
 COOLDOWN_ROBO_DESCONEXION_SEGUNDOS = 6 * 60 * 60
 PROBABILIDAD_ROBO_EXITO = 0.10
 PROBABILIDAD_ROBO_PENALIZACION = 0.10  # además del 10% de éxito (roll único de 0 a 1)
@@ -1845,6 +1962,8 @@ async def ayuda(ctx):
         "`!top` — top 10 de plata total (balance + banco)",
         "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
         "`!retirar cantidad` — saca plata del banco",
+        "`!pay cantidad @usuario` — le pasás plata de tu balance a otro usuario",
+        "`!givechar personaje @usuario` — le regalás un personaje de tu colección a otro usuario",
         "`!robar @usuario` — si está desconectado hace 6hs+: 10% de afanarle todo, 10% de perder vos el 5%, 80% nada",
         "`!w` — trabajar, ganás entre 1.500 y 3.000 Pesos (cooldown: 5 min)",
         "`!cf cara/cruz cantidad` — apostar a cara o cruz",
