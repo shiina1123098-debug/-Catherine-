@@ -60,6 +60,10 @@ def formatear_numero(numero):
     except (TypeError, ValueError):
         return str(numero)
 
+def formatear_pesos(numero):
+    """1500000 -> '1.500.000 Pesos'. Toda la plata del bot se muestra así."""
+    return f"{formatear_numero(numero)} Pesos"
+
 def formatear_tiempo_restante(segundos):
     """1h 30m / 45m / 12s, para mensajes de cooldown."""
     segundos = max(int(segundos), 0)
@@ -573,8 +577,8 @@ async def balance(ctx, miembro: discord.Member = None):
                 ),
                 footer=ctx.author.display_name,
             )
-            embed.add_field(name="🪙 Balance", value=formatear_numero(0), inline=True)
-            embed.add_field(name="🏦 Banco", value=formatear_numero(0), inline=True)
+            embed.add_field(name="🪙 Balance", value=formatear_pesos(0), inline=True)
+            embed.add_field(name="🏦 Banco", value=formatear_pesos(0), inline=True)
         else:
             datos = balances_cache[user_id]
             datos.setdefault("banco", 0)
@@ -590,9 +594,9 @@ async def balance(ctx, miembro: discord.Member = None):
             posicion = next((i for i, (uid, _) in enumerate(ranking_ordenado, start=1) if uid == user_id), None)
 
             embed = crear_embed(titulo=f"🪙 Balance de {objetivo.display_name}", footer=f"{len(balances_cache)} cuentas registradas")
-            embed.add_field(name="Balance", value=f"**{formatear_numero(balance_actual)}**", inline=True)
-            embed.add_field(name="🏦 Banco", value=f"**{formatear_numero(banco_actual)}**", inline=True)
-            embed.add_field(name="Total", value=f"**{formatear_numero(total)}**", inline=True)
+            embed.add_field(name="Balance", value=f"**{formatear_pesos(balance_actual)}**", inline=True)
+            embed.add_field(name="🏦 Banco", value=f"**{formatear_pesos(banco_actual)}**", inline=True)
+            embed.add_field(name="Total", value=f"**{formatear_pesos(total)}**", inline=True)
             if posicion:
                 embed.add_field(name="Puesto local", value=f"#{posicion}", inline=True)
 
@@ -619,7 +623,7 @@ async def top(ctx):
         posicion = medallas[i] if i < 3 else f"`#{i+1}`"
         nombre = datos.get("nombre", "???")
         total = datos.get("balance", 0) + datos.get("banco", 0)
-        lineas.append(f"{posicion} **{nombre}** — {formatear_numero(total)}")
+        lineas.append(f"{posicion} **{nombre}** — {formatear_pesos(total)}")
 
     embed = crear_embed(titulo="🏆 Top de balances", descripcion="\n".join(lineas))
     await ctx.reply(embed=embed)
@@ -640,7 +644,7 @@ async def depositar(ctx, cantidad: int = None):
 
     if balances_cache[user_id]["balance"] < cantidad:
         await ctx.reply(embed=crear_embed(
-            descripcion=f"No tenés esa plata afuera del banco. Tenés **{formatear_numero(balances_cache[user_id]['balance'])}**."
+            descripcion=f"No tenés esa plata afuera del banco. Tenés **{formatear_pesos(balances_cache[user_id]['balance'])}**."
         ))
         return
 
@@ -655,9 +659,9 @@ async def depositar(ctx, cantidad: int = None):
     await ctx.reply(embed=crear_embed(
         titulo="🏦 Depositado",
         descripcion=(
-            f"Guardaste **{formatear_numero(cantidad)}** en el banco.\n"
-            f"Balance: **{formatear_numero(balances_cache[user_id]['balance'])}** — "
-            f"Banco: **{formatear_numero(balances_cache[user_id]['banco'])}**"
+            f"Guardaste **{formatear_pesos(cantidad)}** en el banco.\n"
+            f"Balance: **{formatear_pesos(balances_cache[user_id]['balance'])}** — "
+            f"Banco: **{formatear_pesos(balances_cache[user_id]['banco'])}**"
         ),
     ))
 
@@ -677,7 +681,7 @@ async def retirar(ctx, cantidad: int = None):
 
     if balances_cache[user_id]["banco"] < cantidad:
         await ctx.reply(embed=crear_embed(
-            descripcion=f"No tenés esa plata en el banco. Tenés **{formatear_numero(balances_cache[user_id]['banco'])}**."
+            descripcion=f"No tenés esa plata en el banco. Tenés **{formatear_pesos(balances_cache[user_id]['banco'])}**."
         ))
         return
 
@@ -690,9 +694,9 @@ async def retirar(ctx, cantidad: int = None):
     await ctx.reply(embed=crear_embed(
         titulo="🏦 Retirado",
         descripcion=(
-            f"Sacaste **{formatear_numero(cantidad)}** del banco.\n"
-            f"Balance: **{formatear_numero(balances_cache[user_id]['balance'])}** — "
-            f"Banco: **{formatear_numero(balances_cache[user_id]['banco'])}**"
+            f"Sacaste **{formatear_pesos(cantidad)}** del banco.\n"
+            f"Balance: **{formatear_pesos(balances_cache[user_id]['balance'])}** — "
+            f"Banco: **{formatear_pesos(balances_cache[user_id]['banco'])}**"
         ),
     ))
 
@@ -760,8 +764,8 @@ async def robar(ctx, objetivo: discord.Member = None):
             embed = crear_embed(
                 titulo="🥷 Robo exitoso",
                 descripcion=(
-                    f"Le afanaste **{formatear_numero(balance_objetivo)}** a **{objetivo.display_name}**.\n"
-                    f"Tu balance actual: **{formatear_numero(balances_cache[ladron_id]['balance'])}**"
+                    f"Le afanaste **{formatear_pesos(balance_objetivo)}** a **{objetivo.display_name}**.\n"
+                    f"Tu balance actual: **{formatear_pesos(balances_cache[ladron_id]['balance'])}**"
                 ),
             )
     elif roll < PROBABILIDAD_ROBO_EXITO + PROBABILIDAD_ROBO_PENALIZACION:
@@ -772,8 +776,8 @@ async def robar(ctx, objetivo: discord.Member = None):
         embed = crear_embed(
             titulo="🚨 Te agarraron",
             descripcion=(
-                f"Te descubrieron intentando robarle a **{objetivo.display_name}** y perdiste **{formatear_numero(perdida)}** vos.\n"
-                f"Tu balance actual: **{formatear_numero(balances_cache[ladron_id]['balance'])}**"
+                f"Te descubrieron intentando robarle a **{objetivo.display_name}** y perdiste **{formatear_pesos(perdida)}** vos.\n"
+                f"Tu balance actual: **{formatear_pesos(balances_cache[ladron_id]['balance'])}**"
             ),
         )
     else:
@@ -784,10 +788,20 @@ async def robar(ctx, objetivo: discord.Member = None):
 
     await ctx.reply(embed=embed)
 
-@bot.command(name="w")
-@commands.cooldown(1, 5 * 60, commands.BucketType.user)
-async def work(ctx):
-    """Da una cantidad random de monedas (1.5k a 3k)"""
+MENSAJES_TRABAJO = [
+    'Le vendiste un frasco con "aire de alta montaña" a un hippie en la calle y te lo compró sin dudarlo.',
+    "Ibas por la calle y encontraste una billetera de un tal Juan tirada. Robaste la plata y dejaste la billetera.",
+    "Fuiste a un casting de canto, cantaste tan mal que te pagaron para que te fueras.",
+    "Te dijeron que te pagaban si movías un mueble, agarraste el mueble y te cayó en el pie. El dueño sintió lástima y te pagó por pena.",
+    "Viste a un mimo en la calle, este te imitó, te pusiste a llorar y él te pagó para que te callaras.",
+    "Creaste la cura del cáncer, te fuiste a dormir sabiendo que ibas a revolucionar el mundo. Al día siguiente había desaparecido todo, simplemente encontraste:",
+    'Quisiste hacerte el picante haciendo un "caballito" en la bici frente a unos pibes, te estrellaste contra un contenedor de basura y un viejo te tiró plata para que te compres dignidad.',
+    "Te sentaste en la esquina porque estabas cansado, la gente te confundió con un fisura y te empezó a dar plata.",
+    "Fuiste a la casa de tu abuela, esta te dio plata a escondidas.",
+    "Entraste a la casa de tu amigo, viste la alcancía y la rompiste, agarraste la plata y te fuiste corriendo.",
+]
+
+async def ejecutar_w(ctx):
     global hubo_cambios_sin_guardar
     user_id = str(ctx.author.id)
 
@@ -798,11 +812,30 @@ async def work(ctx):
     balances_cache[user_id]["balance"] += ganancia
     hubo_cambios_sin_guardar = True
 
+    mensaje = random.choice(MENSAJES_TRABAJO)
     embed = crear_embed(
         titulo="💼 A trabajar",
-        descripcion=f"Ganaste **{formatear_numero(ganancia)}** monedas.\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**",
+        descripcion=(
+            f"{mensaje}\n"
+            f"**+{formatear_pesos(ganancia)}**\n\n"
+            f"Balance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
+        ),
     )
     await ctx.reply(embed=embed)
+
+@bot.command(name="w")
+@commands.cooldown(1, 5 * 60, commands.BucketType.user)
+async def work(ctx):
+    """Da una cantidad random de Pesos (1.500 a 3.000) con un mensaje random"""
+    await ejecutar_w(ctx)
+
+@bot.command(name="wAdmin", aliases=["wadmin"], hidden=True)
+async def work_admin(ctx):
+    """Igual que !w pero sin cooldown. Solo el dueño del server."""
+    if ctx.guild is None or ctx.author.id != ctx.guild.owner_id:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño del server."))
+        return
+    await ejecutar_w(ctx)
 
 @bot.command(name="cf")
 async def coinflip(ctx, opcion: str = None, cantidad: int = None):
@@ -827,7 +860,7 @@ async def coinflip(ctx, opcion: str = None, cantidad: int = None):
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
 
     if balances_cache[user_id]["balance"] < cantidad:
-        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_numero(balances_cache[user_id]['balance'])}**."))
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_pesos(balances_cache[user_id]['balance'])}**."))
         return
 
     resultado = random.choice(("cara", "cruz"))
@@ -835,10 +868,10 @@ async def coinflip(ctx, opcion: str = None, cantidad: int = None):
 
     if gano:
         balances_cache[user_id]["balance"] += cantidad
-        descripcion = f"Salió **{resultado}**. Ganaste **{formatear_numero(cantidad)}**.\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**"
+        descripcion = f"Salió **{resultado}**. Ganaste **{formatear_pesos(cantidad)}**.\nBalance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
     else:
         balances_cache[user_id]["balance"] -= cantidad
-        descripcion = f"Salió **{resultado}**. Perdiste **{formatear_numero(cantidad)}**.\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**"
+        descripcion = f"Salió **{resultado}**. Perdiste **{formatear_pesos(cantidad)}**.\nBalance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
 
     hubo_cambios_sin_guardar = True
     await ctx.reply(embed=crear_embed(titulo="🪙 Coinflip", descripcion=descripcion))
@@ -868,7 +901,7 @@ async def roulette(ctx, color: str = None, cantidad: int = None):
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
 
     if balances_cache[user_id]["balance"] < cantidad:
-        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_numero(balances_cache[user_id]['balance'])}**."))
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_pesos(balances_cache[user_id]['balance'])}**."))
         return
 
     # 18 casillas rojas, 18 negras, 1 verde (el 0, hace perder a todos por igual)
@@ -878,10 +911,10 @@ async def roulette(ctx, color: str = None, cantidad: int = None):
 
     if gano:
         balances_cache[user_id]["balance"] += cantidad
-        descripcion = f"Salió {emoji_resultado} **{resultado}**. Ganaste **{formatear_numero(cantidad)}**.\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**"
+        descripcion = f"Salió {emoji_resultado} **{resultado}**. Ganaste **{formatear_pesos(cantidad)}**.\nBalance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
     else:
         balances_cache[user_id]["balance"] -= cantidad
-        descripcion = f"Salió {emoji_resultado} **{resultado}**. Perdiste **{formatear_numero(cantidad)}**.\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**"
+        descripcion = f"Salió {emoji_resultado} **{resultado}**. Perdiste **{formatear_pesos(cantidad)}**.\nBalance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
 
     hubo_cambios_sin_guardar = True
     await ctx.reply(embed=crear_embed(titulo="🎡 Ruleta", descripcion=descripcion))
@@ -906,7 +939,7 @@ async def addmoney(ctx, miembro: discord.Member = None, cantidad: int = None):
     balances_cache[user_id]["balance"] += cantidad
     hubo_cambios_sin_guardar = True
 
-    embed = crear_embed(descripcion=f"Le di **{formatear_numero(cantidad)}** a **{miembro.display_name}**.\nBalance nuevo: **{formatear_numero(balances_cache[user_id]['balance'])}**")
+    embed = crear_embed(descripcion=f"Le di **{formatear_pesos(cantidad)}** a **{miembro.display_name}**.\nBalance nuevo: **{formatear_pesos(balances_cache[user_id]['balance'])}**")
     await ctx.reply(embed=embed)
 
 PALOS = ["♠", "♥", "♦", "♣"]
@@ -955,7 +988,7 @@ class BlackjackView(discord.ui.View):
 
         jugador_txt = f"{self.formatear_mano(self.mano_jugador)}  (**{valor_mano(self.mano_jugador)}**)"
 
-        descripcion = f"Apuesta: **{formatear_numero(self.apuesta)}**"
+        descripcion = f"Apuesta: **{formatear_pesos(self.apuesta)}**"
         if resultado:
             descripcion += f"\n\n{resultado}"
 
@@ -983,19 +1016,19 @@ class BlackjackView(discord.ui.View):
 
         if resultado_tipo == "gana":
             balances_cache[user_id]["balance"] += self.apuesta
-            texto = f"Ganaste **{formatear_numero(self.apuesta)}**."
+            texto = f"Ganaste **{formatear_pesos(self.apuesta)}**."
         elif resultado_tipo == "blackjack":
             ganancia = int(self.apuesta * 1.5)
             balances_cache[user_id]["balance"] += ganancia
-            texto = f"¡Blackjack! Ganaste **{formatear_numero(ganancia)}**."
+            texto = f"¡Blackjack! Ganaste **{formatear_pesos(ganancia)}**."
         elif resultado_tipo == "pierde":
             balances_cache[user_id]["balance"] -= self.apuesta
-            texto = f"Perdiste **{formatear_numero(self.apuesta)}**."
+            texto = f"Perdiste **{formatear_pesos(self.apuesta)}**."
         else:
             texto = "Empate, recuperás tu apuesta."
 
         hubo_cambios_sin_guardar = True
-        texto += f"\nBalance actual: **{formatear_numero(balances_cache[user_id]['balance'])}**"
+        texto += f"\nBalance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
         return texto
 
     async def _terminar(self, interaction, resultado_tipo):
@@ -1057,7 +1090,7 @@ class BlackjackView(discord.ui.View):
 
 @bot.command(name="blackjack", aliases=["bj"])
 async def blackjack(ctx, cantidad: int = None):
-    """Jugá al blackjack apostando monedas"""
+    """Jugá al blackjack apostando Pesos"""
     if cantidad is None:
         await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!bj 500`"))
         return
@@ -1071,7 +1104,7 @@ async def blackjack(ctx, cantidad: int = None):
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
 
     if balances_cache[user_id]["balance"] < cantidad:
-        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_numero(balances_cache[user_id]['balance'])}**."))
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_pesos(balances_cache[user_id]['balance'])}**."))
         return
 
     view = BlackjackView(ctx.author, cantidad)
@@ -1149,8 +1182,9 @@ class RWClaimView(discord.ui.View):
     SEGUNDOS_EXCLUSIVOS = 30
     SEGUNDOS_TOTALES = 90
 
-    def __init__(self, autor, personaje, nombre, imagen, fuente, valor, rareza):
+    def __init__(self, autor, personaje, nombre, imagen, fuente, valor, rareza, admin=False):
         super().__init__(timeout=self.SEGUNDOS_TOTALES)
+        self.admin = admin  # tirada de !rwAdmin: sin cooldown de reclamo
         self.autor = autor
         self.personaje = personaje
         self.nombre = nombre
@@ -1177,7 +1211,7 @@ class RWClaimView(discord.ui.View):
             )
             return
 
-        ultimo_reclamo = ultimo_reclamo_por_usuario.get(str(interaction.user.id))
+        ultimo_reclamo = None if self.admin else ultimo_reclamo_por_usuario.get(str(interaction.user.id))
         if ultimo_reclamo is not None:
             transcurrido_reclamo = time.time() - ultimo_reclamo
             if transcurrido_reclamo < COOLDOWN_RECLAMO_SEGUNDOS:
@@ -1197,7 +1231,8 @@ class RWClaimView(discord.ui.View):
 
         self.reclamado_por = interaction.user
         agregar_personaje_a_coleccion(interaction.user, self.personaje)
-        ultimo_reclamo_por_usuario[str(interaction.user.id)] = time.time()
+        if not self.admin:
+            ultimo_reclamo_por_usuario[str(interaction.user.id)] = time.time()
 
         button.disabled = True
         button.label = f"Reclamado por {interaction.user.display_name}"
@@ -1220,10 +1255,7 @@ class RWClaimView(discord.ui.View):
         except discord.HTTPException:
             pass
 
-@bot.command(name="rw")
-@commands.cooldown(1, 6 * 60 * 60, commands.BucketType.user)
-async def rw(ctx):
-    """Sacá un personaje random del rw.json (los de más valor son más difíciles de sacar)"""
+async def ejecutar_rw(ctx, admin=False):
     if not personajes_cache:
         await ctx.reply(embed=crear_embed(
             descripcion="No hay personajes cargados todavía. Subí el `rw.json` al repo y corré `!rwreload`."
@@ -1253,14 +1285,28 @@ async def rw(ctx):
 
     embed = crear_embed(titulo=f"🎴 {nombre}", footer=f"Tirado por {ctx.author.display_name}")
     embed.add_field(name="Fuente", value=str(fuente), inline=True)
-    embed.add_field(name="Valor", value=formatear_numero(valor), inline=True)
+    embed.add_field(name="Valor", value=formatear_pesos(valor), inline=True)
     embed.add_field(name="Rareza", value=rareza, inline=True)
     if imagen:
         embed.set_image(url=imagen)
 
-    view = RWClaimView(ctx.author, personaje, nombre, imagen, fuente, valor, rareza)
+    view = RWClaimView(ctx.author, personaje, nombre, imagen, fuente, valor, rareza, admin=admin)
     mensaje = await ctx.reply(embed=embed, view=view)
     view.mensaje = mensaje
+
+@bot.command(name="rw")
+@commands.cooldown(1, 6 * 60 * 60, commands.BucketType.user)
+async def rw(ctx):
+    """Sacá un personaje random del rw.json (los de más valor son más difíciles de sacar)"""
+    await ejecutar_rw(ctx)
+
+@bot.command(name="rwAdmin", aliases=["rwadmin"], hidden=True)
+async def rw_admin(ctx):
+    """Igual que !rw pero sin cooldown (ni de tirada ni de reclamo). Solo el dueño del server."""
+    if ctx.guild is None or ctx.author.id != ctx.guild.owner_id:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño del server."))
+        return
+    await ejecutar_rw(ctx, admin=True)
 
 @bot.command(name="rwreload")
 async def rwreload(ctx):
@@ -1781,7 +1827,7 @@ async def winfo(ctx, *, nombre_buscado: str = None):
 
     embed = crear_embed(titulo=f"🔎 {nombre}")
     embed.add_field(name="Fuente", value=str(fuente), inline=True)
-    embed.add_field(name="Valor", value=formatear_numero(valor), inline=True)
+    embed.add_field(name="Valor", value=formatear_pesos(valor), inline=True)
     embed.add_field(name="Rareza", value=rareza, inline=True)
     if imagen:
         embed.set_image(url=imagen)
@@ -1800,7 +1846,7 @@ async def ayuda(ctx):
         "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
         "`!retirar cantidad` — saca plata del banco",
         "`!robar @usuario` — si está desconectado hace 6hs+: 10% de afanarle todo, 10% de perder vos el 5%, 80% nada",
-        "`!w` — trabajar, ganás entre 1.5k y 3k (cooldown: 5 min)",
+        "`!w` — trabajar, ganás entre 1.500 y 3.000 Pesos (cooldown: 5 min)",
         "`!cf cara/cruz cantidad` — apostar a cara o cruz",
         "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
         "`!rt rojo/negro cantidad` o `!roulette rojo/negro cantidad` — jugar a la ruleta",
@@ -1942,7 +1988,7 @@ class ColeccionView(discord.ui.View):
         for p in self.personajes[inicio:fin]:
             nombre_p = campo_personaje(p, "Nombre", "nombre")
             valor_p = campo_personaje(p, "Valor", "valor")
-            lineas.append(f"• **{nombre_p}** — {formatear_numero(valor_p)}")
+            lineas.append(f"• **{nombre_p}** — {formatear_pesos(valor_p)}")
 
         return crear_embed(
             titulo=f"📚 Colección de {self.miembro.display_name}",
