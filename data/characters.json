@@ -493,6 +493,12 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/2/512760.jpg",
         "Fuente": "Overlord",
         "Valor": 14000
+      },
+      {
+        "Nombre": "Kurapika",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/3/549312.jpg",
+        "Fuente": "Hunter x Hunter",
+        "Valor": 12000
       }
     ]
   }
