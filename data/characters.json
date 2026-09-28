@@ -475,6 +475,12 @@
         "Imagen": "https://fgguides.com/wp-content/uploads/2024/07/Cinderella.png",
         "Fuente": "Black Souls 1",
         "Valor": 85000
+      },
+      {
+        "Nombre": "Yami Sukehiro",
+        "Imagen": "https://safebooru.org/images/810/f54ec8cf08c11b63637c6ba42d571236ba1754f6.jpg",
+        "Fuente": "Black Clover",
+        "Valor": 190000
       }
     ]
   }
