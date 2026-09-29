@@ -2435,4 +2435,725 @@ class GaleriaIrAModal(discord.ui.Modal):
     def __init__(self, vista: GaleriaView):
         super().__init__(title="Ir a un personaje")
         self.vista = vista
-        self.numero
+        self.numero = discord.ui.TextInput(
+            label=f"Número (1-{len(vista.personajes)})",
+            placeholder="Ej: 64",
+            required=True,
+            max_length=10,
+        )
+        self.add_item(self.numero)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        total = len(self.vista.personajes)
+        try:
+            numero = int(self.numero.value.strip())
+        except ValueError:
+            await interaction.response.send_message("Eso no es un número.", ephemeral=True)
+            return
+        if not (1 <= numero <= total):
+            await interaction.response.send_message(f"Tiene que ser un número entre 1 y {total}.", ephemeral=True)
+            return
+
+        self.vista.indice = numero - 1
+        self.vista._actualizar_botones()
+        await interaction.response.edit_message(embed=self.vista.construir_embed(), view=self.vista)
+
+@bot.command(name="galeria")
+async def galeria(ctx):
+    """Recorre uno por uno todos los personajes del rw.json: nombre + imagen, con Previous/Next"""
+    if not personajes_cache:
+        await ctx.reply(embed=crear_embed(descripcion="No hay personajes cargados. Probá `!rwreload` primero."))
+        return
+
+    view = GaleriaView(ctx.author, personajes_cache)
+    mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
+    view.mensaje = mensaje
+
+@bot.command(name="winfo")
+async def winfo(ctx, *, nombre_buscado: str = None):
+    """Muestra la ficha de un personaje puntual del rw.json, sin botón de reclamar"""
+    if not personajes_cache:
+        await ctx.reply(embed=crear_embed(
+            descripcion="No hay personajes cargados todavía. Subí el `rw.json` al repo y corré `!rwreload`."
+        ))
+        return
+
+    if not nombre_buscado:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!winfo Gojo Satoru`"))
+        return
+
+    buscado = nombre_buscado.lower().strip()
+    encontrados = [p for p in personajes_cache if buscado in campo_personaje(p, "Nombre", "nombre").lower()]
+
+    if not encontrados:
+        await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún personaje que coincida con **{nombre_buscado}**."))
+        return
+
+    exacto = next((p for p in encontrados if campo_personaje(p, "Nombre", "nombre").lower() == buscado), None)
+    personaje = exacto or encontrados[0]
+
+    nombre = campo_personaje(personaje, "Nombre", "nombre")
+    imagen = campo_personaje(personaje, "Imagen", "imagen", default=None)
+    fuente = campo_personaje(personaje, "Fuente", "fuente")
+    valor = campo_personaje(personaje, "Valor", "valor")
+    _, rareza = info_rareza(valor)
+
+    embed = crear_embed(titulo=f"🔎 {nombre}")
+    embed.add_field(name="Fuente", value=str(fuente), inline=True)
+    embed.add_field(name="Valor", value=formatear_pesos(valor), inline=True)
+    embed.add_field(name="Rareza", value=rareza, inline=True)
+    if imagen:
+        embed.set_image(url=imagen)
+
+    if not exacto and len(encontrados) > 1:
+        embed.set_footer(text=f"Coincidencia parcial. Hay {len(encontrados) - 1} más con nombres similares.")
+
+    await ctx.reply(embed=embed)
+
+class ShopView(discord.ui.View):
+    """Un embed por categoría, con Previous/Next para pasar de categoría."""
+    def __init__(self, autor, categorias):
+        super().__init__(timeout=120)
+        self.autor = autor
+        self.categorias = categorias  # lista de (nombre_categoria, [items])
+        self.pagina = 0
+        self.mensaje = None
+        self._actualizar_botones()
+
+    def _actualizar_botones(self):
+        self.anterior.disabled = self.pagina == 0
+        self.siguiente.disabled = self.pagina >= len(self.categorias) - 1
+
+    def construir_embed(self):
+        nombre_categoria, items = self.categorias[self.pagina]
+
+        if items:
+            lineas = [
+                f"> {item['emoji']} **{item['nombre']}** — {formatear_pesos(item['precio'])}"
+                for item in items
+            ]
+            descripcion = f"### {nombre_categoria}\n{SEPARADOR}\n\n" + "\n\n".join(lineas)
+        else:
+            descripcion = f"### {nombre_categoria}\n{SEPARADOR}\n\n-# No hay ítems acá todavía."
+
+        embed = crear_embed(
+            descripcion=descripcion,
+            footer=f"Página {self.pagina + 1}/{len(self.categorias)} — usá !buy \"nombre\" para comprar",
+        )
+        return embed
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Solo quien pidió la tienda puede cambiar de página.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="◀ Previous", style=discord.ButtonStyle.secondary)
+    async def anterior(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina -= 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.secondary)
+    async def siguiente(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina += 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    async def on_timeout(self):
+        if self.mensaje is None:
+            return
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.mensaje.edit(view=self)
+        except discord.HTTPException:
+            pass
+
+@bot.command(name="shop", aliases=["tienda"])
+async def shop(ctx):
+    """Muestra el menú de la tienda, por categorías"""
+    if not shop_cache:
+        await ctx.reply(embed=crear_embed(descripcion="La tienda está vacía. Subí `data/shop.json` al repo y corré `!shopreload`."))
+        return
+
+    categorias = list(shop_cache.items())
+    view = ShopView(ctx.author, categorias)
+    mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
+    view.mensaje = mensaje
+
+@bot.command(name="shopreload")
+async def shopreload(ctx):
+    """Recarga shop.json desde GitHub sin reiniciar el bot"""
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
+        return
+    try:
+        await cargar_shop_desde_github()
+        total = len(aplanar_shop())
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"🔄 Listo, cargué **{total}** ítems en **{len(shop_cache)}** categorías desde GitHub."
+        ))
+    except Exception as e:
+        await ctx.reply(embed=crear_embed(descripcion=f"❌ Hubo un error al recargar: {str(e)}"))
+
+@bot.command(name="buy", aliases=["comprar"])
+async def buy(ctx, *, entrada: str = None):
+    """Comprá un ítem de la tienda. Usalo así: !buy nombre del ítem [cantidad]"""
+    global hubo_cambios_sin_guardar
+
+    if not shop_cache:
+        await ctx.reply(embed=crear_embed(descripcion="La tienda está vacía. Subí `data/shop.json` al repo y corré `!shopreload`."))
+        return
+
+    if not entrada:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!buy Peluche de Ado` o `!buy Peluche de Ado 3`"))
+        return
+
+    # Si termina en un número, esa es la cantidad; si no, cantidad = 1
+    partes = entrada.strip().rsplit(" ", 1)
+    cantidad = 1
+    nombre_buscado = entrada.strip()
+    if len(partes) == 2 and partes[1].isdigit():
+        nombre_buscado, cantidad = partes[0].strip(), int(partes[1])
+
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="La cantidad tiene que ser mayor a 0."))
+        return
+
+    categoria, item = buscar_item_shop(nombre_buscado)
+    if item is None:
+        await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún ítem que se llame **{nombre_buscado}** en la tienda. Mirá `!shop`."))
+        return
+
+    costo_total = item["precio"] * cantidad
+    user_id = str(ctx.author.id)
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+
+    if balances_cache[user_id]["balance"] < costo_total:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"No te alcanza. **{item['emoji']} {item['nombre']}** x{cantidad} cuesta **{formatear_pesos(costo_total)}**, "
+                        f"y tenés **{formatear_pesos(balances_cache[user_id]['balance'])}**."
+        ))
+        return
+
+    balances_cache[user_id]["balance"] -= costo_total
+    hubo_cambios_sin_guardar = True
+    agregar_item_a_inventario(ctx.author, item["nombre"], cantidad)
+
+    await ctx.reply(embed=crear_embed(
+        titulo="🛍️ Compra realizada",
+        descripcion=(
+            f"Compraste **{item['emoji']} {item['nombre']}** x{cantidad} por **{formatear_pesos(costo_total)}**.\n"
+            f"Balance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
+        ),
+    ))
+
+@bot.command(name="inv", aliases=["inventario"])
+async def inv(ctx, miembro: discord.Member = None):
+    """Muestra el inventario de objetos comprados en la tienda"""
+    miembro = miembro or ctx.author
+    user_id = str(miembro.id)
+    datos = inventario_cache.get(user_id)
+    items = datos.get("items", {}) if datos else {}
+
+    if not items:
+        posesivo = "Todavía no compraste" if miembro.id == ctx.author.id else f"**{miembro.display_name}** todavía no compró"
+        await ctx.reply(embed=crear_embed(descripcion=f"{posesivo} nada en `!shop`."))
+        return
+
+    lineas = []
+    for nombre_item, cantidad in items.items():
+        _, item_shop = buscar_item_shop(nombre_item)
+        emoji = item_shop["emoji"] if item_shop else "📦"
+        lineas.append(f"> {emoji} **{nombre_item}** — x{cantidad}")
+
+    total_items = sum(items.values())
+    embed = crear_embed(
+        descripcion=(
+            f"### 🎒 Inventario de {miembro.display_name}\n"
+            f"{SEPARADOR}\n\n"
+            + "\n\n".join(lineas)
+            + f"\n\n-# {total_items} objeto(s) en total"
+        ),
+    )
+    await ctx.reply(embed=embed)
+
+@bot.command(name="invfo")
+async def invfo(ctx, *, nombre_buscado: str = None):
+    """Muestra la ficha de un ítem puntual de la tienda"""
+    if not shop_cache:
+        await ctx.reply(embed=crear_embed(descripcion="La tienda está vacía. Subí `data/shop.json` al repo y corré `!shopreload`."))
+        return
+
+    if not nombre_buscado:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!invfo Peluche de Ado`"))
+        return
+
+    categoria, item = buscar_item_shop(nombre_buscado)
+    if item is None:
+        await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún ítem que se llame **{nombre_buscado}** en la tienda. Mirá `!shop`."))
+        return
+
+    embed = crear_embed(titulo=f"{item['emoji']} {item['nombre']}", descripcion=item.get("descripcion") or None)
+    embed.add_field(name="Categoría", value=categoria, inline=True)
+    embed.add_field(name="Precio", value=formatear_pesos(item["precio"]), inline=True)
+    if item.get("imagen"):
+        embed.set_image(url=item["imagen"])
+
+    await ctx.reply(embed=embed)
+
+@bot.command(name="help")
+async def ayuda(ctx):
+    """Lista los comandos de Catherine"""
+    lineas = [
+        "`!balance [@alguien]` — ver tu balance (o el de otro), lo bancado y el total",
+        "`!top` — top 10 de plata total (balance + banco)",
+        "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
+        "`!retirar cantidad` — saca plata del banco",
+        "`!pay @usuario cantidad` — le pasás plata de tu balance a otro usuario",
+        "`!givechar personaje @usuario` — le regalás un personaje de tu colección a otro usuario",
+        "`!marry @usuario` — te casás con otro usuario (o con Catherine, si sos vos)",
+        "`!divorcio` — te divorciás (cuesta 5.000 a cada uno; con Catherine, 10.000 a vos)",
+        "`!robar @usuario` — si está desconectado hace 6hs+: 10% de afanarle todo, 10% de perder vos el 5%, 80% nada",
+        "`!w` — trabajar, ganás entre 1.500 y 3.000 Pesos (cooldown: 5 min)",
+        "`!cf cara/cruz cantidad` — apostar a cara o cruz",
+        "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
+        "`!rt rojo/negro cantidad` o `!roulette rojo/negro cantidad` — jugar a la ruleta",
+        "_En cualquier `cantidad` de arriba podés poner `all` (todo), o abreviar: `100k`, `2m`, `1b`, `1t`_",
+        "`!shop` o `!tienda` — ver el catálogo de la tienda, por categorías",
+        "`!buy nombre del ítem [cantidad]` o `!comprar ...` — comprar algo de la tienda",
+        "`!inv` o `!inventario` [@alguien] — ver los objetos que compraste",
+        "`!invfo nombre del ítem` — ver la ficha de un ítem puntual de la tienda",
+        "`!rw` — tirar un personaje random (cooldown: 6hs; reclamar tiene su propio cooldown de 4hs)",
+        "`!rwreload` — recargar la lista de personajes desde GitHub",
+        "`!checkimg` — revisar qué links de imagen de los personajes están rotos",
+        "`!buscarimagenes [cantidad]` — busca fotos para los personajes sin imagen (Guardar/Rechazar/Recargar)",
+        "`!galeria` — recorrer los personajes uno por uno (nombre + imagen) con Previous/Next",
+        "`!winfo nombre` — ver la ficha de un personaje puntual (sin reclamo)",
+        "`!coleccion` o `!harem` [@alguien] — ver los personajes reclamados",
+        "`!mp3 búsqueda` o `!mp3 link` — te paso el audio de un video",
+        "`!datasave` — fuerza el guardado de los balances",
+    ]
+    embed = crear_embed(titulo="Comandos de Catherine", descripcion="\n".join(lineas))
+    await ctx.reply(embed=embed)
+
+_HEADERS_NAVEGADOR = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+}
+
+async def _chequear_una_imagen(session, semaforo, nombre, url):
+    """Devuelve (nombre, ok, motivo) para un link de imagen puntual."""
+    if not url:
+        return (nombre, False, "sin link cargado")
+    async with semaforo:
+        try:
+            async with session.get(
+                url,
+                timeout=aiohttp.ClientTimeout(total=12),
+                allow_redirects=True,
+                headers=_HEADERS_NAVEGADOR,
+            ) as resp:
+                if resp.status != 200:
+                    return (nombre, False, f"código {resp.status}")
+                content_type = resp.headers.get("Content-Type", "").lower()
+                # Solo lo marcamos roto si claramente devolvió una página web en vez de la imagen.
+                # Muchos hosts (Imgur, CDNs) no mandan un Content-Type prolijo con imagen/*.
+                if "text/html" in content_type:
+                    return (nombre, False, "el link redirige a una página, no a la imagen")
+                return (nombre, True, "")
+        except Exception as e:
+            return (nombre, False, f"error de conexión ({type(e).__name__})")
+
+@bot.command(name="checkimg")
+async def checkimg(ctx):
+    """Revisa todos los links de imagen de rw.json y avisa cuáles están rotos"""
+    if not personajes_cache:
+        await ctx.reply(embed=crear_embed(descripcion="No hay personajes cargados. Probá `!rwreload` primero."))
+        return
+
+    aviso = await ctx.reply(embed=crear_embed(
+        descripcion=f"🔎 Revisando {len(personajes_cache)} links de imagen, dame un toque..."
+    ))
+
+    semaforo = asyncio.Semaphore(10)  # no golpear 101 links todos a la vez
+    async with aiohttp.ClientSession() as session:
+        tareas = [
+            _chequear_una_imagen(
+                session, semaforo,
+                campo_personaje(p, "Nombre", "nombre"),
+                campo_personaje(p, "Imagen", "imagen", default=None),
+            )
+            for p in personajes_cache
+        ]
+        resultados = await asyncio.gather(*tareas)
+
+    rotas = [(nombre, motivo) for nombre, ok, motivo in resultados if not ok]
+
+    if not rotas:
+        await aviso.edit(embed=crear_embed(
+            titulo="🔎 Chequeo de imágenes",
+            descripcion=f"Revisé los **{len(personajes_cache)}** personajes y están todos los links bien. Ninguno roto 🎉"
+        ))
+        return
+
+    lineas = [f"❌ **{nombre}** — {motivo}" for nombre, motivo in rotas]
+    resumen = f"De {len(personajes_cache)} personajes, **{len(rotas)}** tienen la imagen rota:\n\n"
+
+    # Discord no deja más de 4096 caracteres en la descripción, así que partimos en varios embeds si hace falta
+    bloque_actual = resumen
+    bloques = []
+    for linea in lineas:
+        if len(bloque_actual) + len(linea) + 1 > 4000:
+            bloques.append(bloque_actual)
+            bloque_actual = ""
+        bloque_actual += linea + "\n"
+    bloques.append(bloque_actual)
+
+    await aviso.edit(embed=crear_embed(titulo="🔎 Chequeo de imágenes", descripcion=bloques[0]))
+    for bloque in bloques[1:]:
+        await ctx.send(embed=crear_embed(descripcion=bloque))
+
+@bot.command(name="5porcentforce", hidden=True)
+async def cinco_porciento_force(ctx):
+    """Fuerza el 5% de interés diario a tu banco ahora mismo, sin esperar las 24hs. Solo vos."""
+    global hubo_cambios_sin_guardar
+
+    if str(ctx.author.id) != ID_BANCA:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
+        return
+
+    user_id = str(ctx.author.id)
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+    balances_cache[user_id].setdefault("banco", 0)
+    banco = balances_cache[user_id]["banco"]
+
+    if banco <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés nada en el banco todavía. Usá `!depositar` primero."))
+        return
+
+    ganancia = round(banco * INTERES_BANCO_DIARIO)
+    balances_cache[user_id]["banco"] = banco + ganancia
+    balances_cache[user_id]["ultimo_interes"] = time.time()  # reinicia el reloj de 24hs para que no se sume de nuevo solo
+    hubo_cambios_sin_guardar = True
+
+    await ctx.reply(embed=crear_embed(
+        titulo="🏦 5% forzado",
+        descripcion=(
+            f"Le metiste el 5% a tu banco a la fuerza: **+{formatear_pesos(ganancia)}**.\n"
+            f"Banco actual: **{formatear_pesos(balances_cache[user_id]['banco'])}**"
+        ),
+    ))
+
+@bot.command(name="datasave")
+async def datasave(ctx):
+    """Fuerza el guardado inmediato de los balances y las colecciones a GitHub"""
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
+        return
+
+    aviso = await ctx.reply(embed=crear_embed(descripcion="🔄 Guardando los datos en GitHub..."))
+    try:
+        guardado_balances = await guardar_balances_en_github()
+        guardado_characters = await guardar_characters_en_github()
+        guardado_personajes = await guardar_personajes_en_github()
+        guardado_inventario = await guardar_inventario_en_github()
+        guardado_matrimonios = await guardar_matrimonios_en_github()
+        if guardado_balances or guardado_characters or guardado_personajes or guardado_inventario or guardado_matrimonios:
+            await aviso.edit(embed=crear_embed(descripcion="💾 Listo, quedó todo guardado en GitHub. Podés estar tranquilo/a."))
+        else:
+            await aviso.edit(embed=crear_embed(descripcion="No había cambios nuevos desde el último guardado, así que no hizo falta tocar nada."))
+    except Exception as e:
+        await aviso.edit(embed=crear_embed(descripcion=f"❌ Hubo un error al guardar: {str(e)}"))
+
+PERSONAJES_POR_PAGINA = 10
+
+class ColeccionView(discord.ui.View):
+    def __init__(self, autor, miembro, personajes):
+        super().__init__(timeout=120)
+        self.autor = autor  # solo quien pidió la colección puede pasar de página
+        self.miembro = miembro
+        self.personajes = sorted(
+            personajes,
+            key=lambda p: parsear_valor(campo_personaje(p, "Valor", "valor")) or 0,
+            reverse=True,
+        )
+        self.pagina = 0
+        self.total_paginas = max(1, -(-len(personajes) // PERSONAJES_POR_PAGINA))
+        self.mensaje = None
+        self._actualizar_botones()
+
+    def _actualizar_botones(self):
+        self.anterior.disabled = self.pagina == 0
+        self.siguiente.disabled = self.pagina >= self.total_paginas - 1
+
+    def construir_embed(self):
+        inicio = self.pagina * PERSONAJES_POR_PAGINA
+        fin = inicio + PERSONAJES_POR_PAGINA
+        lineas = []
+        for p in self.personajes[inicio:fin]:
+            nombre_p = campo_personaje(p, "Nombre", "nombre")
+            valor_p = campo_personaje(p, "Valor", "valor")
+            lineas.append(f"> 🎴 **{nombre_p}** — {formatear_pesos(valor_p)}")
+
+        if lineas:
+            descripcion = (
+                f"### 📚 Colección de {self.miembro.display_name}\n"
+                f"{SEPARADOR}\n\n"
+                + "\n\n".join(lineas)
+            )
+        else:
+            descripcion = (
+                f"### 📚 Colección de {self.miembro.display_name}\n"
+                f"{SEPARADOR}\n\n"
+                f"-# No hay personajes en esta página."
+            )
+
+        return crear_embed(
+            descripcion=descripcion,
+            footer=f"Página {self.pagina + 1}/{self.total_paginas} — {len(self.personajes)} personajes en total",
+        )
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Solo quien pidió la colección puede cambiar de página.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="◀ Previous", style=discord.ButtonStyle.secondary)
+    async def anterior(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina -= 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    @discord.ui.button(label="🔢 Ir a...", style=discord.ButtonStyle.primary)
+    async def ir_a_pagina(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(ColeccionIrAModal(self))
+
+    @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.secondary)
+    async def siguiente(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina += 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    async def on_timeout(self):
+        if self.mensaje is None:
+            return
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.mensaje.edit(view=self)
+        except discord.HTTPException:
+            pass
+
+class ColeccionIrAModal(discord.ui.Modal):
+    def __init__(self, vista: ColeccionView):
+        super().__init__(title="Ir a una página")
+        self.vista = vista
+        self.numero = discord.ui.TextInput(
+            label=f"Página (1-{vista.total_paginas})",
+            placeholder="Ej: 5",
+            required=True,
+            max_length=10,
+        )
+        self.add_item(self.numero)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            numero = int(self.numero.value.strip())
+        except ValueError:
+            await interaction.response.send_message("Eso no es un número.", ephemeral=True)
+            return
+        if not (1 <= numero <= self.vista.total_paginas):
+            await interaction.response.send_message(f"Tiene que ser un número entre 1 y {self.vista.total_paginas}.", ephemeral=True)
+            return
+
+        self.vista.pagina = numero - 1
+        self.vista._actualizar_botones()
+        await interaction.response.edit_message(embed=self.vista.construir_embed(), view=self.vista)
+
+@bot.command(name="coleccion", aliases=["harem"])
+async def coleccion(ctx, miembro: discord.Member = None):
+    """Muestra los personajes reclamados por vos o por alguien más, con paginado"""
+    miembro = miembro or ctx.author
+    user_id = str(miembro.id)
+
+    datos = characters_cache.get(user_id)
+    if not datos or not datos.get("personajes"):
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"**{miembro.display_name}** todavía no reclamó ningún personaje. Probá `!rw`."
+        ))
+        return
+
+    view = ColeccionView(ctx.author, miembro, datos["personajes"])
+    mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
+    view.mensaje = mensaje
+
+async def buscar_por_scraping(session, texto):
+    """Busca directo en youtube.com/results y parsea el primer video ID. Más preciso que la API, pero puede fallar."""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    }
+    try:
+        async with session.get("https://www.youtube.com/results", params={"search_query": texto}, headers=headers) as resp:
+            if resp.status != 200:
+                return None
+            html = await resp.text()
+        coincidencia = re.search(r'"videoId":"([a-zA-Z0-9_-]{11})"', html)
+        return coincidencia.group(1) if coincidencia else None
+    except Exception:
+        return None
+
+async def buscar_por_api(session, titulo_busqueda, canal_busqueda):
+    """Busca con la YouTube Data API oficial (respaldo si el scraping falla)."""
+    if not YOUTUBE_API_KEY:
+        return None, "Falta configurar YOUTUBE_API_KEY."
+
+    channel_id = None
+    if canal_busqueda:
+        params_canal = {
+            "part": "snippet",
+            "q": canal_busqueda,
+            "type": "channel",
+            "maxResults": 1,
+            "key": YOUTUBE_API_KEY,
+        }
+        async with session.get("https://www.googleapis.com/youtube/v3/search", params=params_canal) as resp_canal:
+            data_canal = await resp_canal.json()
+        items_canal = data_canal.get("items", [])
+        if items_canal:
+            channel_id = items_canal[0]["id"]["channelId"]
+
+    params_busqueda = {
+        "part": "snippet",
+        "q": titulo_busqueda,
+        "type": "video",
+        "maxResults": 1,
+        "key": YOUTUBE_API_KEY,
+    }
+    if channel_id:
+        params_busqueda["channelId"] = channel_id
+
+    async with session.get("https://www.googleapis.com/youtube/v3/search", params=params_busqueda) as resp_busqueda:
+        data_busqueda = await resp_busqueda.json()
+
+    items = data_busqueda.get("items", [])
+    if not items:
+        error_msg = data_busqueda.get("error", {}).get("message")
+        return None, error_msg
+    return items[0]["id"]["videoId"], None
+
+@bot.command(name="mp3")
+async def mp3(ctx, *, entrada: str = None):
+    """Busca (o recibe un link de) un video de YouTube y manda el audio como mp3"""
+    if not entrada:
+        await ctx.reply(embed=crear_embed(descripcion="Decime qué buscar, o pasame un link. Ejemplo: `!mp3 bruh` o `!mp3 bruh - juanitoFachero142`"))
+        return
+
+    if not RAPIDAPI_KEY:
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar RAPIDAPI_KEY en las variables de entorno de Render."))
+        return
+
+    embed = crear_embed(titulo=entrada, descripcion="(1/3) Buscando video")
+    aviso = await ctx.reply(embed=embed)
+
+    async def actualizar(nueva_descripcion, nuevo_titulo=None):
+        if nuevo_titulo is not None:
+            embed.title = nuevo_titulo
+        embed.description = nueva_descripcion
+        await aviso.edit(embed=embed)
+
+    match = re.search(r"(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})", entrada)
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            if match:
+                video_id = match.group(1)
+            else:
+                if " - " in entrada:
+                    titulo_busqueda, canal_busqueda = entrada.split(" - ", 1)
+                    titulo_busqueda = titulo_busqueda.strip()
+                    canal_busqueda = canal_busqueda.strip()
+                else:
+                    titulo_busqueda, canal_busqueda = entrada.strip(), None
+
+                video_id = None
+                texto_scraping = f"{titulo_busqueda} {canal_busqueda}" if canal_busqueda else titulo_busqueda
+                video_id = await buscar_por_scraping(session, texto_scraping)
+
+                if not video_id:
+                    video_id, error_api = await buscar_por_api(session, titulo_busqueda, canal_busqueda)
+
+                if not video_id:
+                    await actualizar(f"No encontré nada para eso.{f' ({error_api})' if error_api else ''}")
+                    return
+
+            await actualizar("(2/3) Video encontrado")
+            await actualizar("(3/3) Convirtiendo a MP3")
+
+            headers = {
+                "X-RapidAPI-Key": RAPIDAPI_KEY,
+                "X-RapidAPI-Host": RAPIDAPI_HOST,
+            }
+
+            mp3_url = None
+            titulo = "audio"
+
+            for _ in range(10):
+                async with session.get(f"https://{RAPIDAPI_HOST}/dl", params={"id": video_id}, headers=headers) as resp:
+                    data = await resp.json()
+
+                estado = data.get("status")
+                if estado == "ok":
+                    mp3_url = data.get("link")
+                    titulo = data.get("title", "audio")
+                    break
+                elif estado == "processing":
+                    await asyncio.sleep(3)
+                else:
+                    await actualizar(f"No se pudo convertir: {data.get('msg', 'error desconocido')}")
+                    return
+
+            if not mp3_url:
+                await actualizar("Tardó demasiado en procesar el video, probá de nuevo en un rato.")
+                return
+
+            headers_descarga = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "*/*",
+                "Referer": "https://ytjar.info/",
+            }
+
+            contenido = None
+            for intento in range(3):
+                async with session.get(mp3_url, headers=headers_descarga) as resp_mp3:
+                    if resp_mp3.status == 200:
+                        contenido = await resp_mp3.read()
+                        break
+                    status_actual = resp_mp3.status
+                await asyncio.sleep(2)
+
+            if contenido is None:
+                # No pudimos bajarlo desde el servidor, pero el link funciona para un usuario normal
+                await actualizar(f"No pude bajarlo yo misma, pero acá tenés el link directo:\n{mp3_url}", nuevo_titulo=titulo)
+                return
+
+            tamaño_mb = len(contenido) / (1024 * 1024)
+            if tamaño_mb > 9.5:
+                await actualizar(f"Pesa {tamaño_mb:.1f}MB, es demasiado grande para Discord (límite ~10MB). Te dejo el link:\n{mp3_url}", nuevo_titulo=titulo)
+                return
+
+            embed.title = titulo
+            embed.description = "Aquí tienes:"
+            nombre_archivo = re.sub(r'[\\/*?:"<>|]', "", titulo)[:80] or "audio"
+            await aviso.edit(embed=embed, attachments=[discord.File(io.BytesIO(contenido), filename=f"{nombre_archivo}.mp3")])
+
+    except Exception as e:
+        await actualizar(f"Hubo un error: {str(e)}")
+
+# Iniciar el bot
+bot.run(os.environ.get("DISCORD_TOKEN"))
