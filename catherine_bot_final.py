@@ -169,6 +169,8 @@ GITHUB_REPO = os.environ.get("GITHUB_REPO")  # ej: "usuario/nombre-del-repo"
 GITHUB_ARCHIVO_BALANCES = "data/balances.json"
 GITHUB_ARCHIVO_PERSONAJES = "data/rw.json"
 GITHUB_ARCHIVO_CHARACTERS = "data/characters.json"
+GITHUB_ARCHIVO_SHOP = "data/shop.json"
+GITHUB_ARCHIVO_INVENTARIO = "data/inventario.json"
 
 # Los balances viven en RAM mientras el bot corre; solo se sincronizan con
 # GitHub cada 6hs (o a mano con !datasave) para no golpear la API todo el tiempo
@@ -336,6 +338,131 @@ def agregar_personaje_a_coleccion(usuario, personaje):
     characters_cache[user_id]["personajes"].append(personaje)
     hubo_cambios_characters_sin_guardar = True
 
+# Tienda (shop.json): se edita a mano en GitHub, el bot solo la lee. Se recarga con !shopreload.
+shop_cache = {}
+shop_sha = None
+shop_cargado = False
+
+async def cargar_shop_desde_github():
+    global shop_cache, shop_sha, shop_cargado
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_SHOP}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 404:
+                shop_cache, shop_sha = {}, None
+            else:
+                resp.raise_for_status()
+                data = await resp.json()
+                contenido = base64.b64decode(data["content"]).decode("utf-8")
+                shop_cache = json.loads(contenido)
+                shop_sha = data["sha"]
+    shop_cargado = True
+
+def aplanar_shop():
+    """Devuelve una lista de (categoria, item) recorriendo todas las categorías de la tienda."""
+    plano = []
+    for categoria, items in shop_cache.items():
+        for item in items:
+            plano.append((categoria, item))
+    return plano
+
+def buscar_item_shop(nombre_buscado):
+    """Busca un ítem de la tienda por nombre (coincidencia exacta > parcial > más parecido).
+    Devuelve (categoria, item) o (None, None) si no encontró nada razonable."""
+    buscado = nombre_buscado.strip().lower()
+    plano = aplanar_shop()
+
+    for categoria, item in plano:
+        if item["nombre"].strip().lower() == buscado:
+            return categoria, item
+
+    coincidencias = [(categoria, item) for categoria, item in plano if buscado in item["nombre"].lower()]
+    if coincidencias:
+        return coincidencias[0]
+
+    if plano:
+        mejor = max(plano, key=lambda ci: difflib.SequenceMatcher(None, buscado, ci[1]["nombre"].lower()).ratio())
+        if difflib.SequenceMatcher(None, buscado, mejor[1]["nombre"].lower()).ratio() >= 0.5:
+            return mejor
+
+    return None, None
+
+# Inventario de compras de cada usuario (inventario.json): {user_id: {"nombre": ..., "items": {"Nombre del ítem": cantidad}}}
+inventario_cache = {}
+inventario_sha = None
+inventario_cargado = False
+hubo_cambios_inventario_sin_guardar = False
+
+async def cargar_inventario_desde_github():
+    global inventario_cache, inventario_sha, inventario_cargado
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_INVENTARIO}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 404:
+                inventario_cache, inventario_sha = {}, None
+            else:
+                resp.raise_for_status()
+                data = await resp.json()
+                contenido = base64.b64decode(data["content"]).decode("utf-8")
+                inventario_cache = json.loads(contenido)
+                inventario_sha = data["sha"]
+    inventario_cargado = True
+
+async def guardar_inventario_en_github():
+    """Sube el estado actual de inventario_cache a GitHub. Devuelve True si guardó algo."""
+    global inventario_sha, hubo_cambios_inventario_sin_guardar
+    if not hubo_cambios_inventario_sin_guardar:
+        return False
+
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_INVENTARIO}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp_get:
+            if resp_get.status == 200:
+                data_actual = await resp_get.json()
+                inventario_sha = data_actual["sha"]
+            elif resp_get.status == 404:
+                inventario_sha = None
+            else:
+                resp_get.raise_for_status()
+
+        contenido_b64 = base64.b64encode(json.dumps(inventario_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+        body = {"message": "Actualizar inventarios", "content": contenido_b64}
+        if inventario_sha:
+            body["sha"] = inventario_sha
+
+        async with session.put(url, headers=headers, json=body) as resp:
+            if resp.status not in (200, 201):
+                texto_error = await resp.text()
+                raise RuntimeError(f"{resp.status}: {texto_error}")
+            data = await resp.json()
+            inventario_sha = data["content"]["sha"]
+
+    hubo_cambios_inventario_sin_guardar = False
+    return True
+
+def agregar_item_a_inventario(usuario, nombre_item, cantidad):
+    global hubo_cambios_inventario_sin_guardar
+    user_id = str(usuario.id)
+    if user_id not in inventario_cache:
+        inventario_cache[user_id] = {"nombre": usuario.display_name, "items": {}}
+    inventario_cache[user_id]["nombre"] = usuario.display_name
+    items = inventario_cache[user_id].setdefault("items", {})
+    items[nombre_item] = items.get(nombre_item, 0) + cantidad
+    hubo_cambios_inventario_sin_guardar = True
+
 async def cargar_balances_desde_github():
     global balances_cache, balances_sha, balances_cargados
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_BALANCES}"
@@ -405,6 +532,9 @@ async def guardado_periodico():
     guardado_personajes = await guardar_personajes_en_github()
     if guardado_personajes:
         print("🖼️ rw.json sincronizado con GitHub (guardado periódico)")
+    guardado_inventario = await guardar_inventario_en_github()
+    if guardado_inventario:
+        print("🛍️ Inventarios sincronizados con GitHub (guardado periódico)")
 
 INTERES_BANCO_DIARIO = 0.05
 SEGUNDOS_POR_DIA = 24 * 60 * 60
@@ -465,6 +595,16 @@ async def on_ready():
     if not characters_cargados and GITHUB_TOKEN and GITHUB_REPO:
         await cargar_characters_desde_github()
         print(f"📚 Colecciones cargadas desde GitHub ({len(characters_cache)} usuarios)")
+
+    global shop_cargado
+    if not shop_cargado and GITHUB_TOKEN and GITHUB_REPO:
+        await cargar_shop_desde_github()
+        print(f"🛍️ Tienda cargada desde GitHub ({len(aplanar_shop())} ítems)")
+
+    global inventario_cargado
+    if not inventario_cargado and GITHUB_TOKEN and GITHUB_REPO:
+        await cargar_inventario_desde_github()
+        print(f"🎒 Inventarios cargados desde GitHub ({len(inventario_cache)} usuarios)")
 
 @bot.event
 async def on_presence_update(before, after):
@@ -2032,6 +2172,187 @@ async def winfo(ctx, *, nombre_buscado: str = None):
 
     await ctx.reply(embed=embed)
 
+class ShopView(discord.ui.View):
+    """Un embed por categoría, con Previous/Next para pasar de categoría."""
+    def __init__(self, autor, categorias):
+        super().__init__(timeout=120)
+        self.autor = autor
+        self.categorias = categorias  # lista de (nombre_categoria, [items])
+        self.pagina = 0
+        self.mensaje = None
+        self._actualizar_botones()
+
+    def _actualizar_botones(self):
+        self.anterior.disabled = self.pagina == 0
+        self.siguiente.disabled = self.pagina >= len(self.categorias) - 1
+
+    def construir_embed(self):
+        nombre_categoria, items = self.categorias[self.pagina]
+        lineas = [f"{item['emoji']} **{item['nombre']}** — {formatear_pesos(item['precio'])}" for item in items]
+        embed = crear_embed(
+            titulo=nombre_categoria,
+            descripcion="\n".join(lineas) if lineas else "No hay ítems acá todavía.",
+            footer=f"Página {self.pagina + 1}/{len(self.categorias)} — usá !buy \"nombre\" para comprar",
+        )
+        return embed
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Solo quien pidió la tienda puede cambiar de página.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="◀ Previous", style=discord.ButtonStyle.secondary)
+    async def anterior(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina -= 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.secondary)
+    async def siguiente(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina += 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    async def on_timeout(self):
+        if self.mensaje is None:
+            return
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.mensaje.edit(view=self)
+        except discord.HTTPException:
+            pass
+
+@bot.command(name="shop", aliases=["tienda"])
+async def shop(ctx):
+    """Muestra el menú de la tienda, por categorías"""
+    if not shop_cache:
+        await ctx.reply(embed=crear_embed(descripcion="La tienda está vacía. Subí `data/shop.json` al repo y corré `!shopreload`."))
+        return
+
+    categorias = list(shop_cache.items())
+    view = ShopView(ctx.author, categorias)
+    mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
+    view.mensaje = mensaje
+
+@bot.command(name="shopreload")
+async def shopreload(ctx):
+    """Recarga shop.json desde GitHub sin reiniciar el bot"""
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
+        return
+    try:
+        await cargar_shop_desde_github()
+        total = len(aplanar_shop())
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"🔄 Listo, cargué **{total}** ítems en **{len(shop_cache)}** categorías desde GitHub."
+        ))
+    except Exception as e:
+        await ctx.reply(embed=crear_embed(descripcion=f"❌ Hubo un error al recargar: {str(e)}"))
+
+@bot.command(name="buy", aliases=["comprar"])
+async def buy(ctx, *, entrada: str = None):
+    """Comprá un ítem de la tienda. Usalo así: !buy nombre del ítem [cantidad]"""
+    global hubo_cambios_sin_guardar
+
+    if not shop_cache:
+        await ctx.reply(embed=crear_embed(descripcion="La tienda está vacía. Subí `data/shop.json` al repo y corré `!shopreload`."))
+        return
+
+    if not entrada:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!buy Peluche de Ado` o `!buy Peluche de Ado 3`"))
+        return
+
+    # Si termina en un número, esa es la cantidad; si no, cantidad = 1
+    partes = entrada.strip().rsplit(" ", 1)
+    cantidad = 1
+    nombre_buscado = entrada.strip()
+    if len(partes) == 2 and partes[1].isdigit():
+        nombre_buscado, cantidad = partes[0].strip(), int(partes[1])
+
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="La cantidad tiene que ser mayor a 0."))
+        return
+
+    categoria, item = buscar_item_shop(nombre_buscado)
+    if item is None:
+        await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún ítem que se llame **{nombre_buscado}** en la tienda. Mirá `!shop`."))
+        return
+
+    costo_total = item["precio"] * cantidad
+    user_id = str(ctx.author.id)
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+
+    if balances_cache[user_id]["balance"] < costo_total:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"No te alcanza. **{item['emoji']} {item['nombre']}** x{cantidad} cuesta **{formatear_pesos(costo_total)}**, "
+                        f"y tenés **{formatear_pesos(balances_cache[user_id]['balance'])}**."
+        ))
+        return
+
+    balances_cache[user_id]["balance"] -= costo_total
+    hubo_cambios_sin_guardar = True
+    agregar_item_a_inventario(ctx.author, item["nombre"], cantidad)
+
+    await ctx.reply(embed=crear_embed(
+        titulo="🛍️ Compra realizada",
+        descripcion=(
+            f"Compraste **{item['emoji']} {item['nombre']}** x{cantidad} por **{formatear_pesos(costo_total)}**.\n"
+            f"Balance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
+        ),
+    ))
+
+@bot.command(name="inv", aliases=["inventario"])
+async def inv(ctx, miembro: discord.Member = None):
+    """Muestra el inventario de objetos comprados en la tienda"""
+    miembro = miembro or ctx.author
+    user_id = str(miembro.id)
+    datos = inventario_cache.get(user_id)
+    items = datos.get("items", {}) if datos else {}
+
+    if not items:
+        posesivo = "Todavía no compraste" if miembro.id == ctx.author.id else f"**{miembro.display_name}** todavía no compró"
+        await ctx.reply(embed=crear_embed(descripcion=f"{posesivo} nada en `!shop`."))
+        return
+
+    lineas = []
+    for nombre_item, cantidad in items.items():
+        _, item_shop = buscar_item_shop(nombre_item)
+        emoji = item_shop["emoji"] if item_shop else "📦"
+        lineas.append(f"{emoji} **{nombre_item}** x{cantidad}")
+
+    embed = crear_embed(
+        titulo=f"🎒 Inventario de {miembro.display_name}",
+        descripcion="\n".join(lineas),
+    )
+    await ctx.reply(embed=embed)
+
+@bot.command(name="invfo")
+async def invfo(ctx, *, nombre_buscado: str = None):
+    """Muestra la ficha de un ítem puntual de la tienda"""
+    if not shop_cache:
+        await ctx.reply(embed=crear_embed(descripcion="La tienda está vacía. Subí `data/shop.json` al repo y corré `!shopreload`."))
+        return
+
+    if not nombre_buscado:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!invfo Peluche de Ado`"))
+        return
+
+    categoria, item = buscar_item_shop(nombre_buscado)
+    if item is None:
+        await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún ítem que se llame **{nombre_buscado}** en la tienda. Mirá `!shop`."))
+        return
+
+    embed = crear_embed(titulo=f"{item['emoji']} {item['nombre']}")
+    embed.add_field(name="Categoría", value=categoria, inline=True)
+    embed.add_field(name="Precio", value=formatear_pesos(item["precio"]), inline=True)
+    if item.get("imagen"):
+        embed.set_image(url=item["imagen"])
+
+    await ctx.reply(embed=embed)
+
 @bot.command(name="help")
 async def ayuda(ctx):
     """Lista los comandos de Catherine"""
@@ -2048,6 +2369,10 @@ async def ayuda(ctx):
         "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
         "`!rt rojo/negro cantidad` o `!roulette rojo/negro cantidad` — jugar a la ruleta",
         "_En cualquier `cantidad` de arriba podés poner `all` (todo), o abreviar: `100k`, `2m`, `1b`, `1t`_",
+        "`!shop` o `!tienda` — ver el catálogo de la tienda, por categorías",
+        "`!buy nombre del ítem [cantidad]` o `!comprar ...` — comprar algo de la tienda",
+        "`!inv` o `!inventario` [@alguien] — ver los objetos que compraste",
+        "`!invfo nombre del ítem` — ver la ficha de un ítem puntual de la tienda",
         "`!rw` — tirar un personaje random (cooldown: 6hs; reclamar tiene su propio cooldown de 4hs)",
         "`!rwreload` — recargar la lista de personajes desde GitHub",
         "`!checkimg` — revisar qué links de imagen de los personajes están rotos",
@@ -2151,7 +2476,8 @@ async def datasave(ctx):
         guardado_balances = await guardar_balances_en_github()
         guardado_characters = await guardar_characters_en_github()
         guardado_personajes = await guardar_personajes_en_github()
-        if guardado_balances or guardado_characters or guardado_personajes:
+        guardado_inventario = await guardar_inventario_en_github()
+        if guardado_balances or guardado_characters or guardado_personajes or guardado_inventario:
             await aviso.edit(embed=crear_embed(descripcion="💾 Listo, quedó todo guardado en GitHub. Podés estar tranquilo/a."))
         else:
             await aviso.edit(embed=crear_embed(descripcion="No había cambios nuevos desde el último guardado, así que no hizo falta tocar nada."))
