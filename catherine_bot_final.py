@@ -65,6 +65,32 @@ def crear_embed(titulo=None, descripcion=None, footer=None):
         embed.set_footer(text=footer)
     return embed
 
+MULTIPLICADORES_CANTIDAD = {"k": 1_000, "m": 1_000_000, "b": 1_000_000_000, "t": 1_000_000_000_000}
+
+def parsear_cantidad(texto):
+    """Convierte '100k' -> 100000, '2m' -> 2000000, '1.5b' -> 1500000000, '1t' -> 1000000000000,
+    'all'/'todo' -> el string 'all' (el que llama decide el máximo según el contexto), o un número normal.
+    Devuelve None si no se pudo interpretar."""
+    if texto is None:
+        return None
+    texto = str(texto).strip().lower()
+
+    if texto in ("all", "todo", "everything"):
+        return "all"
+
+    limpio = texto.replace(".", "").replace(",", "").replace("$", "")
+    if limpio and limpio[-1] in MULTIPLICADORES_CANTIDAD:
+        parte_numerica = limpio[:-1]
+        try:
+            return int(float(parte_numerica) * MULTIPLICADORES_CANTIDAD[limpio[-1]])
+        except ValueError:
+            return None
+
+    try:
+        return int(limpio)
+    except ValueError:
+        return None
+
 def formatear_numero(numero):
     """Le pone puntos de miles: 1000000 -> 1.000.000. Si no es un número, lo devuelve tal cual."""
     try:
@@ -641,18 +667,24 @@ async def top(ctx):
     await ctx.reply(embed=embed)
 
 @bot.command(name="depositar")
-async def depositar(ctx, cantidad: int = None):
+async def depositar(ctx, cantidad: str = None):
     """Guarda plata en el banco: no se la pueden robar con !robar"""
     global hubo_cambios_sin_guardar
     user_id = str(ctx.author.id)
 
-    if cantidad is None or cantidad <= 0:
-        await ctx.reply(embed=crear_embed(descripcion="Decime cuánto. Ejemplo: `!depositar 5000`"))
-        return
-
     if user_id not in balances_cache:
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
     balances_cache[user_id].setdefault("banco", 0)
+
+    cantidad = parsear_cantidad(cantidad)
+    if cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="Decime cuánto. Ejemplo: `!depositar 5000`, `!depositar 100k` o `!depositar all`"))
+        return
+    if cantidad == "all":
+        cantidad = balances_cache[user_id]["balance"]
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés plata para depositar." if balances_cache[user_id]["balance"] == 0 else "La cantidad tiene que ser mayor a 0."))
+        return
 
     if balances_cache[user_id]["balance"] < cantidad:
         await ctx.reply(embed=crear_embed(
@@ -678,18 +710,24 @@ async def depositar(ctx, cantidad: int = None):
     ))
 
 @bot.command(name="retirar")
-async def retirar(ctx, cantidad: int = None):
+async def retirar(ctx, cantidad: str = None):
     """Saca plata del banco de vuelta al balance"""
     global hubo_cambios_sin_guardar
     user_id = str(ctx.author.id)
 
-    if cantidad is None or cantidad <= 0:
-        await ctx.reply(embed=crear_embed(descripcion="Decime cuánto. Ejemplo: `!retirar 5000`"))
-        return
-
     if user_id not in balances_cache:
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
     balances_cache[user_id].setdefault("banco", 0)
+
+    cantidad = parsear_cantidad(cantidad)
+    if cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="Decime cuánto. Ejemplo: `!retirar 5000`, `!retirar 100k` o `!retirar all`"))
+        return
+    if cantidad == "all":
+        cantidad = balances_cache[user_id]["banco"]
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés plata en el banco para retirar." if balances_cache[user_id]["banco"] == 0 else "La cantidad tiene que ser mayor a 0."))
+        return
 
     if balances_cache[user_id]["banco"] < cantidad:
         await ctx.reply(embed=crear_embed(
@@ -713,15 +751,12 @@ async def retirar(ctx, cantidad: int = None):
     ))
 
 @bot.command(name="pay")
-async def pay(ctx, cantidad: int = None, miembro: discord.Member = None):
+async def pay(ctx, miembro: discord.Member = None, cantidad: str = None):
     """Le pasás plata de tu balance (no del banco) a otro usuario"""
     global hubo_cambios_sin_guardar
 
-    if cantidad is None or miembro is None:
-        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!pay 5000 @usuario`"))
-        return
-    if cantidad <= 0:
-        await ctx.reply(embed=crear_embed(descripcion="La cantidad tiene que ser mayor a 0."))
+    if miembro is None or cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!pay @usuario 5000`, `!pay @usuario 100k` o `!pay @usuario all`"))
         return
     if miembro.id == ctx.author.id:
         await ctx.reply(embed=crear_embed(descripcion="No te podés pagar a vos mismo."))
@@ -737,6 +772,16 @@ async def pay(ctx, cantidad: int = None, miembro: discord.Member = None):
         balances_cache[emisor_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
     if receptor_id not in balances_cache:
         balances_cache[receptor_id] = {"nombre": miembro.display_name, "balance": 0, "banco": 0}
+
+    cantidad = parsear_cantidad(cantidad)
+    if cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="No entendí la cantidad. Ejemplo: `!pay @usuario 5000`, `!pay @usuario 100k` o `!pay @usuario all`"))
+        return
+    if cantidad == "all":
+        cantidad = balances_cache[emisor_id].get("balance", 0)
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés plata para pagar." if balances_cache[emisor_id].get("balance", 0) == 0 else "La cantidad tiene que ser mayor a 0."))
+        return
 
     balance_emisor = balances_cache[emisor_id].get("balance", 0)
     if balance_emisor < cantidad:
@@ -967,12 +1012,12 @@ async def work_admin(ctx):
     await ejecutar_w(ctx)
 
 @bot.command(name="cf")
-async def coinflip(ctx, opcion: str = None, cantidad: int = None):
+async def coinflip(ctx, opcion: str = None, cantidad: str = None):
     """Apuesta plata a cara o cruz, 50/50"""
     global hubo_cambios_sin_guardar
 
     if opcion is None or cantidad is None:
-        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!cf cara 500` o `!cf cruz 500`"))
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!cf cara 500`, `!cf cruz 100k` o `!cf cara all`"))
         return
 
     opcion = opcion.lower()
@@ -980,13 +1025,19 @@ async def coinflip(ctx, opcion: str = None, cantidad: int = None):
         await ctx.reply(embed=crear_embed(descripcion="Elegí `cara` o `cruz`."))
         return
 
-    if cantidad <= 0:
-        await ctx.reply(embed=crear_embed(descripcion="La apuesta tiene que ser mayor a 0."))
-        return
-
     user_id = str(ctx.author.id)
     if user_id not in balances_cache:
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+
+    cantidad = parsear_cantidad(cantidad)
+    if cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="No entendí la apuesta. Ejemplo: `!cf cara 500`, `!cf cruz 100k` o `!cf cara all`"))
+        return
+    if cantidad == "all":
+        cantidad = balances_cache[user_id]["balance"]
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés plata para apostar." if balances_cache[user_id]["balance"] == 0 else "La apuesta tiene que ser mayor a 0."))
+        return
 
     if balances_cache[user_id]["balance"] < cantidad:
         await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_pesos(balances_cache[user_id]['balance'])}**."))
@@ -1007,12 +1058,12 @@ async def coinflip(ctx, opcion: str = None, cantidad: int = None):
     await ctx.reply(embed=crear_embed(titulo="🪙 Coinflip", descripcion=descripcion))
 
 @bot.command(name="roulette", aliases=["rt"])
-async def roulette(ctx, color: str = None, cantidad: int = None):
+async def roulette(ctx, color: str = None, cantidad: str = None):
     """Apuesta plata a rojo o negro en la ruleta (18/18 casillas, más 1 verde que hace perder a todos)"""
     global hubo_cambios_sin_guardar
 
     if color is None or cantidad is None:
-        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!roulette rojo 500` o `!roulette negro 500`"))
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!roulette rojo 500`, `!roulette negro 100k` o `!roulette rojo all`"))
         return
 
     color = color.lower()
@@ -1022,13 +1073,19 @@ async def roulette(ctx, color: str = None, cantidad: int = None):
         return
     color = alias[color]
 
-    if cantidad <= 0:
-        await ctx.reply(embed=crear_embed(descripcion="La apuesta tiene que ser mayor a 0."))
-        return
-
     user_id = str(ctx.author.id)
     if user_id not in balances_cache:
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+
+    cantidad = parsear_cantidad(cantidad)
+    if cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="No entendí la apuesta. Ejemplo: `!roulette rojo 500`, `!roulette negro 100k` o `!roulette rojo all`"))
+        return
+    if cantidad == "all":
+        cantidad = balances_cache[user_id]["balance"]
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés plata para apostar." if balances_cache[user_id]["balance"] == 0 else "La apuesta tiene que ser mayor a 0."))
+        return
 
     if balances_cache[user_id]["balance"] < cantidad:
         await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_pesos(balances_cache[user_id]['balance'])}**."))
@@ -1221,19 +1278,25 @@ class BlackjackView(discord.ui.View):
             pass
 
 @bot.command(name="blackjack", aliases=["bj"])
-async def blackjack(ctx, cantidad: int = None):
+async def blackjack(ctx, cantidad: str = None):
     """Jugá al blackjack apostando Pesos"""
-    if cantidad is None:
-        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!bj 500`"))
-        return
-
-    if cantidad <= 0:
-        await ctx.reply(embed=crear_embed(descripcion="La apuesta tiene que ser mayor a 0."))
-        return
-
     user_id = str(ctx.author.id)
     if user_id not in balances_cache:
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+
+    if cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!bj 500`, `!bj 100k` o `!bj all`"))
+        return
+
+    cantidad = parsear_cantidad(cantidad)
+    if cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="No entendí la apuesta. Ejemplo: `!bj 500`, `!bj 100k` o `!bj all`"))
+        return
+    if cantidad == "all":
+        cantidad = balances_cache[user_id]["balance"]
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés plata para apostar." if balances_cache[user_id]["balance"] == 0 else "La apuesta tiene que ser mayor a 0."))
+        return
 
     if balances_cache[user_id]["balance"] < cantidad:
         await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_pesos(balances_cache[user_id]['balance'])}**."))
@@ -1977,13 +2040,14 @@ async def ayuda(ctx):
         "`!top` — top 10 de plata total (balance + banco)",
         "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
         "`!retirar cantidad` — saca plata del banco",
-        "`!pay cantidad @usuario` — le pasás plata de tu balance a otro usuario",
+        "`!pay @usuario cantidad` — le pasás plata de tu balance a otro usuario",
         "`!givechar personaje @usuario` — le regalás un personaje de tu colección a otro usuario",
         "`!robar @usuario` — si está desconectado hace 6hs+: 10% de afanarle todo, 10% de perder vos el 5%, 80% nada",
         "`!w` — trabajar, ganás entre 1.500 y 3.000 Pesos (cooldown: 5 min)",
         "`!cf cara/cruz cantidad` — apostar a cara o cruz",
         "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
         "`!rt rojo/negro cantidad` o `!roulette rojo/negro cantidad` — jugar a la ruleta",
+        "_En cualquier `cantidad` de arriba podés poner `all` (todo), o abreviar: `100k`, `2m`, `1b`, `1t`_",
         "`!rw` — tirar un personaje random (cooldown: 6hs; reclamar tiene su propio cooldown de 4hs)",
         "`!rwreload` — recargar la lista de personajes desde GitHub",
         "`!checkimg` — revisar qué links de imagen de los personajes están rotos",
