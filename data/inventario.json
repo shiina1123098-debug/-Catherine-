@@ -14,7 +14,15 @@
       "Estatua de Alice Von Ataraxia": 999,
       "Diamante de Catherine": 100,
       "Corona del Magnate": 100,
-      "Lata de aire de alta montaña": 100000
+      "Lata de aire de alta montaña": 100000,
+      "Poción de reset": 1000,
+      "Dado de la suerte": 39
+    },
+    "buffs": {
+      "suerte_rw": {
+        "valor": 0.05,
+        "expira": 1790719454.6267436
+      }
     }
   }
 }
