@@ -1,16 +1,1 @@
-{
-  "1468974197895336151": {
-    "nombre": "Scarlett",
-    "pareja_id": "1552021087573901412",
-    "pareja_nombre": "†Catherine†",
-    "pareja_es_bot": true,
-    "fecha": 1790707937
-  },
-  "1552021087573901412": {
-    "nombre": "†Catherine†",
-    "pareja_id": "1468974197895336151",
-    "pareja_nombre": "Scarlett",
-    "pareja_es_bot": false,
-    "fecha": 1790707937
-  }
-}
+{}
