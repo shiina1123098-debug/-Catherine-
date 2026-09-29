@@ -119,6 +119,27 @@ def formatear_tiempo_restante(segundos):
         return f"{minutos}m {segs}s"
     return f"{segs}s"
 
+def formatear_fecha_relativa(timestamp):
+    """1234567890 -> 'hace 3 días' / 'hace 2 meses' / 'recién'."""
+    if not timestamp:
+        return "???"
+    segundos = max(int(time.time() - timestamp), 0)
+    if segundos < 60:
+        return "recién"
+    minutos = segundos // 60
+    if minutos < 60:
+        return f"hace {minutos} min"
+    horas = minutos // 60
+    if horas < 24:
+        return f"hace {horas} h"
+    dias = horas // 24
+    if dias < 30:
+        return f"hace {dias} día(s)"
+    meses = dias // 30
+    if meses < 12:
+        return f"hace {meses} mes(es)"
+    return f"hace {meses // 12} año(s)"
+
 # user_id (str) -> time.time() del último reclamo exitoso en !rw (cooldown de reclamo)
 ultimo_reclamo_por_usuario = {}
 
@@ -127,6 +148,14 @@ ultimo_reclamo_por_usuario = {}
 # que ya estaba offline antes de que el bot arrancara no cuenta hasta que se
 # reconecte y se vuelva a desconectar.
 usuarios_desconectados_desde = {}
+
+# Cooldowns manuales para !rw y !w. Los hacemos a mano (en vez de usar
+# @commands.cooldown) porque los items de la tienda necesitan poder
+# reducirlos o resetearlos dinámicamente.
+COOLDOWN_RW_SEGUNDOS = 6 * 60 * 60
+COOLDOWN_W_SEGUNDOS = 5 * 60
+cooldown_rw_usuario = {}   # user_id (str) -> timestamp hasta el que no puede tirar !rw
+cooldown_w_usuario = {}    # user_id (str) -> timestamp hasta el que no puede usar !w
 
 # Configurar Gemini (nueva Interactions API)
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
@@ -154,7 +183,7 @@ Ejemplos de cómo debería responder Catherine:
 Usuario: hola! ¿qué hacías?
 †Catherine†: *Levanta la mirada de sus notas y te observa en silencio un segundo.* Hola. No estaba haciendo nada en especial, solo pensando un poco... ¿Necesitas algo?
 Usuario: te quiero mucho
-†Catherine†: *Se queda paralizada por un momento y desvía la mirada rápidamente, tratando de disimular su timidez.* N-no digas cosas tan repentinas... *Ajusta sus gafas con nerviosismo.* Pero... gracias. Supongo que yo también te tengo cierto aprecio.
+†Catherine†: *Se queda paralizada por un momento y desvía la mirada rápidamente, tratando de disimular su timidez.* N-nno digas cosas tan repentinas... *Ajusta sus gafas con nerviosismo.* Pero... gracias. Supongo que yo también te tengo cierto aprecio.
 Usuario: ¿me ayudas con la tarea?
 †Catherine†: *Asiente levemente con la cabeza y acerca su silla.* Está bien, déjame ver qué es. Si no entiendes algo, dímelo y te lo explicaré de forma sencilla."""
 
@@ -573,6 +602,119 @@ def agregar_item_a_inventario(usuario, nombre_item, cantidad):
     items[nombre_item] = items.get(nombre_item, 0) + cantidad
     hubo_cambios_inventario_sin_guardar = True
 
+# ===================== SISTEMA DE ITEMS: COOLDOWNS Y BUFFS =====================
+
+def cooldown_restante(cooldowns, usuario_id):
+    """Devuelve los segundos restantes de cooldown, o 0 si no hay."""
+    expira = cooldowns.get(str(usuario_id))
+    if expira is None:
+        return 0
+    return max(expira - time.time(), 0)
+
+def poner_cooldown(cooldowns, usuario_id, segundos):
+    cooldowns[str(usuario_id)] = time.time() + segundos
+
+def reducir_cooldown(cooldowns, usuario_id, segundos):
+    """Le saca `segundos` al cooldown. Devuelve cuántos segundos se sacaron de verdad."""
+    expira = cooldowns.get(str(usuario_id))
+    if expira is None:
+        return 0
+    restante_antes = max(expira - time.time(), 0)
+    if restante_antes <= 0:
+        cooldowns.pop(str(usuario_id), None)
+        return 0
+    reduccion_real = min(segundos, restante_antes)
+    nuevo_expira = expira - reduccion_real
+    if nuevo_expira <= time.time():
+        cooldowns.pop(str(usuario_id), None)
+    else:
+        cooldowns[str(usuario_id)] = nuevo_expira
+    return reduccion_real
+
+def resetear_cooldown(cooldowns, usuario_id):
+    """Borra el cooldown. Devuelve cuántos segundos tenía."""
+    expira = cooldowns.pop(str(usuario_id), None)
+    if expira is None:
+        return 0
+    return max(expira - time.time(), 0)
+
+def obtener_buff(usuario_id, nombre_buff):
+    """Devuelve el dict del buff activo, o None si no existe o ya expiró.
+    Si estaba expirado, lo borra del inventario."""
+    global hubo_cambios_inventario_sin_guardar
+    datos = inventario_cache.get(str(usuario_id))
+    if not datos:
+        return None
+    buffs = datos.get("buffs", {})
+    buff = buffs.get(nombre_buff)
+    if not buff:
+        return None
+    if buff.get("expira", 0) <= time.time():
+        buffs.pop(nombre_buff, None)
+        hubo_cambios_inventario_sin_guardar = True
+        return None
+    return buff
+
+def agregar_buff(usuario, nombre_buff, valor, duracion):
+    """Agrega (o refresca) un buff. Si ya existía, se reemplaza (no se acumula el tiempo)."""
+    global hubo_cambios_inventario_sin_guardar
+    user_id = str(usuario.id)
+    if user_id not in inventario_cache:
+        inventario_cache[user_id] = {"nombre": usuario.display_name, "items": {}}
+    inventario_cache[user_id].setdefault("buffs", {})
+    inventario_cache[user_id]["buffs"][nombre_buff] = {
+        "valor": valor,
+        "expira": time.time() + duracion,
+    }
+    hubo_cambios_inventario_sin_guardar = True
+
+def obtener_efecto_unico(usuario_id, nombre):
+    """Devuelve la cantidad disponible de un efecto único (int)."""
+    datos = inventario_cache.get(str(usuario_id))
+    if not datos:
+        return 0
+    return datos.get("efectos_unicos", {}).get(nombre, 0)
+
+def agregar_efecto_unico(usuario, nombre, cantidad=1):
+    global hubo_cambios_inventario_sin_guardar
+    user_id = str(usuario.id)
+    if user_id not in inventario_cache:
+        inventario_cache[user_id] = {"nombre": usuario.display_name, "items": {}}
+    inventario_cache[user_id].setdefault("efectos_unicos", {})
+    inventario_cache[user_id]["efectos_unicos"][nombre] = (
+        inventario_cache[user_id]["efectos_unicos"].get(nombre, 0) + cantidad
+    )
+    hubo_cambios_inventario_sin_guardar = True
+
+def consumir_efecto_unico(usuario_id, nombre):
+    """Consume 1 unidad. Devuelve True si pudo, False si no había."""
+    global hubo_cambios_inventario_sin_guardar
+    datos = inventario_cache.get(str(usuario_id))
+    if not datos:
+        return False
+    efectos = datos.get("efectos_unicos", {})
+    if efectos.get(nombre, 0) <= 0:
+        return False
+    efectos[nombre] -= 1
+    hubo_cambios_inventario_sin_guardar = True
+    return True
+
+def quitar_item_del_inventario(usuario, nombre_item, cantidad=1):
+    """Le saca `cantidad` unidades de un item al usuario. Devuelve True si pudo."""
+    global hubo_cambios_inventario_sin_guardar
+    user_id = str(usuario.id)
+    datos = inventario_cache.get(user_id)
+    if not datos:
+        return False
+    items = datos.get("items", {})
+    if items.get(nombre_item, 0) < cantidad:
+        return False
+    items[nombre_item] -= cantidad
+    if items[nombre_item] <= 0:
+        items.pop(nombre_item, None)
+    hubo_cambios_inventario_sin_guardar = True
+    return True
+
 async def cargar_balances_desde_github():
     global balances_cache, balances_sha, balances_cargados
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_BALANCES}"
@@ -943,6 +1085,93 @@ async def top(ctx):
         lineas.append(f"{posicion} **{nombre}** — {formatear_pesos(total)}")
 
     embed = crear_embed(titulo="🏆 Top de balances", descripcion="\n".join(lineas))
+    await ctx.reply(embed=embed)
+
+@bot.command(name="perfil", aliases=["profile"])
+async def perfil(ctx, miembro: discord.Member = None):
+    """Resumen completo de un usuario: plata, matrimonio, colección e inventario"""
+    objetivo = miembro or ctx.author
+    user_id = str(objetivo.id)
+
+    embed = crear_embed(titulo=f"👤 {objetivo.display_name}")
+    embed.set_thumbnail(url=objetivo.display_avatar.url)
+
+    # --- Plata ---
+    datos_balance = balances_cache.get(user_id)
+    if datos_balance:
+        balance = datos_balance.get("balance", 0)
+        banco = datos_balance.get("banco", 0)
+        total = balance + banco
+
+        ranking = sorted(
+            (item for item in balances_cache.items() if item[0] != ID_BANCA),
+            key=lambda item: item[1].get("balance", 0) + item[1].get("banco", 0),
+            reverse=True,
+        )
+        puesto = next((i for i, (uid, _) in enumerate(ranking, start=1) if uid == user_id), None)
+        puesto_txt = f"\n-# Puesto #{puesto} de {len(ranking)}" if puesto else ""
+
+        embed.add_field(
+            name="💰 Plata",
+            value=(
+                f"> Balance: **{formatear_pesos(balance)}**\n"
+                f"> Banco: **{formatear_pesos(banco)}**\n"
+                f"> Total: **{formatear_pesos(total)}**{puesto_txt}"
+            ),
+            inline=False,
+        )
+    else:
+        embed.add_field(name="💰 Plata", value="-# Todavía no tiene cuenta.", inline=False)
+
+    # --- Matrimonio ---
+    datos_matrimonio = matrimonios_cache.get(user_id)
+    if datos_matrimonio:
+        pareja = datos_matrimonio.get("pareja_nombre", "???")
+        desde = formatear_fecha_relativa(datos_matrimonio.get("fecha"))
+        embed.add_field(name="💍 Matrimonio", value=f"Casado/a con **{pareja}** ({desde}).", inline=False)
+    else:
+        embed.add_field(name="💍 Matrimonio", value="-# Soltero/a.", inline=False)
+
+    # --- Colección ---
+    datos_char = characters_cache.get(user_id)
+    personajes = datos_char.get("personajes", []) if datos_char else []
+    if personajes:
+        top3 = sorted(
+            personajes,
+            key=lambda p: parsear_valor(campo_personaje(p, "Valor", "valor")) or 0,
+            reverse=True,
+        )[:3]
+        lineas = [
+            f"> 🎴 **{campo_personaje(p, 'Nombre', 'nombre')}** — {formatear_pesos(campo_personaje(p, 'Valor', 'valor'))}"
+            for p in top3
+        ]
+        embed.add_field(
+            name=f"📚 Colección ({len(personajes)} personajes)",
+            value="\n".join(lineas),
+            inline=False,
+        )
+    else:
+        embed.add_field(name="📚 Colección", value="-# No reclamó ningún personaje todavía.", inline=False)
+
+    # --- Inventario ---
+    datos_inv = inventario_cache.get(user_id)
+    items = datos_inv.get("items", {}) if datos_inv else {}
+    if items:
+        items_ordenados = sorted(items.items(), key=lambda kv: kv[1], reverse=True)[:3]
+        lineas = []
+        for nombre_item, cantidad in items_ordenados:
+            _, item_shop = buscar_item_shop(nombre_item)
+            emoji = item_shop["emoji"] if item_shop else "📦"
+            lineas.append(f"> {emoji} **{nombre_item}** — x{cantidad}")
+        total_items = sum(items.values())
+        embed.add_field(
+            name=f"🎒 Inventario ({total_items} objetos)",
+            value="\n".join(lineas),
+            inline=False,
+        )
+    else:
+        embed.add_field(name="🎒 Inventario", value="-# No compró nada todavía.", inline=False)
+
     await ctx.reply(embed=embed)
 
 @bot.command(name="depositar")
@@ -1400,10 +1629,22 @@ async def robar(ctx, objetivo: discord.Member = None):
     balances_cache[ladron_id].setdefault("banco", 0)
     balances_cache[objetivo_id].setdefault("banco", 0)
 
+    # Aplicar buffs
+    buff_trebol = obtener_buff(ladron_id, "suerte_robo")
+    buff_pata = obtener_buff(ladron_id, "pata_conejo")
+
+    prob_exito = PROBABILIDAD_ROBO_EXITO
+    if buff_trebol:
+        prob_exito += buff_trebol["valor"]
+
+    penalizacion = PENALIZACION_ROBO_FALLIDO
+    if buff_pata:
+        penalizacion = max(penalizacion - buff_pata["valor"], 0)
+
     balance_objetivo = balances_cache[objetivo_id].get("balance", 0)
     roll = random.random()
 
-    if roll < PROBABILIDAD_ROBO_EXITO:
+    if roll < prob_exito:
         if balance_objetivo <= 0:
             embed = crear_embed(
                 titulo="🥷 Casi",
@@ -1420,9 +1661,9 @@ async def robar(ctx, objetivo: discord.Member = None):
                     f"Tu balance actual: **{formatear_pesos(balances_cache[ladron_id]['balance'])}**"
                 ),
             )
-    elif roll < PROBABILIDAD_ROBO_EXITO + PROBABILIDAD_ROBO_PENALIZACION:
+    elif roll < prob_exito + PROBABILIDAD_ROBO_PENALIZACION:
         balance_ladron = balances_cache[ladron_id].get("balance", 0)
-        perdida = int(balance_ladron * PENALIZACION_ROBO_FALLIDO)
+        perdida = int(balance_ladron * penalizacion)
         balances_cache[ladron_id]["balance"] = balance_ladron - perdida
         hubo_cambios_sin_guardar = True
         embed = crear_embed(
@@ -1459,27 +1700,43 @@ async def ejecutar_w(ctx):
 
     if user_id not in balances_cache:
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+    balances_cache[user_id].setdefault("banco", 0)
 
     ganancia = random.randint(1500, 3000)
+
+    # Aplicar buff del Bono del gobierno (+20% de ganancia)
+    buff_bono = obtener_buff(user_id, "bono_w")
+    if buff_bono:
+        ganancia = int(ganancia * (1 + buff_bono["valor"]))
+
     balances_cache[user_id]["balance"] += ganancia
     hubo_cambios_sin_guardar = True
 
     mensaje = random.choice(MENSAJES_TRABAJO)
+    texto_buff = f"\n-# 🏛️ Bono del gobierno activo (+{int(buff_bono['valor']*100)}%)" if buff_bono else ""
+
     embed = crear_embed(
         titulo="💼 A trabajar",
         descripcion=(
             f"{mensaje}\n"
-            f"**+{formatear_pesos(ganancia)}**\n\n"
+            f"**+{formatear_pesos(ganancia)}**{texto_buff}\n\n"
             f"Balance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
         ),
     )
     await ctx.reply(embed=embed)
 
 @bot.command(name="w")
-@commands.cooldown(1, 5 * 60, commands.BucketType.user)
 async def work(ctx):
     """Da una cantidad random de Pesos (1.500 a 3.000) con un mensaje random"""
+    user_id = str(ctx.author.id)
+    restante = cooldown_restante(cooldown_w_usuario, user_id)
+    if restante > 0:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"⏳ Todavía no. Podés volver a trabajar en **{formatear_tiempo_restante(restante)}**.\n-# Tip: un `Café doble` te baja 2 min del cooldown."
+        ))
+        return
     await ejecutar_w(ctx)
+    poner_cooldown(cooldown_w_usuario, user_id, COOLDOWN_W_SEGUNDOS)
 
 @bot.command(name="wAdmin", aliases=["wadmin"], hidden=True)
 async def work_admin(ctx):
@@ -1521,8 +1778,15 @@ async def coinflip(ctx, opcion: str = None, cantidad: str = None):
         await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_pesos(balances_cache[user_id]['balance'])}**."))
         return
 
-    resultado = random.choice(("cara", "cruz"))
-    gano = resultado == opcion
+    # Chance base 50%. El Amuleto del ludópata suma +5% a favor del jugador.
+    buff_amuleto = obtener_buff(user_id, "suerte_apuesta")
+    chance_ganar = 0.5 + (buff_amuleto["valor"] if buff_amuleto else 0)
+    gano = random.random() < chance_ganar
+
+    if gano:
+        resultado = opcion
+    else:
+        resultado = "cruz" if opcion == "cara" else "cara"
 
     if gano:
         balances_cache[user_id]["balance"] += cantidad
@@ -1571,8 +1835,15 @@ async def roulette(ctx, color: str = None, cantidad: str = None):
 
     # 18 casillas rojas, 18 negras, 1 verde (el 0, hace perder a todos por igual)
     resultado = random.choices(("rojo", "negro", "verde"), weights=(18, 18, 1), k=1)[0]
-    emoji_resultado = {"rojo": "🔴", "negro": "⚫", "verde": "🟢"}[resultado]
     gano = resultado == color
+
+    # Amuleto del ludópata: si perdiste, un 5% de chance de que te "salve"
+    buff_amuleto = obtener_buff(user_id, "suerte_apuesta")
+    if not gano and buff_amuleto and random.random() < buff_amuleto["valor"]:
+        resultado = color
+        gano = True
+
+    emoji_resultado = {"rojo": "🔴", "negro": "⚫", "verde": "🟢"}[resultado]
 
     if gano:
         balances_cache[user_id]["balance"] += cantidad
@@ -1888,12 +2159,16 @@ class RWClaimView(discord.ui.View):
         if ultimo_reclamo is not None:
             transcurrido_reclamo = time.time() - ultimo_reclamo
             if transcurrido_reclamo < COOLDOWN_RECLAMO_SEGUNDOS:
-                restante_reclamo = COOLDOWN_RECLAMO_SEGUNDOS - transcurrido_reclamo
-                await interaction.response.send_message(
-                    f"Ya reclamaste uno hace poco. Podés volver a reclamar en **{formatear_tiempo_restante(restante_reclamo)}**.",
-                    ephemeral=True,
-                )
-                return
+                # ¿Tiene un Pase VIP guardado? Lo consume y salta el cooldown
+                if not self.admin and obtener_efecto_unico(interaction.user.id, "pase_vip") > 0:
+                    consumir_efecto_unico(interaction.user.id, "pase_vip")
+                else:
+                    restante_reclamo = COOLDOWN_RECLAMO_SEGUNDOS - transcurrido_reclamo
+                    await interaction.response.send_message(
+                        f"Ya reclamaste uno hace poco. Podés volver a reclamar en **{formatear_tiempo_restante(restante_reclamo)}**.",
+                        ephemeral=True,
+                    )
+                    return
 
         if usuario_ya_tiene_personaje(interaction.user, self.personaje):
             await interaction.response.send_message(
@@ -1929,11 +2204,12 @@ class RWClaimView(discord.ui.View):
             pass
 
 async def ejecutar_rw(ctx, admin=False):
+    """Devuelve True si se hizo la tirada, False si no."""
     if not personajes_cache:
         await ctx.reply(embed=crear_embed(
             descripcion="No hay personajes cargados todavía. Subí el `rw.json` al repo y corré `!rwreload`."
         ))
-        return
+        return False
 
     # 1) Agrupamos los personajes por rango de rareza
     grupos = agrupar_personajes_por_rareza()
@@ -1943,8 +2219,23 @@ async def ejecutar_rw(ctx, admin=False):
     indices_disponibles = [i for i, grupo in enumerate(grupos) if grupo]
     if not indices_disponibles:
         await ctx.reply(embed=crear_embed(descripcion="No hay personajes con un valor válido cargado."))
-        return
+        return False
     pesos_disponibles = [RANGOS_RAREZA[i][2] for i in indices_disponibles]
+
+    # Aplicar buff del Dado de la suerte: le saca un % del peso al Común
+    # y lo reparte entre las rarezas altas (a mayor rareza, más se beneficia).
+    buff_dado = None if admin else obtener_buff(ctx.author.id, "suerte_rw")
+    if buff_dado and 0 in indices_disponibles:
+        idx_comun_en_lista = indices_disponibles.index(0)
+        peso_comun_original = pesos_disponibles[idx_comun_en_lista]
+        peso_a_mover = peso_comun_original * buff_dado["valor"]
+        pesos_disponibles[idx_comun_en_lista] -= peso_a_mover
+        otros = [p for p in range(len(indices_disponibles)) if indices_disponibles[p] != 0]
+        if otros:
+            reparto = peso_a_mover / len(otros)
+            for p in otros:
+                pesos_disponibles[p] += reparto
+
     indice_rango = random.choices(indices_disponibles, weights=pesos_disponibles, k=1)[0]
 
     # 3) Dentro de esa rareza, elegimos un personaje al azar (todos con la misma chance)
@@ -1960,18 +2251,42 @@ async def ejecutar_rw(ctx, admin=False):
     embed.add_field(name="Fuente", value=str(fuente), inline=True)
     embed.add_field(name="Valor", value=formatear_pesos(valor), inline=True)
     embed.add_field(name="Rareza", value=rareza, inline=True)
+    if buff_dado:
+        embed.add_field(name="🎲 Dado activo", value=f"+{int(buff_dado['valor']*100)}% a rarezas altas", inline=False)
     if imagen:
         embed.set_image(url=imagen)
 
     view = RWClaimView(ctx.author, personaje, nombre, imagen, fuente, valor, rareza, admin=admin)
     mensaje = await ctx.reply(embed=embed, view=view)
     view.mensaje = mensaje
+    return True
 
 @bot.command(name="rw")
-@commands.cooldown(1, 6 * 60 * 60, commands.BucketType.user)
 async def rw(ctx):
     """Sacá un personaje random del rw.json (los de más valor son más difíciles de sacar)"""
-    await ejecutar_rw(ctx)
+    user_id = str(ctx.author.id)
+    restante = cooldown_restante(cooldown_rw_usuario, user_id)
+
+    usando_cristal = False
+    if restante > 0:
+        # ¿Tiene un Cristal de reroll? Lo consume y tira igual, sin resetear el cooldown
+        if obtener_efecto_unico(user_id, "cristal_reroll") > 0:
+            consumir_efecto_unico(user_id, "cristal_reroll")
+            usando_cristal = True
+        else:
+            await ctx.reply(embed=crear_embed(
+                descripcion=(
+                    f"⏳ Todavía no. Podés volver a tirar en **{formatear_tiempo_restante(restante)}**.\n"
+                    f"-# Tips: un `Reloj de arena` te baja 3hs, una `Máquina del tiempo` te lo resetea, y un `Cristal de reroll` te deja tirar igual."
+                )
+            ))
+            return
+
+    exito = await ejecutar_rw(ctx)
+
+    # Solo ponemos cooldown nuevo si la tirada se hizo Y no usamos cristal
+    if exito and not usando_cristal:
+        poner_cooldown(cooldown_rw_usuario, user_id, COOLDOWN_RW_SEGUNDOS)
 
 @bot.command(name="rwAdmin", aliases=["rwadmin"], hidden=True)
 async def rw_admin(ctx):
@@ -2528,17 +2843,22 @@ class ShopView(discord.ui.View):
         nombre_categoria, items = self.categorias[self.pagina]
 
         if items:
-            lineas = [
-                f"> {item['emoji']} **{item['nombre']}** — {formatear_pesos(item['precio'])}"
-                for item in items
-            ]
-            descripcion = f"### {nombre_categoria}\n{SEPARADOR}\n\n" + "\n\n".join(lineas)
+            lineas = []
+            for item in items:
+                lineas.append(f"> {item['emoji']} **{item['nombre']}** — {formatear_pesos(item['precio'])}")
+                desc = item.get("descripcion")
+                if desc:
+                    if len(desc) > 80:
+                        desc = desc[:77] + "..."
+                    lineas.append(f"> -# {desc}")
+                lineas.append("")
+            descripcion = f"### {nombre_categoria}\n{SEPARADOR}\n\n" + "\n".join(lineas).rstrip()
         else:
             descripcion = f"### {nombre_categoria}\n{SEPARADOR}\n\n-# No hay ítems acá todavía."
 
         embed = crear_embed(
             descripcion=descripcion,
-            footer=f"Página {self.pagina + 1}/{len(self.categorias)} — usá !buy \"nombre\" para comprar",
+            footer=f"Página {self.pagina + 1}/{len(self.categorias)} — usá !buy \"nombre\" para comprar y !usar \"nombre\" para usar",
         )
         return embed
 
@@ -2699,10 +3019,210 @@ async def invfo(ctx, *, nombre_buscado: str = None):
     embed = crear_embed(titulo=f"{item['emoji']} {item['nombre']}", descripcion=item.get("descripcion") or None)
     embed.add_field(name="Categoría", value=categoria, inline=True)
     embed.add_field(name="Precio", value=formatear_pesos(item["precio"]), inline=True)
+    if item.get("efecto"):
+        embed.add_field(name="Usable", value="Sí, con `!usar`", inline=False)
     if item.get("imagen"):
         embed.set_image(url=item["imagen"])
 
     await ctx.reply(embed=embed)
+
+# ===================== COMANDOS DE ITEMS =====================
+
+async def aplicar_efecto_item(ctx, item, efecto):
+    """Aplica el efecto del item. Devuelve el texto de resultado o None si no se pudo
+    (en cuyo caso ya mandó un mensaje explicando por qué)."""
+    user_id = str(ctx.author.id)
+
+    if efecto == "buff_suerte_rw":
+        agregar_buff(ctx.author, "suerte_rw", item.get("valor", 0.05), item.get("duracion", 600))
+        return f"✨ Aumentaste un **{int(item['valor']*100)}%** el peso de las rarezas altas en `!rw` durante **{formatear_tiempo_restante(item.get('duracion', 600))}**."
+
+    if efecto == "buff_suerte_robo":
+        agregar_buff(ctx.author, "suerte_robo", item.get("valor", 0.05), item.get("duracion", 3600))
+        return f"🍀 Tenés **+{int(item['valor']*100)}%** de éxito en `!robar` durante **{formatear_tiempo_restante(item.get('duracion', 3600))}**."
+
+    if efecto == "buff_suerte_apuesta":
+        agregar_buff(ctx.author, "suerte_apuesta", item.get("valor", 0.05), item.get("duracion", 3600))
+        return f"🎰 Tenés **+{int(item['valor']*100)}%** de ganar en `!cf` y `!roulette` durante **{formatear_tiempo_restante(item.get('duracion', 3600))}**."
+
+    if efecto == "buff_pata_conejo":
+        agregar_buff(ctx.author, "pata_conejo", item.get("valor", 0.05), item.get("duracion", 3600))
+        return f"🐰 Si te agarran robando, perdés **{int(item['valor']*100)}% menos** de plata durante **{formatear_tiempo_restante(item.get('duracion', 3600))}**."
+
+    if efecto == "buff_bono_w":
+        agregar_buff(ctx.author, "bono_w", item.get("valor", 0.20), item.get("duracion", 259200))
+        return f"🏛️ Ganás **+{int(item['valor']*100)}%** en `!w` durante **{formatear_tiempo_restante(item.get('duracion', 259200))}**."
+
+    if efecto == "reducir_cooldown_rw":
+        segundos = item.get("valor", 10800)
+        restante_antes = cooldown_restante(cooldown_rw_usuario, user_id)
+        if restante_antes <= 0:
+            await ctx.reply(embed=crear_embed(descripcion="No tenés ningún cooldown activo de `!rw` para reducir. No gastaste el item."))
+            return None
+        reduccion = reducir_cooldown(cooldown_rw_usuario, user_id, segundos)
+        restante_despues = cooldown_restante(cooldown_rw_usuario, user_id)
+        if restante_despues <= 0:
+            return f"⏳ Le sacaste **{formatear_tiempo_restante(reduccion)}** a tu cooldown de `!rw`. ¡Ya podés tirar de nuevo!"
+        return f"⏳ Le sacaste **{formatear_tiempo_restante(reduccion)}** a tu cooldown de `!rw`.\nTe quedan **{formatear_tiempo_restante(restante_despues)}**."
+
+    if efecto == "reducir_cooldown_w":
+        segundos = item.get("valor", 120)
+        restante_antes = cooldown_restante(cooldown_w_usuario, user_id)
+        if restante_antes <= 0:
+            await ctx.reply(embed=crear_embed(descripcion="No tenés ningún cooldown activo de `!w` para reducir. No gastaste el item."))
+            return None
+        reduccion = reducir_cooldown(cooldown_w_usuario, user_id, segundos)
+        restante_despues = cooldown_restante(cooldown_w_usuario, user_id)
+        if restante_despues <= 0:
+            return f"☕ Le sacaste **{formatear_tiempo_restante(reduccion)}** a tu cooldown de `!w`. ¡Ya podés trabajar de nuevo!"
+        return f"☕ Le sacaste **{formatear_tiempo_restante(reduccion)}** a tu cooldown de `!w`.\nTe quedan **{formatear_tiempo_restante(restante_despues)}**."
+
+    if efecto == "resetear_cooldown_rw":
+        restante = resetear_cooldown(cooldown_rw_usuario, user_id)
+        if restante <= 0:
+            await ctx.reply(embed=crear_embed(descripcion="No tenés ningún cooldown activo de `!rw` para resetear. No gastaste el item."))
+            return None
+        return f"⏰ Tu cooldown de `!rw` se borró. Ya podés tirar de nuevo (tenías **{formatear_tiempo_restante(restante)}** restantes)."
+
+    if efecto == "pase_vip":
+        agregar_efecto_unico(ctx.author, "pase_vip", 1)
+        return "🎟️ Guardaste un **Pase VIP**. La próxima vez que reclames un personaje en `!rw`, ignorás el cooldown de 4hs del reclamo."
+
+    if efecto == "cristal_reroll":
+        agregar_efecto_unico(ctx.author, "cristal_reroll", 1)
+        return "💠 Guardaste un **Cristal de reroll**. La próxima vez que uses `!rw` estando en cooldown, vas a poder tirar igual (sin resetear el cooldown)."
+
+    return None
+
+
+@bot.command(name="usar", aliases=["use"])
+async def usar(ctx, *, nombre_buscado: str = None):
+    """Usa un item de tu inventario. Ej: !usar Dado de la suerte"""
+    global hubo_cambios_inventario_sin_guardar
+
+    if not shop_cache:
+        await ctx.reply(embed=crear_embed(descripcion="La tienda está vacía."))
+        return
+
+    if not nombre_buscado:
+        await ctx.reply(embed=crear_embed(descripcion="Decime qué item querés usar. Ejemplo: `!usar Dado de la suerte`"))
+        return
+
+    user_id = str(ctx.author.id)
+    datos = inventario_cache.get(user_id)
+    if not datos or not datos.get("items"):
+        await ctx.reply(embed=crear_embed(descripcion="No tenés ningún item en tu inventario. Mirá `!shop`."))
+        return
+
+    # Buscar el item en el shop por nombre (usa la misma lógica difusa que !buy)
+    categoria, item = buscar_item_shop(nombre_buscado)
+    if item is None:
+        await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún item llamado **{nombre_buscado}** en la tienda."))
+        return
+
+    # ¿El usuario realmente tiene este item?
+    items_usuario = datos.get("items", {})
+    if items_usuario.get(item["nombre"], 0) <= 0:
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés **{item['nombre']}** en tu inventario."))
+        return
+
+    # ¿El item tiene un efecto usable?
+    efecto = item.get("efecto")
+    if not efecto:
+        await ctx.reply(embed=crear_embed(descripcion=f"**{item['emoji']} {item['nombre']}** no tiene un efecto que se pueda usar. Es un item de colección."))
+        return
+
+    # Aplicar el efecto
+    resultado_texto = await aplicar_efecto_item(ctx, item, efecto)
+    if resultado_texto is None:
+        # El efecto no se pudo aplicar (ya se mandó un mensaje explicando por qué)
+        return
+
+    # Consumir 1 unidad del item
+    quitar_item_del_inventario(ctx.author, item["nombre"], 1)
+
+    embed = crear_embed(
+        titulo=f"{item['emoji']} {item['nombre']} usado",
+        descripcion=resultado_texto,
+        footer="Se consumió 1 unidad de tu inventario.",
+    )
+    await ctx.reply(embed=embed)
+    try:
+        await guardar_inventario_en_github()
+    except Exception as e:
+        print(f"⚠️ No pude guardar el inventario: {e}", flush=True)
+
+
+@bot.command(name="buffs", aliases=["efectos"])
+async def buffs(ctx, miembro: discord.Member = None):
+    """Muestra los buffs activos y efectos guardados de un usuario"""
+    objetivo = miembro or ctx.author
+    user_id = str(objetivo.id)
+    datos = inventario_cache.get(user_id, {})
+
+    lineas = []
+    ahora = time.time()
+
+    # --- Buffs temporales (los limpiamos de paso si expiraron) ---
+    buffs_activos = datos.get("buffs", {})
+    nombres_buffs = {
+        "suerte_rw": "🎲 Dado de la suerte",
+        "suerte_robo": "🍀 Trébol de 4 hojas",
+        "suerte_apuesta": "🎰 Amuleto del ludópata",
+        "pata_conejo": "🐰 Pata de conejo",
+        "bono_w": "🏛️ Bono del gobierno",
+    }
+
+    buffs_vivos = {}
+    for nombre, info in list(buffs_activos.items()):
+        if info.get("expira", 0) > ahora:
+            buffs_vivos[nombre] = info
+        else:
+            buffs_activos.pop(nombre, None)
+
+    if buffs_vivos:
+        lineas.append("**Buffs activos:**")
+        for nombre, info in buffs_vivos.items():
+            etiqueta = nombres_buffs.get(nombre, nombre)
+            restante = info["expira"] - ahora
+            lineas.append(f"> {etiqueta} — {formatear_tiempo_restante(restante)} restantes")
+    else:
+        lineas.append("**Buffs activos:**\n> *Ninguno.*")
+
+    # --- Efectos únicos guardados ---
+    efectos = datos.get("efectos_unicos", {})
+    efectos_activos = {k: v for k, v in efectos.items() if v > 0}
+    nombres_efectos = {
+        "pase_vip": "🎟️ Pase VIP",
+        "cristal_reroll": "💠 Cristal de reroll",
+    }
+
+    if efectos_activos:
+        lineas.append("")
+        lineas.append("**Efectos guardados:**")
+        for nombre, cantidad in efectos_activos.items():
+            etiqueta = nombres_efectos.get(nombre, nombre)
+            lineas.append(f"> {etiqueta} x{cantidad}")
+
+    # --- Cooldowns activos ---
+    restante_rw = cooldown_restante(cooldown_rw_usuario, user_id)
+    restante_w = cooldown_restante(cooldown_w_usuario, user_id)
+
+    if restante_rw > 0 or restante_w > 0:
+        lineas.append("")
+        lineas.append("**Cooldowns activos:**")
+        if restante_rw > 0:
+            lineas.append(f"> ⏳ `!rw` — {formatear_tiempo_restante(restante_rw)}")
+        if restante_w > 0:
+            lineas.append(f"> ☕ `!w` — {formatear_tiempo_restante(restante_w)}")
+
+    embed = crear_embed(
+        titulo=f"✨ Efectos de {objetivo.display_name}",
+        descripcion="\n".join(lineas),
+    )
+    await ctx.reply(embed=embed)
+
+# ===================== FIN COMANDOS DE ITEMS =====================
 
 @bot.command(name="help")
 async def ayuda(ctx):
@@ -2710,6 +3230,7 @@ async def ayuda(ctx):
     lineas = [
         "`!balance [@alguien]` — ver tu balance (o el de otro), lo bancado y el total",
         "`!top` — top 10 de plata total (balance + banco)",
+        "`!perfil [@alguien]` — resumen completo: plata, matrimonio, colección e inventario",
         "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
         "`!retirar cantidad` — saca plata del banco",
         "`!pay @usuario cantidad` — le pasás plata de tu balance a otro usuario",
@@ -2724,6 +3245,8 @@ async def ayuda(ctx):
         "_En cualquier `cantidad` de arriba podés poner `all` (todo), o abreviar: `100k`, `2m`, `1b`, `1t`_",
         "`!shop` o `!tienda` — ver el catálogo de la tienda, por categorías",
         "`!buy nombre del ítem [cantidad]` o `!comprar ...` — comprar algo de la tienda",
+        "`!usar nombre del ítem` — usar un item de tu inventario (buffs, cooldowns, efectos)",
+        "`!buffs [@alguien]` — ver tus buffs activos y efectos guardados",
         "`!inv` o `!inventario` [@alguien] — ver los objetos que compraste",
         "`!invfo nombre del ítem` — ver la ficha de un ítem puntual de la tienda",
         "`!rw` — tirar un personaje random (cooldown: 6hs; reclamar tiene su propio cooldown de 4hs)",
