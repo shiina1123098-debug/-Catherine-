@@ -505,6 +505,24 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/14/280893.jpg",
         "Fuente": "Dragon Ball",
         "Valor": 2500
+      },
+      {
+        "Nombre": "Vergil",
+        "Imagen": "https://safebooru.org/images/9/a611b95e517c193715e7db4ea8a45bf8.jpeg",
+        "Fuente": "Devil May Cry",
+        "Valor": 490000
+      },
+      {
+        "Nombre": "Tifa Lockhart",
+        "Imagen": "https://upload.wikimedia.org/wikipedia/en/6/61/Tifa_Lockhart_art.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
+        "Fuente": "Final Fantasy VII",
+        "Valor": 15000
+      },
+      {
+        "Nombre": "Priket",
+        "Imagen": "https://fgguides.com/wp-content/uploads/2024/09/Red-Idol-Prickett.png",
+        "Fuente": "Black Souls 2",
+        "Valor": 430000
       }
     ]
   }
