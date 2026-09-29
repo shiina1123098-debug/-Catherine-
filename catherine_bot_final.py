@@ -754,16 +754,13 @@ async def balance(ctx, miembro: discord.Member = None):
                 return
             balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
             hubo_cambios_sin_guardar = True
-            embed = crear_embed(
-                titulo="✨ Cuenta nueva",
-                descripcion=(
-                    f"No tenías cuenta todavía, así que te abrí una. Arrancás en cero, "
-                    f"pero de acá en más va a ir quedando registrado lo que vayas juntando."
-                ),
-                footer=ctx.author.display_name,
+            descripcion = (
+                "No tenías cuenta todavía, así que te abrí una. Arrancás en cero, "
+                "pero de acá en más va a ir quedando registrado lo que vayas juntando.\n\n"
+                f"💳 **Balance**\n> {formatear_pesos(0)}\n\n"
+                f"🏦 **Banco**\n> {formatear_pesos(0)}"
             )
-            embed.add_field(name="🪙 Balance", value=formatear_pesos(0), inline=True)
-            embed.add_field(name="🏦 Banco", value=formatear_pesos(0), inline=True)
+            embed = crear_embed(titulo="✨ Cuenta nueva", descripcion=descripcion, footer=ctx.author.display_name)
         else:
             datos = balances_cache[user_id]
             datos.setdefault("banco", 0)
@@ -772,18 +769,25 @@ async def balance(ctx, miembro: discord.Member = None):
             total = balance_actual + banco_actual
 
             ranking_ordenado = sorted(
-                balances_cache.items(),
+                (item for item in balances_cache.items() if item[0] != ID_BANCA),
                 key=lambda item: item[1].get("balance", 0) + item[1].get("banco", 0),
                 reverse=True,
             )
             posicion = next((i for i, (uid, _) in enumerate(ranking_ordenado, start=1) if uid == user_id), None)
 
-            embed = crear_embed(titulo=f"🪙 Balance de {objetivo.display_name}", footer=f"{len(balances_cache)} cuentas registradas")
-            embed.add_field(name="Balance", value=f"**{formatear_pesos(balance_actual)}**", inline=True)
-            embed.add_field(name="🏦 Banco", value=f"**{formatear_pesos(banco_actual)}**", inline=True)
-            embed.add_field(name="Total", value=f"**{formatear_pesos(total)}**", inline=True)
+            descripcion = (
+                f"💳 **Balance**\n> {formatear_pesos(balance_actual)}\n\n"
+                f"🏦 **Banco**\n> {formatear_pesos(banco_actual)}\n\n"
+                f"📊 **Total**\n> {formatear_pesos(total)}"
+            )
             if posicion:
-                embed.add_field(name="Puesto local", value=f"#{posicion}", inline=True)
+                descripcion += f"\n\n🏅 **Puesto local**\n> #{posicion}"
+
+            embed = crear_embed(
+                titulo=f"🪙 Balance de {objetivo.display_name}",
+                descripcion=descripcion,
+                footer=f"{len(balances_cache)} cuentas registradas",
+            )
 
         await ctx.reply(embed=embed)
     except Exception as e:
@@ -797,7 +801,7 @@ async def top(ctx):
         return
 
     ranking_ordenado = sorted(
-        balances_cache.items(),
+        (item for item in balances_cache.items() if item[0] != ID_BANCA),  # el dueño de la banca no compite, tiene ventaja infinita
         key=lambda item: item[1].get("balance", 0) + item[1].get("banco", 0),
         reverse=True,
     )[:10]
@@ -2327,12 +2331,19 @@ async def inv(ctx, miembro: discord.Member = None):
     lineas = []
     for nombre_item, cantidad in items.items():
         _, item_shop = buscar_item_shop(nombre_item)
-        emoji = item_shop["emoji"] if item_shop else "📦"
-        lineas.append(f"{emoji} **{nombre_item}** x{cantidad}")
+        precio_unitario = item_shop["precio"] if item_shop else None
+        subtotal = precio_unitario * cantidad if precio_unitario is not None else None
+        etiqueta_cantidad = f"x{cantidad}"
+        etiqueta_precio = formatear_pesos(subtotal) if subtotal is not None else "—"
+        # Nombre a la izquierda, cantidad y precio a la derecha, alineados en columnas
+        # (código monoespaciado, sin emoji adentro para que la alineación no se rompa).
+        lineas.append(f"{nombre_item:<24}{etiqueta_cantidad:>6}{etiqueta_precio:>14}")
+
+    tabla = "```\n" + "\n\n".join(lineas) + "\n```"
 
     embed = crear_embed(
         titulo=f"🎒 Inventario de {miembro.display_name}",
-        descripcion="\n".join(lineas),
+        descripcion=tabla,
     )
     await ctx.reply(embed=embed)
 
@@ -2551,11 +2562,14 @@ class ColeccionView(discord.ui.View):
         for p in self.personajes[inicio:fin]:
             nombre_p = campo_personaje(p, "Nombre", "nombre")
             valor_p = campo_personaje(p, "Valor", "valor")
-            lineas.append(f"• **{nombre_p}** — {formatear_pesos(valor_p)}")
+            # Nombre a la izquierda, valor a la derecha, en columnas monoespaciadas.
+            lineas.append(f"{nombre_p:<26}{formatear_pesos(valor_p):>14}")
+
+        tabla = "```\n" + "\n\n".join(lineas) + "\n```" if lineas else "No hay personajes en esta página."
 
         return crear_embed(
             titulo=f"📚 Colección de {self.miembro.display_name}",
-            descripcion="\n".join(lineas) if lineas else "No hay personajes en esta página.",
+            descripcion=tabla,
             footer=f"Página {self.pagina + 1}/{self.total_paginas} — {len(self.personajes)} personajes en total",
         )
 
