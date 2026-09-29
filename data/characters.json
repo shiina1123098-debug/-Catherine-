@@ -499,6 +499,12 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/3/549312.jpg",
         "Fuente": "Hunter x Hunter",
         "Valor": 12000
+      },
+      {
+        "Nombre": "Bulma",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/14/280893.jpg",
+        "Fuente": "Dragon Ball",
+        "Valor": 2500
       }
     ]
   }
