@@ -573,6 +573,13 @@ async def interes_banco():
     if hubo_interes:
         hubo_cambios_sin_guardar = True
         print("🏦 Interés diario aplicado a bancos", flush=True)
+        # Guardamos ya mismo (no esperamos los 15 min del guardado periódico) para que,
+        # si el bot se reinicia justo después, no se pierda este cálculo puntual.
+        try:
+            await guardar_balances_en_github()
+            print("💾 Interés guardado en GitHub al toque", flush=True)
+        except Exception as e:
+            print(f"⚠️ No pude guardar el interés al toque: {e}", flush=True)
 
 @bot.event
 async def on_ready():
@@ -1145,9 +1152,9 @@ async def work(ctx):
 
 @bot.command(name="wAdmin", aliases=["wadmin"], hidden=True)
 async def work_admin(ctx):
-    """Igual que !w pero sin cooldown. Solo el dueño del server."""
-    if ctx.guild is None or ctx.author.id != ctx.guild.owner_id:
-        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño del server."))
+    """Igual que !w pero sin cooldown. Solo vos."""
+    if str(ctx.author.id) != ID_BANCA:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
         return
     await ejecutar_w(ctx)
 
@@ -1249,11 +1256,11 @@ async def roulette(ctx, color: str = None, cantidad: str = None):
 
 @bot.command(name="addmoney")
 async def addmoney(ctx, miembro: discord.Member = None, cantidad: int = None):
-    """Le agrega plata a alguien. Solo el dueño del server puede usarlo."""
+    """Le agrega plata a alguien. Solo vos podés usarlo."""
     global hubo_cambios_sin_guardar
 
-    if ctx.author.id != ctx.guild.owner_id:
-        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño del server."))
+    if str(ctx.author.id) != ID_BANCA:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
         return
 
     if miembro is None or cantidad is None:
@@ -1637,9 +1644,9 @@ async def rw(ctx):
 
 @bot.command(name="rwAdmin", aliases=["rwadmin"], hidden=True)
 async def rw_admin(ctx):
-    """Igual que !rw pero sin cooldown (ni de tirada ni de reclamo). Solo el dueño del server."""
-    if ctx.guild is None or ctx.author.id != ctx.guild.owner_id:
-        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño del server."))
+    """Igual que !rw pero sin cooldown (ni de tirada ni de reclamo). Solo vos."""
+    if str(ctx.author.id) != ID_BANCA:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
         return
     await ejecutar_rw(ctx, admin=True)
 
@@ -2345,7 +2352,7 @@ async def invfo(ctx, *, nombre_buscado: str = None):
         await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún ítem que se llame **{nombre_buscado}** en la tienda. Mirá `!shop`."))
         return
 
-    embed = crear_embed(titulo=f"{item['emoji']} {item['nombre']}")
+    embed = crear_embed(titulo=f"{item['emoji']} {item['nombre']}", descripcion=item.get("descripcion") or None)
     embed.add_field(name="Categoría", value=categoria, inline=True)
     embed.add_field(name="Precio", value=formatear_pesos(item["precio"]), inline=True)
     if item.get("imagen"):
@@ -2463,6 +2470,38 @@ async def checkimg(ctx):
     await aviso.edit(embed=crear_embed(titulo="🔎 Chequeo de imágenes", descripcion=bloques[0]))
     for bloque in bloques[1:]:
         await ctx.send(embed=crear_embed(descripcion=bloque))
+
+@bot.command(name="5porcentforce", hidden=True)
+async def cinco_porciento_force(ctx):
+    """Fuerza el 5% de interés diario a tu banco ahora mismo, sin esperar las 24hs. Solo vos."""
+    global hubo_cambios_sin_guardar
+
+    if str(ctx.author.id) != ID_BANCA:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
+        return
+
+    user_id = str(ctx.author.id)
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+    balances_cache[user_id].setdefault("banco", 0)
+    banco = balances_cache[user_id]["banco"]
+
+    if banco <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés nada en el banco todavía. Usá `!depositar` primero."))
+        return
+
+    ganancia = round(banco * INTERES_BANCO_DIARIO)
+    balances_cache[user_id]["banco"] = banco + ganancia
+    balances_cache[user_id]["ultimo_interes"] = time.time()  # reinicia el reloj de 24hs para que no se sume de nuevo solo
+    hubo_cambios_sin_guardar = True
+
+    await ctx.reply(embed=crear_embed(
+        titulo="🏦 5% forzado",
+        descripcion=(
+            f"Le metiste el 5% a tu banco a la fuerza: **+{formatear_pesos(ganancia)}**.\n"
+            f"Banco actual: **{formatear_pesos(balances_cache[user_id]['banco'])}**"
+        ),
+    ))
 
 @bot.command(name="datasave")
 async def datasave(ctx):
