@@ -756,7 +756,7 @@ async def balance(ctx, miembro: discord.Member = None):
             hubo_cambios_sin_guardar = True
             embed = crear_embed(
                 descripcion=(
-                    f"### ✨ Cuenta nueva\n\n"
+                    f"### ✨ Cuenta nueva\n\n\n"
                     f"No tenías cuenta todavía, así que te abrí una. Arrancás en cero, "
                     f"pero de acá en más va a ir quedando registrado lo que vayas juntando.\n\n"
                     f"> 🪙 **Balance**\n"
@@ -781,7 +781,7 @@ async def balance(ctx, miembro: discord.Member = None):
             posicion = next((i for i, (uid, _) in enumerate(ranking_ordenado, start=1) if uid == user_id), None)
 
             descripcion = (
-                f"### 🪙 {objetivo.display_name}\n\n"
+                f"### 🪙 Cuenta de {objetivo.display_name}\n\n\n"
                 f"> 💵 **Balance**\n"
                 f"> {formatear_pesos(balance_actual)}\n\n"
                 f"> 🏦 **Banco**\n"
@@ -2210,12 +2210,12 @@ class ShopView(discord.ui.View):
 
         if items:
             lineas = [
-                f"> {item['emoji']} **{item['nombre']}**\n> {formatear_pesos(item['precio'])}"
+                f"> {item['emoji']} **{item['nombre']}** — {formatear_pesos(item['precio'])}"
                 for item in items
             ]
-            descripcion = f"### {nombre_categoria}\n\n" + "\n\n".join(lineas)
+            descripcion = f"### {nombre_categoria}\n\n\n" + "\n\n".join(lineas)
         else:
-            descripcion = f"### {nombre_categoria}\n\n-# No hay ítems acá todavía."
+            descripcion = f"### {nombre_categoria}\n\n\n-# No hay ítems acá todavía."
 
         embed = crear_embed(
             descripcion=descripcion,
@@ -2348,12 +2348,12 @@ async def inv(ctx, miembro: discord.Member = None):
     for nombre_item, cantidad in items.items():
         _, item_shop = buscar_item_shop(nombre_item)
         emoji = item_shop["emoji"] if item_shop else "📦"
-        lineas.append(f"> {emoji} **{nombre_item}**\n> x{cantidad}")
+        lineas.append(f"> {emoji} **{nombre_item}** — x{cantidad}")
 
     total_items = sum(items.values())
     embed = crear_embed(
         descripcion=(
-            f"### 🎒 Inventario de {miembro.display_name}\n\n"
+            f"### 🎒 Inventario de {miembro.display_name}\n\n\n"
             + "\n\n".join(lineas)
             + f"\n\n-# {total_items} objeto(s) en total"
         ),
@@ -2575,16 +2575,16 @@ class ColeccionView(discord.ui.View):
         for p in self.personajes[inicio:fin]:
             nombre_p = campo_personaje(p, "Nombre", "nombre")
             valor_p = campo_personaje(p, "Valor", "valor")
-            lineas.append(f"> 🎴 **{nombre_p}**\n> {formatear_pesos(valor_p)}")
+            lineas.append(f"> 🎴 **{nombre_p}** — {formatear_pesos(valor_p)}")
 
         if lineas:
             descripcion = (
-                f"### 📚 Colección de {self.miembro.display_name}\n\n"
+                f"### 📚 Colección de {self.miembro.display_name}\n\n\n"
                 + "\n\n".join(lineas)
             )
         else:
             descripcion = (
-                f"### 📚 Colección de {self.miembro.display_name}\n\n"
+                f"### 📚 Colección de {self.miembro.display_name}\n\n\n"
                 f"-# No hay personajes en esta página."
             )
 
