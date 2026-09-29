@@ -1,7 +1,7 @@
 {
   "🎁 Coleccionables sin función": [
     {"nombre": "Peluche de Ado", "emoji": "🧸", "precio": 100000000, "descripcion": "Gyaru", "imagen": "https://i.imgur.com/Gjl55hd.jpeg"},
-    {"nombre": "Wachín de bolsillo", "emoji": "🐕", "precio": 50000000, "descripcion": null, "imagen": null},
+    {"nombre": "Wachín de bolsillo", "emoji": "🐕", "precio": 50000000, "descripcion": "deja de ser wachin, wachin.", "imagen": null},
     {"nombre": "Estatua del Fisura", "emoji": "🗿", "precio": 10000000, "descripcion": null, "imagen": null},
     {"nombre": "Lata de aire de alta montaña", "emoji": "🥫", "precio": 25000, "descripcion": null, "imagen": null},
     {"nombre": "Cabeza de Catherine", "emoji": "💀", "precio": 5000000, "descripcion": null, "imagen": null},
