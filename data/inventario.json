@@ -17,7 +17,7 @@
       "Lata de aire de alta montaña": 100000,
       "Poción de reset": 951,
       "Dado de la suerte": 38,
-      "Pase VIP": 195
+      "Pase VIP": 194
     },
     "buffs": {
       "suerte_rw": {
@@ -26,7 +26,7 @@
       }
     },
     "efectos_unicos": {
-      "pase_vip": 0
+      "pase_vip": 1
     },
     "autouse": {
       "despues_de_reclamar": "Pase VIP",
