@@ -1015,7 +1015,7 @@ async def on_command_error(ctx, error):
         return
     await ctx.reply(embed=crear_embed(descripcion=f"❌ Error al ejecutar el comando: {error}"))
 
-@bot.command(name="balance", aliases=["saldo"])
+@bot.command(name="balance", aliases=["saldo", "bal"])
 async def balance(ctx, miembro: discord.Member = None):
     """Muestra el balance (afuera del banco), lo bancado, y el total de vos o de otro usuario"""
     global hubo_cambios_sin_guardar
@@ -3108,9 +3108,118 @@ async def buy(ctx, *, entrada: str = None):
         ),
     ))
 
+ITEMS_POR_PAGINA = 10
+
+class InventarioIrAModal(discord.ui.Modal):
+    def __init__(self, vista):
+        super().__init__(title="Ir a una página")
+        self.vista = vista
+        self.numero = discord.ui.TextInput(
+            label=f"Página (1-{vista.total_paginas})",
+            placeholder="Ej: 3",
+            required=True,
+            max_length=10,
+        )
+        self.add_item(self.numero)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            numero = int(self.numero.value.strip())
+        except ValueError:
+            await interaction.response.send_message("Eso no es un número.", ephemeral=True)
+            return
+        if not (1 <= numero <= self.vista.total_paginas):
+            await interaction.response.send_message(f"Tiene que ser un número entre 1 y {self.vista.total_paginas}.", ephemeral=True)
+            return
+
+        self.vista.pagina = numero - 1
+        self.vista._actualizar_botones()
+        await interaction.response.edit_message(embed=self.vista.construir_embed(), view=self.vista)
+
+class InventarioView(discord.ui.View):
+    """Muestra el inventario paginado: 10 tipos de item por página, con
+    Previous/Ir a/Next. Solo el autor puede mover las páginas."""
+
+    def __init__(self, autor, miembro, items):
+        super().__init__(timeout=120)
+        self.autor = autor
+        self.miembro = miembro
+        # Ordenamos por cantidad descendente (los que más tenés primero)
+        self.items = sorted(items.items(), key=lambda kv: kv[1], reverse=True)
+        self.pagina = 0
+        self.total_paginas = max(1, -(-len(self.items) // ITEMS_POR_PAGINA))
+        self.mensaje = None
+        self._actualizar_botones()
+
+    def _actualizar_botones(self):
+        self.anterior.disabled = self.pagina == 0
+        self.siguiente.disabled = self.pagina >= self.total_paginas - 1
+
+    def construir_embed(self):
+        inicio = self.pagina * ITEMS_POR_PAGINA
+        fin = inicio + ITEMS_POR_PAGINA
+        items_pagina = self.items[inicio:fin]
+
+        lineas = []
+        for nombre_item, cantidad in items_pagina:
+            _, item_shop = buscar_item_shop(nombre_item)
+            emoji = item_shop["emoji"] if item_shop else "📦"
+            lineas.append(f"> {emoji} **{nombre_item}** — x{cantidad}")
+
+        if lineas:
+            descripcion = (
+                f"### 🎒 Inventario de {self.miembro.display_name}\n"
+                f"{SEPARADOR}\n\n"
+                + "\n\n".join(lineas)
+            )
+        else:
+            descripcion = (
+                f"### 🎒 Inventario de {self.miembro.display_name}\n"
+                f"{SEPARADOR}\n\n"
+                f"-# No hay items en esta página."
+            )
+
+        total_items = sum(c for _, c in self.items)
+        return crear_embed(
+            descripcion=descripcion,
+            footer=f"Página {self.pagina + 1}/{self.total_paginas} — {len(self.items)} tipo(s) de item, {total_items} objeto(s) en total",
+        )
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Solo quien pidió el inventario puede cambiar de página.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="◀ Previous", style=discord.ButtonStyle.secondary)
+    async def anterior(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina -= 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    @discord.ui.button(label="🔢 Ir a...", style=discord.ButtonStyle.primary)
+    async def ir_a_pagina(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(InventarioIrAModal(self))
+
+    @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.secondary)
+    async def siguiente(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina += 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    async def on_timeout(self):
+        if self.mensaje is None:
+            return
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.mensaje.edit(view=self)
+        except discord.HTTPException:
+            pass
+
 @bot.command(name="inv", aliases=["inventario"])
 async def inv(ctx, miembro: discord.Member = None):
-    """Muestra el inventario de objetos comprados en la tienda"""
+    """Muestra el inventario de objetos comprados en la tienda (paginado)"""
     miembro = miembro or ctx.author
     user_id = str(miembro.id)
     datos = inventario_cache.get(user_id)
@@ -3121,22 +3230,9 @@ async def inv(ctx, miembro: discord.Member = None):
         await ctx.reply(embed=crear_embed(descripcion=f"{posesivo} nada en `!shop`."))
         return
 
-    lineas = []
-    for nombre_item, cantidad in items.items():
-        _, item_shop = buscar_item_shop(nombre_item)
-        emoji = item_shop["emoji"] if item_shop else "📦"
-        lineas.append(f"> {emoji} **{nombre_item}** — x{cantidad}")
-
-    total_items = sum(items.values())
-    embed = crear_embed(
-        descripcion=(
-            f"### 🎒 Inventario de {miembro.display_name}\n"
-            f"{SEPARADOR}\n\n"
-            + "\n\n".join(lineas)
-            + f"\n\n-# {total_items} objeto(s) en total"
-        ),
-    )
-    await ctx.reply(embed=embed)
+    view = InventarioView(ctx.author, miembro, items)
+    mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
+    view.mensaje = mensaje
 
 @bot.command(name="invfo")
 async def invfo(ctx, *, nombre_buscado: str = None):
@@ -3516,7 +3612,7 @@ async def buffs(ctx, miembro: discord.Member = None):
 async def ayuda(ctx):
     """Lista los comandos de Catherine"""
     lineas = [
-        "`!balance [@alguien]` — ver tu balance (o el de otro), lo bancado y el total",
+        "`!balance [@alguien]` (o `!bal`) — ver tu balance (o el de otro), lo bancado y el total",
         "`!top` — top 10 de plata total (balance + banco)",
         "`!perfil [@alguien]` — resumen completo: plata, matrimonio, colección e inventario",
         "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
@@ -3538,7 +3634,7 @@ async def ayuda(ctx):
         "`!usar nombre del ítem` — usar un item de tu inventario (buffs, cooldowns, efectos)",
         "`!buffs [@alguien]` — ver tus buffs activos y efectos guardados",
         "`!autouse nombre del ítem` — hace que ese item se use solo en su momento (de nuevo para desactivar)",
-        "`!inv` o `!inventario` [@alguien] — ver los objetos que compraste",
+        "`!inv` o `!inventario` [@alguien] — ver los objetos que compraste (paginado)",
         "`!invfo nombre del ítem` — ver la ficha de un ítem puntual de la tienda",
         "`!rw` — tirar un personaje random (cooldown: 6hs; reclamar tiene su propio cooldown de 4hs)",
         "`!rwreload` — recargar la lista de personajes desde GitHub",
