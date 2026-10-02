@@ -1051,6 +1051,402 @@
         "Imagen": "https://upload.wikimedia.org/wikipedia/en/f/fa/SaberFateGrandOrder.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
         "Fuente": "Fate",
         "Valor": 1900000
+      },
+      {
+        "Nombre": "Kyoka Jiro",
+        "Imagen": "https://static.wikia.nocookie.net/battle-saga-fan-fiction-series/images/2/25/Kyoka_Jiro.png/revision/latest?cb=20201022003356",
+        "Fuente": "My Hero Academia",
+        "Valor": 32000
+      },
+      {
+        "Nombre": "Kobeni Higashiyama",
+        "Imagen": "https://static.wikia.nocookie.net/chainsaw-man/images/a/ab/Kobeniscarownercolored.png/revision/latest/scale-to-width/360?cb=20220408012522",
+        "Fuente": "Chainsaw Man",
+        "Valor": 17500
+      },
+      {
+        "Nombre": "Yunyun",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/0/02/Crimson_Demons_Yunyun_Renders.png/revision/latest?cb=20241227063446&path-prefix=protagonist",
+        "Fuente": "KonoSuba",
+        "Valor": 20000
+      },
+      {
+        "Nombre": "Kiana Kaslana (Herrscher)",
+        "Imagen": "https://i.redd.it/yffbqdqi8p2b1.jpg",
+        "Fuente": "Honkai Impact 3rd",
+        "Valor": 150000
+      },
+      {
+        "Nombre": "Kai'Sa",
+        "Imagen": "https://wiki.leagueoflegends.com/en-us/images/thumb/Kai%27Sa_Render.png/410px-Kai%27Sa_Render.png?146d2",
+        "Fuente": "League of Legends",
+        "Valor": 6000
+      },
+      {
+        "Nombre": "Koishi Komeiji",
+        "Imagen": "https://static.wikia.nocookie.net/touhou/images/4/40/Th155Koishi.png/revision/latest?cb=20180107031544",
+        "Fuente": "Touhou Project",
+        "Valor": 95000
+      },
+      {
+        "Nombre": "Obito Uchiha",
+        "Imagen": "https://upload.wikimedia.org/wikipedia/en/1/1c/Obitounmasked.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
+        "Fuente": "Naruto",
+        "Valor": 130000
+      },
+      {
+        "Nombre": "Meryphillia",
+        "Imagen": "https://fgguides.com/wp-content/uploads/2025/02/Meryphillia-the-Ghoul.png",
+        "Fuente": "Black Souls 2",
+        "Valor": 220000
+      },
+      {
+        "Nombre": "Izumi Hashima",
+        "Imagen": "https://static.wikia.nocookie.net/saekano/images/4/42/Body_%282%29.png/revision/latest?cb=20141125164730",
+        "Fuente": "Saekano",
+        "Valor": 7400
+      },
+      {
+        "Nombre": "Xenovia Quarta",
+        "Imagen": "https://static.wikia.nocookie.net/highschooldxd/images/e/e2/Xenovia_LN_Profile_Image.png/revision/latest?cb=20181109200114",
+        "Fuente": "High School DxD",
+        "Valor": 5400
+      },
+      {
+        "Nombre": "Mako Mankanshoku",
+        "Imagen": "https://static.wikitide.net/greatcharacterswiki/0/05/Mako_Mankanshoku.png",
+        "Fuente": "Kill la Kill",
+        "Valor": 12000
+      },
+      {
+        "Nombre": "Mayuri Shiina",
+        "Imagen": "https://static.wikia.nocookie.net/steins-gate/images/e/e6/Mayuri_Shiina_Portrait.png/revision/latest?cb=20181024172638",
+        "Fuente": "Steins;Gate",
+        "Valor": 16500
+      },
+      {
+        "Nombre": "Yui Hirasawa",
+        "Imagen": "https://static.wikia.nocookie.net/k-on/images/4/4b/Yui_Hirasawa_new_mugshot.png/revision/latest?cb=20251218213805",
+        "Fuente": "K-On!",
+        "Valor": 13000
+      },
+      {
+        "Nombre": "Uiharu Kazari",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/3/39/UiharuT_body.png/revision/latest?cb=20241031161321&path-prefix=protagonist",
+        "Fuente": "Toaru Kagaku no Railgun",
+        "Valor": 14000
+      },
+      {
+        "Nombre": "Itsuki Nakano",
+        "Imagen": "https://i.redd.it/279b3oiet4481.jpg",
+        "Fuente": "Quintessential Quintuplets",
+        "Valor": 12000
+      },
+      {
+        "Nombre": "Historia Reiss",
+        "Imagen": "https://cdn.staticneo.com/w/attackontitan/HistoriaReiss.png",
+        "Fuente": "Attack on Titan",
+        "Valor": 80000
+      },
+      {
+        "Nombre": "Doflamingo",
+        "Imagen": "https://static.wikia.nocookie.net/onepiece/images/7/7e/Donquixote_Doflamingo_Anime_Infobox.png/revision/latest?cb=20231017082245",
+        "Fuente": "One Piece",
+        "Valor": 470000
+      },
+      {
+        "Nombre": "Toga Himiko",
+        "Imagen": "https://preview.redd.it/anime-creation-toga-himiko-from-my-hero-academia-v0-6lbsp1hypqb71.jpg?width=850&format=pjpg&auto=webp&s=f7d28bc5380e936e56c1463c8563d1302025083f",
+        "Fuente": "My Hero Academia",
+        "Valor": 50000
+      },
+      {
+        "Nombre": "Yukari Yakumo",
+        "Imagen": "https://static.wikia.nocookie.net/touhou/images/e/e8/Th155Yukari.png/revision/latest?cb=20241004093319",
+        "Fuente": "Touhou Project",
+        "Valor": 115000
+      },
+      {
+        "Nombre": "Snow White (Manga)",
+        "Imagen": "https://static.wikitide.net/blacksoulswiki/e/e2/Snow_White_Dialogue_HD.png",
+        "Fuente": "Black Souls 1",
+        "Valor": 140000
+      },
+      {
+        "Nombre": "Cornelia li Britannia",
+        "Imagen": "https://static.wikia.nocookie.net/villains/images/6/68/Cornelia_li_Britannia.png/revision/latest?cb=20200621112901",
+        "Fuente": "Code Geass",
+        "Valor": 22000
+      },
+      {
+        "Nombre": "Natsu Dragneel",
+        "Imagen": "https://static.wikia.nocookie.net/fairytail/images/6/66/Natsu_2018.png/revision/latest?cb=20180821153623",
+        "Fuente": "Fairy Tail",
+        "Valor": 182000
+      },
+      {
+        "Nombre": "Patchouli Knowledge",
+        "Imagen": "https://static.wikia.nocookie.net/fcs-vs-battle/images/1/1e/Patchouli_Knowledge_Vector.png/revision/latest?cb=20190905203459",
+        "Fuente": "Touhou Project",
+        "Valor": 90000
+      },
+      {
+        "Nombre": "Kiana Kaslana",
+        "Imagen": "https://static.wikia.nocookie.net/hoducks/images/f/f2/Herrscher_of_Finality.png/revision/latest?cb=20230307072139",
+        "Fuente": "Honkai Impact 3rd",
+        "Valor": 820000
+      },
+      {
+        "Nombre": "Reimu Hakurei",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/4/45/Reimu_Hakurei_Urban_Legend_in_Limbo.png/revision/latest?cb=20210207093128&path-prefix=protagonist",
+        "Fuente": "Touhou Project",
+        "Valor": 2050000
+      },
+      {
+        "Nombre": "Pieck Finger",
+        "Imagen": "https://static.wikia.nocookie.net/shingekinokyojin/images/7/73/Pieck_Finger_%28Anime%29_character_image.png/revision/latest?cb=20231105183352",
+        "Fuente": "Attack on Titan",
+        "Valor": 76000
+      },
+      {
+        "Nombre": "Tomura Shigaraki",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/14/272139.jpg",
+        "Fuente": "My Hero Academia",
+        "Valor": 66000
+      },
+      {
+        "Nombre": "Kaito",
+        "Imagen": "https://static.wikia.nocookie.net/vocaloid/images/8/82/KAITO_SP.png/revision/latest?cb=20241025030728",
+        "Fuente": "Vocaloid",
+        "Valor": 40000
+      },
+      {
+        "Nombre": "Killua Zoldyck",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/327920.jpg",
+        "Fuente": "Hunter x Hunter",
+        "Valor": 15000
+      },
+      {
+        "Nombre": "Akagi",
+        "Imagen": "https://azurlane.netojuu.com/images/0/06/Akagi.png",
+        "Fuente": "Azur Lane",
+        "Valor": 470000
+      },
+      {
+        "Nombre": "Rise Kujikawa",
+        "Imagen": "https://static.wikia.nocookie.net/megamitensei/images/a/ad/Rise_Kujikawa_Winter_Uniform.png/revision/latest?cb=20201214210808",
+        "Fuente": "Persona 4",
+        "Valor": 14000
+      },
+      {
+        "Nombre": "Fubuki",
+        "Imagen": "https://static.wikia.nocookie.net/vsbattles/images/8/83/Fubuki%2C_Road_to_Hero.png/revision/latest?cb=20221214001214",
+        "Fuente": "One Punch Man",
+        "Valor": 26000
+      },
+      {
+        "Nombre": "Mash Kyrielight",
+        "Imagen": "https://static.wikia.nocookie.net/fategrandorder/images/6/62/S001_Stage3.webp/revision/latest/scale-to-width/360?cb=20260606155437",
+        "Fuente": "Fate",
+        "Valor": 17500
+      },
+      {
+        "Nombre": "Rias Gremory",
+        "Imagen": "https://static.wikia.nocookie.net/highschooldxd/images/6/61/Volume_20_-_Rias.jpg/revision/latest/scale-to-width-down/1200?cb=20230512014330",
+        "Fuente": "High School DxD",
+        "Valor": 5800
+      },
+      {
+        "Nombre": "Bocchi (Hitori Gotoh)",
+        "Imagen": "https://static.wikia.nocookie.net/bocchi-the-rock/images/9/98/Hitori_Gotoh_Character_Design_2.png/revision/latest?cb=20220915114341",
+        "Fuente": "Bocchi the Rock!",
+        "Valor": 13500
+      },
+      {
+        "Nombre": "Ken Kaneki",
+        "Imagen": "https://static.wikia.nocookie.net/omniversal-battlefield/images/0/0a/Ken_Kaneki.jpg/revision/latest/scale-to-width-down/340?cb=20171031101134",
+        "Fuente": "Tokyo Ghoul",
+        "Valor": 200000
+      },
+      {
+        "Nombre": "Momo Yaoyorozu",
+        "Imagen": "https://static.wikia.nocookie.net/bokunoheroacademia/images/b/b1/Momo_Yaoyorozu_Winter_Costume_%28Anime%29.png/revision/latest/scale-to-width-down/250?cb=20210222070329",
+        "Fuente": "My Hero Academia",
+        "Valor": 33000
+      },
+      {
+        "Nombre": "Riko Sakurauchi",
+        "Imagen": "https://static.wikia.nocookie.net/yuripedia/images/7/77/Sunshine%21%21_infobox_-_Sakurauchi_Riko.png/revision/latest?cb=20170730231749",
+        "Fuente": "Love Live Sunshine",
+        "Valor": 7000
+      },
+      {
+        "Nombre": "Kei Karuizawa",
+        "Imagen": "https://static.wikia.nocookie.net/youkoso-jitsuryoku-shijou-shugi-no-kyoushitsu-e/images/d/d1/Kei_Karuizawa_LN_3rd_Year_visual.png/revision/latest/scale-to-width/360?cb=20250226043253",
+        "Fuente": "Classroom of the Elite",
+        "Valor": 15500
+      },
+      {
+        "Nombre": "Hina Kagiyama",
+        "Imagen": "https://static.wikia.nocookie.net/fcs-vs-battle/images/f/fb/Hina_Kagiyama_Vector.png/revision/latest?cb=20200615162459",
+        "Fuente": "Touhou Project",
+        "Valor": 56000
+      },
+      {
+        "Nombre": "D.Va",
+        "Imagen": "https://static.wikia.nocookie.net/overwatch_gamepedia/images/1/19/Icon-D.Va.png/revision/latest/scale-to-width-down/250?cb=20221005161600",
+        "Fuente": "Overwatch",
+        "Valor": 5800
+      },
+      {
+        "Nombre": "Caulifla",
+        "Imagen": "https://static.wikia.nocookie.net/dragonball/images/c/c2/SSJ2-Caulifla_Dokkan.jpg/revision/latest/scale-to-width-down/340?cb=20170727022300",
+        "Fuente": "Dragon Ball",
+        "Valor": 20000
+      },
+      {
+        "Nombre": "Hisoka Morow",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/3/174561.jpg",
+        "Fuente": "Hunter x Hunter",
+        "Valor": 64000
+      },
+      {
+        "Nombre": "Venti",
+        "Imagen": "https://upload.wikimedia.org/wikipedia/en/7/7d/Venti_Genshin.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
+        "Fuente": "Genshin Impact",
+        "Valor": 390000
+      },
+      {
+        "Nombre": "Lucy (Nyuu)",
+        "Imagen": "https://animerants.net/wp-content/uploads/2019/07/elfen-lied-lucy-discussion-7.png",
+        "Fuente": "Elfen Lied",
+        "Valor": 580000
+      },
+      {
+        "Nombre": "Gumi",
+        "Imagen": "https://static.wikia.nocookie.net/vocaloid/images/a/ad/AI_Megpoid_GUMI_transparent.png/revision/latest?cb=20221016001045",
+        "Fuente": "Vocaloid",
+        "Valor": 46000
+      },
+      {
+        "Nombre": "Asuka Langley Soryu",
+        "Imagen": "https://static.wikia.nocookie.net/evangelion/images/b/be/Asuka_Langley_Soryu.png/revision/latest?cb=20241229202153",
+        "Fuente": "Neon Genesis Evangelion",
+        "Valor": 1550000
+      },
+      {
+        "Nombre": "Shirai Kuroko",
+        "Imagen": "https://static.wikia.nocookie.net/to-aru-majutsu-no-index/images/d/db/KurokoT_body.png/revision/latest/scale-to-width-down/250?cb=20191218161935",
+        "Fuente": "Toaru Kagaku no Railgun",
+        "Valor": 16500
+      },
+      {
+        "Nombre": "Kanao Tsuyuri",
+        "Imagen": "https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/b/bf/Kanao_colored_body_2.png/revision/latest?cb=20220817214750",
+        "Fuente": "Demon Slayer",
+        "Valor": 62000
+      },
+      {
+        "Nombre": "Skull Knight",
+        "Imagen": "https://static.wikia.nocookie.net/berserk/images/6/65/Manga_E88_Skull_Knight_Attacks_Void.png/revision/latest?cb=20160819045259",
+        "Fuente": "Berserk",
+        "Valor": 450000
+      },
+      {
+        "Nombre": "Chi-Chi",
+        "Imagen": "https://static.wikia.nocookie.net/dragonuniverse/images/0/0a/ChiChiAdult.png/revision/latest?cb=20171028115800",
+        "Fuente": "Dragon Ball",
+        "Valor": 20500
+      },
+      {
+        "Nombre": "Yoruichi (base)",
+        "Imagen": "https://preview.redd.it/where-does-yoruichi-rank-in-terms-of-the-strongest-female-v0-bm1r5he0c3uf1.jpeg?auto=webp&s=63d8948e1e82944238d39d13b01344c5f4295db6",
+        "Fuente": "Bleach",
+        "Valor": 27000
+      },
+      {
+        "Nombre": "Holo",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/c/c4/Vt7.jpg/revision/latest?cb=20150607221015&path-prefix=protagonist",
+        "Fuente": "Spice and Wolf",
+        "Valor": 700000
+      },
+      {
+        "Nombre": "Ganyu",
+        "Imagen": "https://static.wikia.nocookie.net/gensin-impact/images/2/24/Ganyu_Card.png/revision/latest?cb=20230519012433",
+        "Fuente": "Genshin Impact",
+        "Valor": 850000
+      },
+      {
+        "Nombre": "Kamisato Ayaka",
+        "Imagen": "https://static.wikia.nocookie.net/gensin-impact/images/0/01/Kamisato_Ayaka_Card.png/revision/latest?cb=20210607100828",
+        "Fuente": "Genshin Impact",
+        "Valor": 170000
+      },
+      {
+        "Nombre": "Nui Harime",
+        "Imagen": "https://www.kill-la-kill-game.jp/img/character/07/chara.png",
+        "Fuente": "Kill la Kill",
+        "Valor": 14500
+      },
+      {
+        "Nombre": "Tirpitz",
+        "Imagen": "https://azurlane.netojuu.com/images/3/38/Tirpitz.png",
+        "Fuente": "Azur Lane",
+        "Valor": 420000
+      },
+      {
+        "Nombre": "Kanako Yasaka",
+        "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/9/96/Yasaka_kanako_touhou_drawn_by_dairi_123bb44144ace43102c9a204ede54507.png/revision/latest?cb=20180724084120",
+        "Fuente": "Touhou Project",
+        "Valor": 70000
+      },
+      {
+        "Nombre": "Satsuki Kiryuin",
+        "Imagen": "https://static.wikia.nocookie.net/kill-la-kill/images/a/a3/KLKMV1_Satsuki_TitleCard.png/revision/latest/scale-to-width-down/275?cb=20230315222019",
+        "Fuente": "Kill la Kill",
+        "Valor": 19000
+      },
+      {
+        "Nombre": "Alice Margatroid",
+        "Imagen": "https://static.wikia.nocookie.net/touhou/images/f/f0/Th105Alice.png/revision/latest?cb=20170807085954",
+        "Fuente": "Touhou Project",
+        "Valor": 66000
+      },
+      {
+        "Nombre": "Guts",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/13/284125.jpg",
+        "Fuente": "Berserk",
+        "Valor": 460000
+      },
+      {
+        "Nombre": "Lux",
+        "Imagen": "https://wiki.leagueoflegends.com/en-us/images/thumb/Lux_Render.png/227px-Lux_Render.png?3b428",
+        "Fuente": "League of Legends",
+        "Valor": 6200
+      },
+      {
+        "Nombre": "Jinx",
+        "Imagen": "https://thumb.wikimedia.org/wikipedia/en/thumb/c/c4/ArcaneJinx.jpeg/250px-ArcaneJinx.jpeg?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail",
+        "Fuente": "League of Legends",
+        "Valor": 6600
+      },
+      {
+        "Nombre": "Toru Hagakure",
+        "Imagen": "https://static.wikia.nocookie.net/bokunoheroacademia/images/c/c2/Toru_Hagakure_Action_2.png/revision/latest?cb=20240615225042",
+        "Fuente": "My Hero Academia",
+        "Valor": 30000
+      },
+      {
+        "Nombre": "Suika Ibuki",
+        "Imagen": "https://static.wikia.nocookie.net/fcs-vs-battle/images/6/6d/Suika_Ibuki_Vector.png/revision/latest?cb=20190904204310",
+        "Fuente": "Touhou Project",
+        "Valor": 58000
+      },
+      {
+        "Nombre": "Veldora Tempest",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/381124.jpg",
+        "Fuente": "That Time I Got Reincarnated as a Slime",
+        "Valor": 95000
       }
     ]
   }
