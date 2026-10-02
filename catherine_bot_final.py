@@ -933,7 +933,19 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Verificar si el bot fue mencionado
+    # Chequeamos ANTES si el mensaje es un comando válido. Si lo es, que lo
+    # maneje process_commands y salimos sin pasar por la lógica de Catherine.
+    # Esto evita el doble-comportamiento cuando respondés con "reply" a un
+    # mensaje del bot: Discord hace que bot.user.mentioned_in(message) sea True
+    # (por la referencia al mensaje original), pero como también es un comando
+    # válido, sin este chequeo el bot te contestaría como Catherine Y además
+    # te ejecutaría el comando.
+    ctx = await bot.get_context(message)
+    if ctx.valid:
+        await bot.process_commands(message)
+        return
+
+    # Verificar si el bot fue mencionado (por contenido o por reply)
     if bot.user.mentioned_in(message):
         # Mostrar que está "escribiendo..."
         async with message.channel.typing():
