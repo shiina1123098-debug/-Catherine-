@@ -22,6 +22,9 @@
     "buffs": {},
     "efectos_unicos": {
       "pase_vip": 0
+    },
+    "autouse": {
+      "despues_de_reclamar": "Pase VIP"
     }
   }
 }
