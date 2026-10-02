@@ -643,6 +643,12 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/6/63870.jpg",
         "Fuente": "Death Note",
         "Valor": 48000
+      },
+      {
+        "Nombre": "Arisu Sakayanagi",
+        "Imagen": "",
+        "Fuente": "Classroom of the Elite",
+        "Valor": 15000
       }
     ]
   }
