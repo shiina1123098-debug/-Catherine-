@@ -529,6 +529,18 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/15/262053.jpg",
         "Fuente": "Sword Art Online",
         "Valor": 16000
+      },
+      {
+        "Nombre": "The White Rabbit",
+        "Imagen": "https://static.wikitide.net/blacksoulswiki/7/7e/Node_Dialogue_HD.png",
+        "Fuente": "Black Souls 2",
+        "Valor": 110000
+      },
+      {
+        "Nombre": "Sanji",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/5/136769.jpg",
+        "Fuente": "One Piece",
+        "Valor": 45000
       }
     ]
   }
