@@ -589,13 +589,13 @@
   },
   {
     "Nombre": "Mereoleona Vermillion",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/p__/images/f/f4/Mereoleona_movie_concept.webp/revision/latest?cb=20240529181621&path-prefix=protagonist",
     "Fuente": "Black Clover",
     "Valor": 200000
   },
   {
     "Nombre": "Yae Miko",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/gensin-impact/images/8/89/Yae_Miko_Card.png/revision/latest?cb=20211231161334",
     "Fuente": "Genshin Impact",
     "Valor": 195000
   },
@@ -613,7 +613,7 @@
   },
   {
     "Nombre": "Nahida",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/gensin-impact/images/4/4c/Nahida_Card.png/revision/latest?cb=20241007221505",
     "Fuente": "Genshin Impact",
     "Valor": 190000
   },
@@ -631,7 +631,7 @@
   },
   {
     "Nombre": "Saber (Nero)",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/c/c8/Nero_Claudius_Fate.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Fate",
     "Valor": 190000
   },
@@ -649,7 +649,7 @@
   },
   {
     "Nombre": "Mona",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/gensin-impact/images/9/9f/Mona_Card.png/revision/latest?cb=20220725210059",
     "Fuente": "Genshin Impact",
     "Valor": 185000
   },
@@ -673,13 +673,13 @@
   },
   {
     "Nombre": "Jean",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/gensin-impact/images/a/a8/Jean_Card.png/revision/latest?cb=20220725210053",
     "Fuente": "Genshin Impact",
     "Valor": 180000
   },
   {
     "Nombre": "Diluc",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/gensin-impact/images/e/e7/Diluc_Card.png/revision/latest?cb=20220725204921",
     "Fuente": "Genshin Impact",
     "Valor": 175000
   },
@@ -703,7 +703,7 @@
   },
   {
     "Nombre": "Kamisato Ayaka",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/gensin-impact/images/0/01/Kamisato_Ayaka_Card.png/revision/latest?cb=20210607100828",
     "Fuente": "Genshin Impact",
     "Valor": 170000
   },
@@ -721,7 +721,7 @@
   },
   {
     "Nombre": "Yoimiya",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/gensin-impact/images/3/36/Yoimiya_Card.png/revision/latest?cb=20210607100839",
     "Fuente": "Genshin Impact",
     "Valor": 165000
   },
@@ -757,13 +757,13 @@
   },
   {
     "Nombre": "Eula",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/gensin-impact/images/0/0e/Eula_Card.png/revision/latest?cb=20210511110453",
     "Fuente": "Genshin Impact",
     "Valor": 160000
   },
   {
     "Nombre": "Raiden Mei (Herrscher)",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/hoducks/images/e/ea/Herrscher_of_Origin.png/revision/latest?cb=20230307072058",
     "Fuente": "Honkai Impact 3rd",
     "Valor": 155000
   },
@@ -805,7 +805,7 @@
   },
   {
     "Nombre": "Kiana Kaslana (Herrscher)",
-    "Imagen": "",
+    "Imagen": "https://i.redd.it/yffbqdqi8p2b1.jpg",
     "Fuente": "Honkai Impact 3rd",
     "Valor": 150000
   },
@@ -817,13 +817,13 @@
   },
   {
     "Nombre": "Rukia Kuchiki (Bankai)",
-    "Imagen": "",
+    "Imagen": "https://i.redd.it/8nnm079c0nqc1.jpeg",
     "Fuente": "Bleach",
     "Valor": 145000
   },
   {
     "Nombre": "Seele Vollerei",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/hoducks/images/e/e0/Swallowtail_Phantasm.png/revision/latest?cb=20201226084800",
     "Fuente": "Honkai Impact 3rd",
     "Valor": 145000
   },
@@ -841,13 +841,13 @@
   },
   {
     "Nombre": "Snow White (Manga)",
-    "Imagen": "",
+    "Imagen": "https://static.wikitide.net/blacksoulswiki/e/e2/Snow_White_Dialogue_HD.png",
     "Fuente": "Black Souls 1",
     "Valor": 140000
   },
   {
     "Nombre": "Fu Hua",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/hoducks/images/f/f7/Valkyrie_Accipiter.png/revision/latest?cb=20201226082235",
     "Fuente": "Honkai Impact 3rd",
     "Valor": 140000
   },
@@ -883,7 +883,7 @@
   },
   {
     "Nombre": "Sakuya Izayoi",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/p__/images/b/b7/Th105Sakuya.png/revision/latest?cb=20241122124704&path-prefix=protagonist",
     "Fuente": "Touhou Project",
     "Valor": 130000
   },
@@ -907,7 +907,7 @@
   },
   {
     "Nombre": "Flandre Scarlet",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/vsbattles/images/2/22/ImageFlandreScarletImage.png/revision/latest/scale-to-width-down/400?cb=20250314233452",
     "Fuente": "Touhou Project",
     "Valor": 125000
   },
@@ -919,7 +919,7 @@
   },
   {
     "Nombre": "Remilia Scarlet",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/a/af/Remilia_scarlet_by_rddm12_9_7-d9546vc.png/revision/latest?cb=20180716121647",
     "Fuente": "Touhou Project",
     "Valor": 120000
   },
@@ -955,7 +955,7 @@
   },
   {
     "Nombre": "Yukari Yakumo",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/touhou/images/e/e8/Th155Yukari.png/revision/latest?cb=20241004093319",
     "Fuente": "Touhou Project",
     "Valor": 115000
   },
@@ -979,7 +979,7 @@
   },
   {
     "Nombre": "Youmu Konpaku",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/fcs-vs-battle/images/4/44/Youmu_Konpaku_Vector.png/revision/latest?cb=20200520121552",
     "Fuente": "Touhou Project",
     "Valor": 110000
   },
@@ -991,13 +991,13 @@
   },
   {
     "Nombre": "Yuyuko Saigyouji",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/villainous-benchmark/images/1/1a/Yuyuko_Saigyouji.png/revision/latest?cb=20251015071207",
     "Fuente": "Touhou Project",
     "Valor": 105000
   },
   {
     "Nombre": "Satori Komeiji",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/fcs-vs-battle/images/5/50/Satori_Komeiji_Vector.png/revision/latest?cb=20200612152414",
     "Fuente": "Touhou Project",
     "Valor": 100000
   },
@@ -1009,7 +1009,7 @@
   },
   {
     "Nombre": "Koishi Komeiji",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/touhou/images/4/40/Th155Koishi.png/revision/latest?cb=20180107031544",
     "Fuente": "Touhou Project",
     "Valor": 95000
   },
@@ -1021,79 +1021,79 @@
   },
   {
     "Nombre": "Yuki Tsukumo",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/22/Yuki_Tsukumo_%28Anime_3%29.png/revision/latest?cb=20251230190559",
     "Fuente": "Jujutsu Kaisen",
     "Valor": 90000
   },
   {
     "Nombre": "Patchouli Knowledge",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/fcs-vs-battle/images/1/1e/Patchouli_Knowledge_Vector.png/revision/latest?cb=20190905203459",
     "Fuente": "Touhou Project",
     "Valor": 90000
   },
   {
     "Nombre": "Yoru (Asa Mitaka)",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/chainsaw-man/images/9/90/Volume_12_%28Textless%29.png/revision/latest?cb=20230405234930",
     "Fuente": "Chainsaw Man",
     "Valor": 88000
   },
   {
     "Nombre": "Mei Mei",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/fb/Mei_Mei_2006_%28Anime%29.png/revision/latest/scale-to-width-down/250?cb=20230501184838",
     "Fuente": "Jujutsu Kaisen",
     "Valor": 85000
   },
   {
     "Nombre": "Aya Shameimaru",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/p__/images/1/1a/Th105Aya.png/revision/latest?cb=20241122105338&path-prefix=protagonist",
     "Fuente": "Touhou Project",
     "Valor": 85000
   },
   {
     "Nombre": "Mai Zenin",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/86/Mai_Zen%27in_%28Anime_4%29.png/revision/latest?cb=20260122164350",
     "Fuente": "Jujutsu Kaisen",
     "Valor": 82000
   },
   {
     "Nombre": "Fujiwara no Mokou",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/p__/images/9/9b/Th145Mokou2.png/revision/latest?cb=20251028215605&path-prefix=protagonist",
     "Fuente": "Touhou Project",
     "Valor": 82000
   },
   {
     "Nombre": "Historia Reiss",
-    "Imagen": "",
+    "Imagen": "https://cdn.staticneo.com/w/attackontitan/HistoriaReiss.png",
     "Fuente": "Attack on Titan",
     "Valor": 80000
   },
   {
     "Nombre": "Annie Leonhart",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/shingekinokyojin/images/6/66/Annie_Leonhart_%28Anime%29_character_image.png/revision/latest?cb=20231105182447",
     "Fuente": "Attack on Titan",
     "Valor": 80000
   },
   {
     "Nombre": "Kaguya Houraisan",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/omniversal-battlefield/images/f/f5/Kaguya_Houraisan.jpg/revision/latest?cb=20190528033616",
     "Fuente": "Touhou Project",
     "Valor": 80000
   },
   {
     "Nombre": "Hange Zoe",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/shingekinokyojin/images/e/e4/Hange_Zo%C3%AB_%28Anime%29_character_image.png/revision/latest?cb=20210221212604",
     "Fuente": "Attack on Titan",
     "Valor": 78000
   },
   {
     "Nombre": "Pieck Finger",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/shingekinokyojin/images/7/73/Pieck_Finger_%28Anime%29_character_image.png/revision/latest?cb=20231105183352",
     "Fuente": "Attack on Titan",
     "Valor": 76000
   },
   {
     "Nombre": "Reisen Udongein Inaba",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/touhou/images/0/02/Th155Reisen.png/revision/latest?cb=20180107032138",
     "Fuente": "Touhou Project",
     "Valor": 74000
   },
@@ -1111,7 +1111,7 @@
   },
   {
     "Nombre": "Sanae Kochiya",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/fcs-vs-battle/images/2/29/Sanae_Kochiya_Vector.png/revision/latest?cb=20200521113937",
     "Fuente": "Touhou Project",
     "Valor": 72000
   },
@@ -1123,7 +1123,7 @@
   },
   {
     "Nombre": "Kanako Yasaka",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/9/96/Yasaka_kanako_touhou_drawn_by_dairi_123bb44144ace43102c9a204ede54507.png/revision/latest?cb=20180724084120",
     "Fuente": "Touhou Project",
     "Valor": 70000
   },
@@ -1135,13 +1135,13 @@
   },
   {
     "Nombre": "Mitsuri Kanroji",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/8/82/Kimetsu_no_Yaiba_Animation_Illustration_Book_4_BC.png/revision/latest/scale-to-width-down/250?cb=20260203015230",
     "Fuente": "Demon Slayer",
     "Valor": 68000
   },
   {
     "Nombre": "Suwako Moriya",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/8/8a/Suwako_Moriya.png/revision/latest?cb=20180724085403",
     "Fuente": "Touhou Project",
     "Valor": 68000
   },
@@ -1153,7 +1153,7 @@
   },
   {
     "Nombre": "Alice Margatroid",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/touhou/images/f/f0/Th105Alice.png/revision/latest?cb=20170807085954",
     "Fuente": "Touhou Project",
     "Valor": 66000
   },
@@ -1165,19 +1165,19 @@
   },
   {
     "Nombre": "Nitori Kawashiro",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/p__/images/0/02/Th145Nitori.png/revision/latest?cb=20260526123503&path-prefix=protagonist",
     "Fuente": "Touhou Project",
     "Valor": 64000
   },
   {
     "Nombre": "Kanao Tsuyuri",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/b/bf/Kanao_colored_body_2.png/revision/latest?cb=20220817214750",
     "Fuente": "Demon Slayer",
     "Valor": 62000
   },
   {
     "Nombre": "Momiji Inubashiri",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/touhou/images/1/1d/Momizi_Whos_Who.png/revision/latest?cb=20251207212025",
     "Fuente": "Touhou Project",
     "Valor": 62000
   },
@@ -1189,7 +1189,7 @@
   },
   {
     "Nombre": "Cirno",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/standard-evil/images/7/70/Cirno.png/revision/latest?cb=20251006002446",
     "Fuente": "Touhou Project",
     "Valor": 60000
   },
@@ -1201,7 +1201,7 @@
   },
   {
     "Nombre": "Suika Ibuki",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/fcs-vs-battle/images/6/6d/Suika_Ibuki_Vector.png/revision/latest?cb=20190904204310",
     "Fuente": "Touhou Project",
     "Valor": 58000
   },
@@ -1213,13 +1213,13 @@
   },
   {
     "Nombre": "Hina Kagiyama",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/fcs-vs-battle/images/f/fb/Hina_Kagiyama_Vector.png/revision/latest?cb=20200615162459",
     "Fuente": "Touhou Project",
     "Valor": 56000
   },
   {
     "Nombre": "Tewi Inaba",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/e/e7/296C8727-4F08-4F4C-9857-9288A1DB8A15.png/revision/latest?cb=20200404090025",
     "Fuente": "Touhou Project",
     "Valor": 54000
   },
@@ -1231,19 +1231,19 @@
   },
   {
     "Nombre": "Keine Kamishirasawa",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/3b/Keine_Kamishirasawa_Vector.png/revision/latest?cb=20190824120220",
     "Fuente": "Touhou Project",
     "Valor": 52000
   },
   {
     "Nombre": "Toga Himiko",
-    "Imagen": "",
+    "Imagen": "https://preview.redd.it/anime-creation-toga-himiko-from-my-hero-academia-v0-6lbsp1hypqb71.jpg?width=850&format=pjpg&auto=webp&s=f7d28bc5380e936e56c1463c8563d1302025083f",
     "Fuente": "My Hero Academia",
     "Valor": 50000
   },
   {
     "Nombre": "Kagamine Rin",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/vocaloid/images/a/af/Kagamine_Rin_act2.png/revision/latest/scale-to-width-down/160?cb=20221118025110",
     "Fuente": "Vocaloid",
     "Valor": 50000
   },
@@ -1255,7 +1255,7 @@
   },
   {
     "Nombre": "Megurine Luka",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/vocaloid/images/8/80/LUKA_SP.png/revision/latest/scale-to-width-down/1200?cb=20241025030907",
     "Fuente": "Vocaloid",
     "Valor": 48000
   },
@@ -1267,7 +1267,7 @@
   },
   {
     "Nombre": "Gumi",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/vocaloid/images/a/ad/AI_Megpoid_GUMI_transparent.png/revision/latest?cb=20221016001045",
     "Fuente": "Vocaloid",
     "Valor": 46000
   },
@@ -1279,7 +1279,7 @@
   },
   {
     "Nombre": "IA",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/p__/images/3/35/IA_Vocaloid.png/revision/latest/scale-to-width-down/1200?cb=20240929095634&path-prefix=protagonist",
     "Fuente": "Vocaloid",
     "Valor": 44000
   },
@@ -1291,7 +1291,7 @@
   },
   {
     "Nombre": "Kagamine Len",
-    "Imagen": "",
+    "Imagen": "https://www.colorfulstage.com/img/chara/v_03_KagamineLen_ver02.webp",
     "Fuente": "Vocaloid",
     "Valor": 42000
   },
@@ -1303,7 +1303,7 @@
   },
   {
     "Nombre": "Kaito",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/vocaloid/images/8/82/KAITO_SP.png/revision/latest?cb=20241025030728",
     "Fuente": "Vocaloid",
     "Valor": 40000
   },
@@ -1315,7 +1315,7 @@
   },
   {
     "Nombre": "Meiko",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/vocaloid/images/c/c4/MEIKO_SP.png/revision/latest?cb=20241025030706",
     "Fuente": "Vocaloid",
     "Valor": 38000
   },
@@ -1327,19 +1327,19 @@
   },
   {
     "Nombre": "Ochaco Uraraka",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/b/b3/Ochako_Uraraka.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "My Hero Academia",
     "Valor": 36000
   },
   {
     "Nombre": "Reze",
-    "Imagen": "",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/1/1b/Reze_%28Chainsaw_Man%29.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
     "Fuente": "Chainsaw Man",
     "Valor": 34000
   },
   {
     "Nombre": "Tsuyu Asui",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/p__/images/f/ff/Tsuyu_Asui_Full_Body_School_Uniform_Anime.png/revision/latest?cb=20190616203420&path-prefix=protagonist",
     "Fuente": "My Hero Academia",
     "Valor": 34000
   },
