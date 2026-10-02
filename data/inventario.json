@@ -20,12 +20,7 @@
       "Pase VIP": 600,
       "Amuleto del ludópata": 200
     },
-    "buffs": {
-      "suerte_apuesta": {
-        "valor": 0.05,
-        "expira": 1790920094.196862
-      }
-    },
+    "buffs": {},
     "efectos_unicos": {
       "pase_vip": 4
     },
