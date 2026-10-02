@@ -2181,6 +2181,7 @@ class RWClaimView(discord.ui.View):
         agregar_personaje_a_coleccion(interaction.user, self.personaje)
         if not self.admin:
             ultimo_reclamo_por_usuario[str(interaction.user.id)] = time.time()
+        await ejecutar_autouse_silencioso(interaction.user, "despues_de_reclamar")
 
         button.disabled = True
         button.label = f"Reclamado por {interaction.user.display_name}"
@@ -2287,6 +2288,9 @@ async def rw(ctx):
     # Solo ponemos cooldown nuevo si la tirada se hizo Y no usamos cristal
     if exito and not usando_cristal:
         poner_cooldown(cooldown_rw_usuario, user_id, COOLDOWN_RW_SEGUNDOS)
+
+    if exito:
+        await ejecutar_autouse_silencioso(ctx.author, "despues_de_rw")
 
 @bot.command(name="rwAdmin", aliases=["rwadmin"], hidden=True)
 async def rw_admin(ctx):
@@ -3095,6 +3099,74 @@ async def aplicar_efecto_item(ctx, item, efecto):
     return None
 
 
+# ===================== AUTOUSE =====================
+# Cada efecto "usable" tiene, como mucho, UN momento natural en el que tiene
+# sentido gatillarse solo. Si un efecto no está acá, significa que no hay un
+# momento automático obvio para él (ej: los buffs de suerte, que se activan
+# antes de una sesión, no después de una acción puntual) y !autouse lo rechaza.
+TRIGGERS_AUTOUSE = {
+    "reducir_cooldown_rw": "despues_de_rw",
+    "resetear_cooldown_rw": "despues_de_rw",
+    "cristal_reroll": "despues_de_rw",
+    "pase_vip": "despues_de_reclamar",
+}
+
+NOMBRES_TRIGGER = {
+    "despues_de_rw": "usar `!rw`",
+    "despues_de_reclamar": "reclamar un personaje en `!rw`",
+}
+
+class _CtxSilencioso:
+    """Shim mínimo para poder reusar aplicar_efecto_item() en el autouse sin que
+    mande mensajes al canal público cuando el efecto no corresponde aplicarse
+    (ej: 'no tenés cooldown que reducir'). El autouse falla en silencio en esos casos."""
+    def __init__(self, author):
+        self.author = author
+
+    async def reply(self, *args, **kwargs):
+        pass
+
+async def ejecutar_autouse_silencioso(usuario, trigger):
+    """Si `usuario` configuró un item para este gatillo y todavía le queda
+    stock, lo usa automáticamente (reusando la misma lógica que !usar) y le
+    manda un DM avisando. No hace nada si no hay autouse configurado, no tiene
+    stock, o el efecto no necesitaba aplicarse (ej: no había cooldown activo)."""
+    user_id = str(usuario.id)
+    datos = inventario_cache.get(user_id)
+    if not datos:
+        return
+
+    nombre_item = datos.get("autouse", {}).get(trigger)
+    if not nombre_item:
+        return
+
+    if datos.get("items", {}).get(nombre_item, 0) <= 0:
+        return  # ya no le queda, no hay nada que avisar
+
+    _, item = buscar_item_shop(nombre_item)
+    if item is None or TRIGGERS_AUTOUSE.get(item.get("efecto")) != trigger:
+        return  # cambió la tienda y este item ya no corresponde a este gatillo
+
+    global hubo_cambios_inventario_sin_guardar
+    resultado_texto = await aplicar_efecto_item(_CtxSilencioso(usuario), item, item["efecto"])
+    if resultado_texto is None:
+        return  # no hacía falta (ej: no había cooldown que reducir), no se gastó nada
+
+    quitar_item_del_inventario(usuario, nombre_item, 1)
+    hubo_cambios_inventario_sin_guardar = True
+    try:
+        await guardar_inventario_en_github()
+    except Exception as e:
+        print(f"⚠️ No pude guardar el inventario tras autouse: {e}", flush=True)
+
+    try:
+        await usuario.send(embed=crear_embed(
+            titulo="🤖 Autouse",
+            descripcion=f"{resultado_texto}\n\n-# Se usó automáticamente tu **{item['emoji']} {item['nombre']}**.",
+        ))
+    except discord.Forbidden:
+        pass  # tiene los DMs cerrados, no hay forma de avisarle
+
 @bot.command(name="usar", aliases=["use"])
 async def usar(ctx, *, nombre_buscado: str = None):
     """Usa un item de tu inventario. Ej: !usar Dado de la suerte"""
@@ -3151,6 +3223,74 @@ async def usar(ctx, *, nombre_buscado: str = None):
         await guardar_inventario_en_github()
     except Exception as e:
         print(f"⚠️ No pude guardar el inventario: {e}", flush=True)
+
+@bot.command(name="autouse")
+async def autouse(ctx, *, nombre_buscado: str = None):
+    """Configura que un item se use solo en su momento (!autouse nombre del item).
+    Corré el mismo comando de nuevo con el mismo item para desactivarlo.
+    Sin nombre, muestra qué tenés activo."""
+    global hubo_cambios_inventario_sin_guardar
+    user_id = str(ctx.author.id)
+    datos = inventario_cache.setdefault(user_id, {"nombre": ctx.author.display_name, "items": {}})
+    config_autouse = datos.setdefault("autouse", {})
+
+    if not nombre_buscado:
+        if not config_autouse:
+            await ctx.reply(embed=crear_embed(
+                descripcion="No tenés ningún autouse activo. Usalo así: `!autouse Pase VIP`."
+            ))
+            return
+        lineas = [
+            f"> Después de {NOMBRES_TRIGGER.get(trigger, trigger)}\n> se usa **{nombre_item}**"
+            for trigger, nombre_item in config_autouse.items()
+        ]
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"### 🤖 Autouse activos\n{SEPARADOR}\n\n" + "\n\n".join(lineas)
+        ))
+        return
+
+    categoria, item = buscar_item_shop(nombre_buscado)
+    if item is None:
+        await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún item llamado **{nombre_buscado}** en la tienda."))
+        return
+
+    trigger = TRIGGERS_AUTOUSE.get(item.get("efecto"))
+    if trigger is None:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"**{item['emoji']} {item['nombre']}** no tiene un momento automático definido para usarse. Usalo manualmente con `!usar {item['nombre']}`."
+        ))
+        return
+
+    # Toggle: si ya era justo este item el configurado en este gatillo, lo apagamos
+    if config_autouse.get(trigger) == item["nombre"]:
+        del config_autouse[trigger]
+        hubo_cambios_inventario_sin_guardar = True
+        try:
+            await guardar_inventario_en_github()
+        except Exception as e:
+            print(f"⚠️ No pude guardar el autouse: {e}", flush=True)
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"🔕 Desactivado. **{item['emoji']} {item['nombre']}** ya no se va a usar automáticamente."
+        ))
+        return
+
+    anterior = config_autouse.get(trigger)
+    config_autouse[trigger] = item["nombre"]
+    hubo_cambios_inventario_sin_guardar = True
+    try:
+        await guardar_inventario_en_github()
+    except Exception as e:
+        print(f"⚠️ No pude guardar el autouse: {e}", flush=True)
+
+    texto = (
+        f"🔔 A partir de ahora, después de {NOMBRES_TRIGGER.get(trigger, trigger)}, "
+        f"se va a usar automáticamente tu **{item['emoji']} {item['nombre']}** (mientras tengas stock).\n\n"
+        f"-# Te voy a avisar por DM cada vez que se use. Corré `!autouse {item['nombre']}` de nuevo para desactivarlo."
+    )
+    if anterior and anterior != item["nombre"]:
+        texto = f"-# (Reemplazó a **{anterior}**, que tenía el mismo gatillo.)\n\n" + texto
+
+    await ctx.reply(embed=crear_embed(titulo="🤖 Autouse configurado", descripcion=texto))
 
 
 @bot.command(name="buffs", aliases=["efectos"])
@@ -3247,6 +3387,7 @@ async def ayuda(ctx):
         "`!buy nombre del ítem [cantidad]` o `!comprar ...` — comprar algo de la tienda",
         "`!usar nombre del ítem` — usar un item de tu inventario (buffs, cooldowns, efectos)",
         "`!buffs [@alguien]` — ver tus buffs activos y efectos guardados",
+        "`!autouse nombre del ítem` — hace que ese item se use solo en su momento (de nuevo para desactivar)",
         "`!inv` o `!inventario` [@alguien] — ver los objetos que compraste",
         "`!invfo nombre del ítem` — ver la ficha de un ítem puntual de la tienda",
         "`!rw` — tirar un personaje random (cooldown: 6hs; reclamar tiene su propio cooldown de 4hs)",
