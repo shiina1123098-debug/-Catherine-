@@ -601,6 +601,48 @@
         "Imagen": "https://upload.wikimedia.org/wikipedia/en/9/9e/RockLee.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
         "Fuente": "Naruto",
         "Valor": 16000
+      },
+      {
+        "Nombre": "Gohan",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/72715.jpg",
+        "Fuente": "Dragon Ball",
+        "Valor": 18000
+      },
+      {
+        "Nombre": "Igris",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/15/583246.jpg",
+        "Fuente": "Solo Leveling",
+        "Valor": 19000
+      },
+      {
+        "Nombre": "Joel Miller",
+        "Imagen": "https://upload.wikimedia.org/wikipedia/en/9/94/Joel_in_The_Last_of_Us.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
+        "Fuente": "The Last of Us",
+        "Valor": 15000
+      },
+      {
+        "Nombre": "Tank",
+        "Imagen": "https://static.wikia.nocookie.net/solo-leveling/images/b/bd/Tank4.jpg/revision/latest?cb=20250130135752",
+        "Fuente": "Solo Leveling",
+        "Valor": 15000
+      },
+      {
+        "Nombre": "Power",
+        "Imagen": "https://static.wikia.nocookie.net/chainsaw-man/images/5/59/Volume_2_%28Textless%29.png/revision/latest?cb=20230523200057",
+        "Fuente": "Chainsaw Man",
+        "Valor": 11000
+      },
+      {
+        "Nombre": "Ryu",
+        "Imagen": "https://upload.wikimedia.org/wikipedia/en/5/50/RyuStreetFighterTwoHadoken.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
+        "Fuente": "Street Fighter",
+        "Valor": 180000
+      },
+      {
+        "Nombre": "Light Yagami",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/6/63870.jpg",
+        "Fuente": "Death Note",
+        "Valor": 48000
       }
     ]
   }
