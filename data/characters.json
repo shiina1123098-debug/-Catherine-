@@ -646,9 +646,21 @@
       },
       {
         "Nombre": "Arisu Sakayanagi",
-        "Imagen": "",
+        "Imagen": "https://static.wikia.nocookie.net/youkoso-jitsuryoku-shijou-shugi-no-kyoushitsu-e/images/2/2d/Arisu_Sakayanagi_LN_visual.png/revision/latest?cb=20171023234543",
         "Fuente": "Classroom of the Elite",
         "Valor": 15000
+      },
+      {
+        "Nombre": "Rukia Kuchiki",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/78215.jpg",
+        "Fuente": "Bleach",
+        "Valor": 6800
+      },
+      {
+        "Nombre": "Sayaka Miki",
+        "Imagen": "https://upload.wikimedia.org/wikipedia/en/c/cb/SayakaMiki.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
+        "Fuente": "Puella Magi Madoka Magica",
+        "Valor": 17000
       }
     ]
   }
