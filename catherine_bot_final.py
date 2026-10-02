@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 import random
-from google import genai
+from groq import AsyncGroq
 import os
 import re
 import io
@@ -157,9 +157,9 @@ COOLDOWN_W_SEGUNDOS = 5 * 60
 cooldown_rw_usuario = {}   # user_id (str) -> timestamp hasta el que no puede tirar !rw
 cooldown_w_usuario = {}    # user_id (str) -> timestamp hasta el que no puede usar !w
 
-# Configurar Gemini (nueva Interactions API)
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-MODEL_NAME = "gemini-3.5-flash-lite"
+# Configurar Groq (cliente async, para no bloquear el event loop del bot mientras espera la respuesta)
+client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
+MODEL_NAME = "openai/gpt-oss-120b"
 
 # Historial de conversaciones por canal
 conversation_history = defaultdict(list)
@@ -901,12 +901,12 @@ async def generar_resumen(channel_id):
 Solo los datos IMPORTANTES que el usuario mencionó (gustos, nombres, contexto, etc)."""
 
     try:
-        interaction = client.interactions.create(
+        completion = await client.chat.completions.create(
             model=MODEL_NAME,
-            input=resumen_prompt
+            messages=[{"role": "user", "content": resumen_prompt}],
         )
-        return interaction.output_text
-    except:
+        return completion.choices[0].message.content
+    except Exception:
         return None
 
 @bot.event
@@ -936,7 +936,7 @@ async def on_message(message):
                 })
                 message_count[channel_id] += 1
 
-                # Construir el contexto para Gemini
+                # Construir el contexto para Groq
                 contexto = ""
 
                 # Si hay resumen cada 6-8 mensajes, agregarlo
@@ -956,13 +956,15 @@ async def on_message(message):
                 # El nuevo mensaje
                 contexto += f"Usuario: {contenido}"
 
-                # Llamar a Gemini (Interactions API, con la personalidad como system_instruction)
-                interaction = client.interactions.create(
+                # Llamar a Groq (chat completions, con la personalidad como mensaje system)
+                completion = await client.chat.completions.create(
                     model=MODEL_NAME,
-                    system_instruction=PERSONALIDAD,
-                    input=contexto
+                    messages=[
+                        {"role": "system", "content": PERSONALIDAD},
+                        {"role": "user", "content": contexto},
+                    ],
                 )
-                texto_respuesta = interaction.output_text
+                texto_respuesta = completion.choices[0].message.content
 
                 # Agregar respuesta al historial
                 conversation_history[channel_id].append({
