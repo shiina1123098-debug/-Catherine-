@@ -2155,6 +2155,15 @@ class RWClaimView(discord.ui.View):
             )
             return
 
+        # Chequeamos el duplicado ANTES de tocar el cooldown o gastar el Pase VIP:
+        # si total el reclamo iba a fallar por esto, no tiene sentido consumir nada.
+        if usuario_ya_tiene_personaje(interaction.user, self.personaje):
+            await interaction.response.send_message(
+                f"Ya tenés a **{self.nombre}** en tu colección, no podés repetirlo.",
+                ephemeral=True,
+            )
+            return
+
         ultimo_reclamo = None if self.admin else ultimo_reclamo_por_usuario.get(str(interaction.user.id))
         if ultimo_reclamo is not None:
             transcurrido_reclamo = time.time() - ultimo_reclamo
@@ -2170,18 +2179,10 @@ class RWClaimView(discord.ui.View):
                     )
                     return
 
-        if usuario_ya_tiene_personaje(interaction.user, self.personaje):
-            await interaction.response.send_message(
-                f"Ya tenés a **{self.nombre}** en tu colección, no podés repetirlo.",
-                ephemeral=True,
-            )
-            return
-
         self.reclamado_por = interaction.user
         agregar_personaje_a_coleccion(interaction.user, self.personaje)
         if not self.admin:
             ultimo_reclamo_por_usuario[str(interaction.user.id)] = time.time()
-        await ejecutar_autouse_silencioso(interaction.user, "despues_de_reclamar")
 
         button.disabled = True
         button.label = f"Reclamado por {interaction.user.display_name}"
@@ -2191,6 +2192,8 @@ class RWClaimView(discord.ui.View):
         embed.add_field(name="🔒 Reclamado por", value=interaction.user.display_name, inline=False)
         await interaction.response.edit_message(embed=embed, view=self)
         self.stop()
+
+        await ejecutar_autouse_silencioso(interaction.user, "despues_de_reclamar", interaction=interaction)
 
     async def on_timeout(self):
         if self.reclamado_por is not None or self.mensaje is None:
@@ -3126,11 +3129,16 @@ class _CtxSilencioso:
     async def reply(self, *args, **kwargs):
         pass
 
-async def ejecutar_autouse_silencioso(usuario, trigger):
+async def ejecutar_autouse_silencioso(usuario, trigger, interaction=None):
     """Si `usuario` configuró un item para este gatillo y todavía le queda
     stock, lo usa automáticamente (reusando la misma lógica que !usar) y le
-    manda un DM avisando. No hace nada si no hay autouse configurado, no tiene
-    stock, o el efecto no necesitaba aplicarse (ej: no había cooldown activo)."""
+    avisa. Si `interaction` viene seteado (gatillo disparado desde un botón,
+    como el de reclamar), avisa con un mensaje ephemeral de esa interacción
+    -solo esa persona lo ve, sin salir del canal-. Si no hay interacción
+    (gatillo disparado desde un comando de texto plano, como !rw) no hay forma
+    de mandar algo ephemeral, así que cae a un DM. No hace nada si no hay
+    autouse configurado, no tiene stock, o el efecto no necesitaba aplicarse
+    (ej: no había cooldown activo)."""
     user_id = str(usuario.id)
     datos = inventario_cache.get(user_id)
     if not datos:
@@ -3159,11 +3167,20 @@ async def ejecutar_autouse_silencioso(usuario, trigger):
     except Exception as e:
         print(f"⚠️ No pude guardar el inventario tras autouse: {e}", flush=True)
 
+    embed_aviso = crear_embed(
+        titulo="🤖 Autouse",
+        descripcion=f"{resultado_texto}\n\n-# Se usó automáticamente tu **{item['emoji']} {item['nombre']}**.",
+    )
+
+    if interaction is not None:
+        try:
+            await interaction.followup.send(embed=embed_aviso, ephemeral=True)
+            return
+        except discord.HTTPException:
+            pass  # el token de la interacción venció o algo falló: probamos DM igual
+
     try:
-        await usuario.send(embed=crear_embed(
-            titulo="🤖 Autouse",
-            descripcion=f"{resultado_texto}\n\n-# Se usó automáticamente tu **{item['emoji']} {item['nombre']}**.",
-        ))
+        await usuario.send(embed=embed_aviso)
     except discord.Forbidden:
         pass  # tiene los DMs cerrados, no hay forma de avisarle
 
