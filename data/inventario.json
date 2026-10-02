@@ -16,13 +16,13 @@
       "Corona del Magnate": 100,
       "Lata de aire de alta montaña": 100000,
       "Poción de reset": 945,
-      "Dado de la suerte": 38,
+      "Dado de la suerte": 37,
       "Pase VIP": 192
     },
     "buffs": {
       "suerte_rw": {
         "valor": 0.05,
-        "expira": 1790900772.1861808
+        "expira": 1790901338.1223667
       }
     },
     "efectos_unicos": {
