@@ -2076,12 +2076,12 @@ async def blackjack(ctx, cantidad: str = None):
 # Rangos de rareza para !rw: cuanto más vale el personaje, menos peso tiene
 # a la hora de salir sorteado. (mínimo, máximo, peso, nombre)
 RANGOS_RAREZA = [
-    (1000, 7999, 60, "⚪ Común"),
-    (8000, 19999, 25, "🟢 Poco común"),
-    (20000, 49999, 7, "🔵 Raro"),
-    (50000, 199999, 4, "🟣 Épico"),
-    (200000, 499999, 3, "🟡 Legendario"),
-    (500000, 1000000, 1, "🔴 Mítico"),
+    (5000, 24999, 45, "⚪ Común"),
+    (25000, 74999, 30, "🟢 Poco común"),
+    (75000, 199999, 12, "🔵 Raro"),
+    (200000, 499999, 4, "🟣 Épico"),
+    (500000, 999999, 3, "🟡 Legendario"),
+    (1000000, 2500000, 1, "🔴 Mítico"),
 ]
 
 def parsear_valor(valor):
