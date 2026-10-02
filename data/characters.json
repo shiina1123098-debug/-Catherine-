@@ -541,6 +541,66 @@
         "Imagen": "https://cdn.myanimelist.net/images/characters/5/136769.jpg",
         "Fuente": "One Piece",
         "Valor": 45000
+      },
+      {
+        "Nombre": "Suzaku Kururugi",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/31564.jpg",
+        "Fuente": "Code Geass",
+        "Valor": 47000
+      },
+      {
+        "Nombre": "John Marston",
+        "Imagen": "https://safebooru.org/images/333/99fc7ae2ace201e40f94b3ca049f8854ce206bdc.jpg",
+        "Fuente": "Red Dead Redemption",
+        "Valor": 45000
+      },
+      {
+        "Nombre": "Nicholas D. Wolfwood",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/89610.jpg",
+        "Fuente": "Trigun",
+        "Valor": 8500
+      },
+      {
+        "Nombre": "Kokushibo",
+        "Imagen": "https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/5/5f/Kokushibo_back_facing.png/revision/latest?cb=20260812005024",
+        "Fuente": "Demon Slayer",
+        "Valor": 470000
+      },
+      {
+        "Nombre": "Kirito",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/7/204821.jpg",
+        "Fuente": "Sword Art Online",
+        "Valor": 19000
+      },
+      {
+        "Nombre": "Levi Ackerman",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/241413.jpg",
+        "Fuente": "Attack on Titan",
+        "Valor": 35000
+      },
+      {
+        "Nombre": "Megumi Fushiguro",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/12/621887.jpg",
+        "Fuente": "Jujutsu Kaisen",
+        "Valor": 12000
+      },
+      {
+        "Nombre": "Mabel",
+        "Imagen": "https://fgguides.com/wp-content/uploads/2024/10/Mabel-Girl-of-Nihility.png",
+        "Fuente": "Black Souls 2",
+        "Valor": 450000
+      },
+      {
+        "Nombre": "Raiden",
+        "Imagen": "https://static.wikia.nocookie.net/mkwikia/images/c/cd/Raiden_%28MK1%29_Render.png/revision/latest?cb=20240517202601",
+        "Fuente": "Mortal Kombat",
+        "Valor": 440000
+      },
+      {
+        "Nombre": "Rock Lee",
+        "Imagen": "https://upload.wikimedia.org/wikipedia/en/9/9e/RockLee.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
+        "Fuente": "Naruto",
+        "Valor": 16000
       }
     ]
   }
