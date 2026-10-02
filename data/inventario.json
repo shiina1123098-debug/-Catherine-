@@ -15,16 +15,11 @@
       "Diamante de Catherine": 100,
       "Corona del Magnate": 100,
       "Lata de aire de alta montaña": 100000,
-      "Poción de reset": 761,
+      "Poción de reset": 760,
       "Dado de la suerte": 35,
       "Pase VIP": 101
     },
-    "buffs": {
-      "suerte_rw": {
-        "valor": 0.05,
-        "expira": 1790913612.1797514
-      }
-    },
+    "buffs": {},
     "efectos_unicos": {
       "pase_vip": 3
     },
