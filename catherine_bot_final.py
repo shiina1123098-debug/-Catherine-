@@ -47,7 +47,7 @@ bot.remove_command("help")
 
 COLOR_CATHERINE = 0xF5F4F0  # blanco hueso, discord no deja el blanco puro (#FFFFFF) como color de embed
 
-ID_BANCA = "1468974197895336151"  # a este usuario le entra toda la plata que se pierde en apuestas (!cf, !roulette, !bj)
+ID_BANCA = "1468974197895336151"  # a este usuario le entra toda la plata que se pierde en apuestas (!cf, !roulette, !bj) y el 30% de las ventas de personajes
 
 # Separador visual hecho con subtexto: se ve como una línea fina y gris
 SEPARADOR = "-# ─────────────────────────"
@@ -55,8 +55,13 @@ SEPARADOR = "-# ─────────────────────�
 # Costo del divorcio (en Pesos). Se cobra mitad y mitad a cada cónyuge.
 COSTO_DIVORCIO_POR_PERSONA = 5_000
 
+# Porcentaje del valor que recibe el vendedor al vender un personaje.
+# El resto (1 - PORCENTAJE_VENTA) va a la banca del dueño del bot.
+PORCENTAJE_VENTA = 0.70
+
 def sumar_a_banca(cantidad):
-    """Le suma al dueño de la banca lo que cualquiera pierde apostando."""
+    """Le suma al dueño de la banca lo que cualquiera pierde apostando (o el
+    porcentaje que se queda el bot al vender un personaje)."""
     global hubo_cambios_sin_guardar
     if cantidad <= 0:
         return
@@ -1395,6 +1400,117 @@ async def givechar(ctx, *, texto: str = None):
     imagen = campo_personaje(elegido, "Imagen", "imagen", default=None)
     if imagen:
         embed.set_thumbnail(url=imagen)
+    await ctx.reply(embed=embed)
+
+@bot.command(name="vender", aliases=["sell"])
+async def vender(ctx, *, nombre_buscado: str = None):
+    """Vende un personaje de tu colección a cambio de Pesos. Te doy el 70% del
+    valor; el 30% restante se lo queda la banca."""
+    global hubo_cambios_sin_guardar, hubo_cambios_characters_sin_guardar
+
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
+        return
+
+    if not nombre_buscado:
+        await ctx.reply(embed=crear_embed(descripcion=f"Usalo así: `!vender Gojo Satoru`. Te doy el **{int(PORCENTAJE_VENTA*100)}%** de su valor en Pesos."))
+        return
+
+    user_id = str(ctx.author.id)
+    mis_personajes = characters_cache.get(user_id, {}).get("personajes", [])
+
+    if not mis_personajes:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés ningún personaje para vender. Probá `!rw` para conseguir alguno."))
+        return
+
+    # Buscar el personaje: nombre exacto > parcial único > error
+    buscado = nombre_buscado.casefold().strip()
+    exactos = [p for p in mis_personajes if str(campo_personaje(p, "Nombre", "nombre")).casefold() == buscado]
+    if exactos:
+        elegido = exactos[0]
+    else:
+        parciales = [p for p in mis_personajes if buscado in str(campo_personaje(p, "Nombre", "nombre")).casefold()]
+        if len(parciales) == 1:
+            elegido = parciales[0]
+        elif len(parciales) > 1:
+            nombres = ", ".join(f"**{campo_personaje(p, 'Nombre', 'nombre')}**" for p in parciales[:10])
+            await ctx.reply(embed=crear_embed(descripcion=f"Hay varios que coinciden: {nombres}. Poné el nombre completo."))
+            return
+        else:
+            await ctx.reply(embed=crear_embed(descripcion=f"No tenés ningún personaje llamado **{nombre_buscado}** en tu colección. Mirá `!coleccion`."))
+            return
+
+    nombre_personaje = campo_personaje(elegido, "Nombre", "nombre")
+    valor_original = parsear_valor(campo_personaje(elegido, "Valor", "valor")) or 0
+    ganancia = int(valor_original * PORCENTAJE_VENTA)
+    comision_banca = valor_original - ganancia
+
+    # Aseguramos que el vendedor tenga cuenta
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+    balances_cache[user_id].setdefault("banco", 0)
+
+    # Sacamos el personaje de la colección (por identidad, no por igualdad)
+    mis_personajes[:] = [p for p in mis_personajes if p is not elegido]
+    hubo_cambios_characters_sin_guardar = True
+
+    # Le acreditamos la plata al balance del vendedor y la comisión a la banca
+    balances_cache[user_id]["balance"] += ganancia
+    hubo_cambios_sin_guardar = True
+    sumar_a_banca(comision_banca)
+
+    embed = crear_embed(
+        titulo="💰 Personaje vendido",
+        descripcion=(
+            f"Vendiste a **{nombre_personaje}**.\n\n"
+            f"> 💵 Valor original: **{formatear_pesos(valor_original)}**\n"
+            f"> 📈 Te dieron ({int(PORCENTAJE_VENTA*100)}%): **{formatear_pesos(ganancia)}**\n"
+            f"> 🏦 Comisión de la banca ({int((1-PORCENTAJE_VENTA)*100)}%): **{formatear_pesos(comision_banca)}**\n\n"
+            f"Balance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
+        ),
+    )
+    imagen = campo_personaje(elegido, "Imagen", "imagen", default=None)
+    if imagen:
+        embed.set_thumbnail(url=imagen)
+    await ctx.reply(embed=embed)
+
+    try:
+        await guardar_characters_en_github()
+        await guardar_balances_en_github()
+    except Exception as e:
+        print(f"⚠️ No pude guardar la venta al toque: {e}", flush=True)
+
+@bot.command(name="tasacion", aliases=["tasart", "precio"])
+async def tasacion(ctx, *, nombre_buscado: str = None):
+    """Te dice cuánto te darían por vender un personaje, sin venderlo."""
+    if not nombre_buscado:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!tasacion Gojo Satoru`"))
+        return
+
+    user_id = str(ctx.author.id)
+    mis_personajes = characters_cache.get(user_id, {}).get("personajes", [])
+    if not mis_personajes:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés personajes para tasar. Probá `!rw` para conseguir alguno."))
+        return
+
+    buscado = nombre_buscado.casefold().strip()
+    encontrados = [p for p in mis_personajes if buscado in str(campo_personaje(p, "Nombre", "nombre")).casefold()]
+    if not encontrados:
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés ningún personaje que coincida con **{nombre_buscado}**."))
+        return
+
+    lineas = []
+    for p in encontrados[:10]:
+        nombre_p = campo_personaje(p, "Nombre", "nombre")
+        valor_p = parsear_valor(campo_personaje(p, "Valor", "valor")) or 0
+        lineas.append(
+            f"> 🎴 **{nombre_p}** — vale **{formatear_pesos(valor_p)}**, te darían **{formatear_pesos(int(valor_p * PORCENTAJE_VENTA))}**"
+        )
+
+    embed = crear_embed(
+        titulo="🔎 Tasación",
+        descripcion="\n".join(lineas) + f"\n\n-# Recordá: te doy el {int(PORCENTAJE_VENTA*100)}% del valor al vender. El resto va a la banca.",
+    )
     await ctx.reply(embed=embed)
 
 @bot.command(name="marry", aliases=["casarse", "casamiento"])
@@ -3407,6 +3523,8 @@ async def ayuda(ctx):
         "`!retirar cantidad` — saca plata del banco",
         "`!pay @usuario cantidad` — le pasás plata de tu balance a otro usuario",
         "`!givechar personaje @usuario` — le regalás un personaje de tu colección a otro usuario",
+        "`!vender personaje` — vendés un personaje de tu colección y te doy el 70% de su valor en Pesos",
+        "`!tasacion personaje` — te digo cuánto te darían por venderlo, sin venderlo",
         "`!marry @usuario` — te casás con otro usuario",
         "`!divorcio` — te divorciás (cuesta 5.000 a cada uno)",
         "`!robar @usuario` — si está desconectado hace 6hs+: 10% de afanarle todo, 10% de perder vos el 5%, 80% nada",
