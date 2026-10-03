@@ -3622,9 +3622,9 @@ async def buffs(ctx, miembro: discord.Member = None):
 
 @bot.command(name="help")
 async def ayuda(ctx):
-    """Lista los comandos de Catherine"""
+    """Lista los comandos disponibles para todos los usuarios"""
     lineas = [
-        "`!balance [@alguien]` (o `!bal`) — ver tu balance (o el de otro), lo bancado y el total",
+        "`!balance [@alguien]` (o `!bal` / `!saldo`) — ver tu balance (o el de otro), lo bancado y el total",
         "`!top` — top 10 de plata total (balance + banco)",
         "`!perfil [@alguien]` — resumen completo: plata, matrimonio, colección e inventario",
         "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
@@ -3649,16 +3649,40 @@ async def ayuda(ctx):
         "`!inv` o `!inventario` [@alguien] — ver los objetos que compraste (paginado)",
         "`!invfo nombre del ítem` — ver la ficha de un ítem puntual de la tienda",
         "`!rw` — tirar un personaje random (cooldown: 6hs; reclamar tiene su propio cooldown de 4hs)",
-        "`!rwreload` — recargar la lista de personajes desde GitHub",
-        "`!checkimg` — revisar qué links de imagen de los personajes están rotos",
-        "`!buscarimagenes [cantidad]` — busca fotos para los personajes sin imagen (Guardar/Rechazar/Recargar)",
-        "`!galeria` — recorrer los personajes uno por uno (nombre + imagen) con Previous/Next",
         "`!winfo nombre` — ver la ficha de un personaje puntual (sin reclamo)",
         "`!coleccion` o `!harem` [@alguien] — ver los personajes reclamados",
         "`!mp3 búsqueda` o `!mp3 link` — te paso el audio de un video",
-        "`!datasave` — fuerza el guardado de los balances",
     ]
     embed = crear_embed(titulo="Comandos de Catherine", descripcion="\n".join(lineas))
+    await ctx.reply(embed=embed)
+
+@bot.command(name="adminhelp", hidden=True)
+async def adminhelp(ctx):
+    """Lista los comandos de administración (solo dueño de la banca)"""
+    if str(ctx.author.id) != ID_BANCA:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
+        return
+
+    lineas = [
+        "### 🛠️ Comandos de administración",
+        "",
+        "**💰 Economía**",
+        "`!addmoney @usuario cantidad` — le agregás plata a alguien",
+        "`!wAdmin` — igual que `!w` pero sin cooldown",
+        "`!5porcentforce` — fuerza el 5% de interés diario a tu banco ahora mismo",
+        "",
+        "**🎴 Gacha / rw**",
+        "`!rwAdmin` — igual que `!rw` pero sin cooldown (ni de tirada ni de reclamo)",
+        "`!rwreload` — recarga el `rw.json` desde GitHub sin reiniciar el bot",
+        "`!checkimg` — revisa qué links de imagen de los personajes están rotos",
+        "`!buscarimagenes [cantidad]` o `!imgsearch` — busca fotos para los personajes sin imagen (Guardar/Rechazar/Recargar)",
+        "`!galeria` — recorrer los personajes uno por uno para revisar imágenes",
+        "",
+        "**🛍️ Tienda / datos**",
+        "`!shopreload` — recarga el `shop.json` desde GitHub sin reiniciar el bot",
+        "`!datasave` — fuerza el guardado inmediato de TODOS los datos a GitHub",
+    ]
+    embed = crear_embed(descripcion="\n".join(lineas))
     await ctx.reply(embed=embed)
 
 _HEADERS_NAVEGADOR = {
