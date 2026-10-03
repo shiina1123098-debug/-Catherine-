@@ -1591,6 +1591,30 @@
         "Imagen": "https://static.wikia.nocookie.net/rezero/images/4/4c/Echidna_LN_character_design.png/revision/latest?cb=20230628150117",
         "Fuente": "Re:Zero",
         "Valor": 22000
+      },
+      {
+        "Nombre": "Mari Ohara",
+        "Imagen": "https://static.wikia.nocookie.net/love-live/images/e/e4/LL-SS-Mari.png/revision/latest/scale-to-width-down/1200?cb=20260919152542",
+        "Fuente": "Love Live Sunshine",
+        "Valor": 6000
+      },
+      {
+        "Nombre": "Sotoka Rakita",
+        "Imagen": "",
+        "Fuente": "Hitoribocchi",
+        "Valor": 25000
+      },
+      {
+        "Nombre": "Aalto",
+        "Imagen": "https://static.wikia.nocookie.net/wutheringwaves/images/6/65/Aalto_Card.jpg/revision/latest?cb=20231221174300",
+        "Fuente": "Wuthering Waves",
+        "Valor": 26000
+      },
+      {
+        "Nombre": "Kirche (Zero no Tsukaima)",
+        "Imagen": "",
+        "Fuente": "Zero no Tsukaima",
+        "Valor": 45000
       }
     ]
   }
