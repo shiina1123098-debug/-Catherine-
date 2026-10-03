@@ -1600,7 +1600,7 @@
       },
       {
         "Nombre": "Sotoka Rakita",
-        "Imagen": "",
+        "Imagen": "https://static.wikia.nocookie.net/hitoribocchi-no-oo-seikatsu/images/3/33/Sotoka.png/revision/latest?cb=20190625073830",
         "Fuente": "Hitoribocchi",
         "Valor": 25000
       },
@@ -1612,9 +1612,33 @@
       },
       {
         "Nombre": "Kirche (Zero no Tsukaima)",
-        "Imagen": "",
+        "Imagen": "https://static.wikia.nocookie.net/zeronotsukaima/images/6/6f/KircheAnime.png/revision/latest?cb=20251213021259",
         "Fuente": "Zero no Tsukaima",
         "Valor": 45000
+      },
+      {
+        "Nombre": "Aoi Inuyama",
+        "Imagen": "https://static.wikia.nocookie.net/yuru-camp/images/3/30/Yurucamp-aoi-character_4main.png/revision/latest/scale-to-width/360?cb=20221120022649",
+        "Fuente": "Yuru Camp",
+        "Valor": 18000
+      },
+      {
+        "Nombre": "Fiona Frost",
+        "Imagen": "https://static.wikia.nocookie.net/spy-x-family9171/images/6/60/Fiona_Frost_Anime.png/revision/latest/scale-to-width/360?cb=20221119210130",
+        "Fuente": "Spy x Family",
+        "Valor": 17500
+      },
+      {
+        "Nombre": "Cirno",
+        "Imagen": "https://static.wikia.nocookie.net/standard-evil/images/7/70/Cirno.png/revision/latest?cb=20251006002446",
+        "Fuente": "Touhou Project",
+        "Valor": 150000
+      },
+      {
+        "Nombre": "Yoo Mira",
+        "Imagen": "https://static.wikia.nocookie.net/godofhighschool/images/5/5a/Miraworldt.png/revision/latest?cb=20160502232609",
+        "Fuente": "The God of High School",
+        "Valor": 120000
       }
     ]
   }
