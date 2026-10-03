@@ -1435,6 +1435,162 @@
         "Imagen": "https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/character_iori.png",
         "Fuente": "The King of Fighters",
         "Valor": 125000
+      },
+      {
+        "Nombre": "Nozomi Tojo",
+        "Imagen": "https://static.wikia.nocookie.net/love-live/images/4/47/Nozomi_Dengeki_G%27s_Mag_Nov_2010.jpg/revision/latest?cb=20150505135027",
+        "Fuente": "Love Live",
+        "Valor": 8000
+      },
+      {
+        "Nombre": "Mikasa Ackerman (base)",
+        "Imagen": "https://static.wikia.nocookie.net/base-breaking-character/images/c/cc/Mikasa_ackerman_850.png/revision/latest/scale-to-width/360?cb=20241103141802",
+        "Fuente": "Attack on Titan",
+        "Valor": 23500
+      },
+      {
+        "Nombre": "Ymir (AoT)",
+        "Imagen": "https://static.wikia.nocookie.net/shingekinokyojin/images/4/43/Ymir_%28Anime%29_character_image.png/revision/latest?cb=20181009020525",
+        "Fuente": "Attack on Titan",
+        "Valor": 15500
+      },
+      {
+        "Nombre": "Nino Nakano",
+        "Imagen": "https://nxsnjqfqtwiaoedulnpr.supabase.co/storage/v1/object/public/image-derived/tag-images/1200/characters/519940f2-9bed-4c04-9166-9bf0fd894961/1774264498414.webp",
+        "Fuente": "Quintessential Quintuplets",
+        "Valor": 13500
+      },
+      {
+        "Nombre": "Yuanwu",
+        "Imagen": "https://static.wikia.nocookie.net/wutheringwaves/images/5/53/Yuanwu_Card.jpg/revision/latest?cb=20231221175828",
+        "Fuente": "Wuthering Waves",
+        "Valor": 27000
+      },
+      {
+        "Nombre": "Nagatoro Hayase",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/3/37/Nagatoro_Hayase_Render.png/revision/latest?cb=20230125192852&path-prefix=protagonist",
+        "Fuente": "Ijiranaide Nagatoro-san",
+        "Valor": 12000
+      },
+      {
+        "Nombre": "Marisa Kirisame",
+        "Imagen": "https://static.wikia.nocookie.net/vsbattles/images/4/43/Th145Marisa2.png/revision/latest?cb=20160224213353",
+        "Fuente": "Touhou Project",
+        "Valor": 1750000
+      },
+      {
+        "Nombre": "Mina Ashido",
+        "Imagen": "https://static.wikia.nocookie.net/xenonpersonalproject/images/2/20/GzMrxKobsAAtBQZ.jpg/revision/latest/scale-to-width-down/1200?cb=20250826183141",
+        "Fuente": "My Hero Academia",
+        "Valor": 31000
+      },
+      {
+        "Nombre": "Void",
+        "Imagen": "https://i.redd.it/e40jk0lgllnb1.png",
+        "Fuente": "Berserk",
+        "Valor": 500000
+      },
+      {
+        "Nombre": "Filo",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/7/7b/Filo_Anime.png/revision/latest?cb=20191128013430&path-prefix=protagonist",
+        "Fuente": "Shield Hero",
+        "Valor": 10000
+      },
+      {
+        "Nombre": "Stark",
+        "Imagen": "https://static.wikia.nocookie.net/frieren/images/0/04/Stark_manga_profile.png/revision/latest?cb=20240418184137",
+        "Fuente": "Sousou no Frieren",
+        "Valor": 15000
+      },
+      {
+        "Nombre": "Tamayo",
+        "Imagen": "https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/c/ce/Tamayo_colored_body.png/revision/latest?cb=20220323131822",
+        "Fuente": "Demon Slayer",
+        "Valor": 14500
+      },
+      {
+        "Nombre": "Honoka Kosaka",
+        "Imagen": "https://static.wikia.nocookie.net/love-live/images/2/26/SIP-Honoka.png/revision/latest/scale-to-width-down/1200?cb=20260918152807",
+        "Fuente": "Love Live",
+        "Valor": 11000
+      },
+      {
+        "Nombre": "Naruto Uzumaki",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/2/284121.jpg",
+        "Fuente": "Naruto",
+        "Valor": 350000
+      },
+      {
+        "Nombre": "Temari",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/6/67/Temari_Part_1.png/revision/latest?cb=20171214040125&path-prefix=protagonist",
+        "Fuente": "Naruto",
+        "Valor": 25500
+      },
+      {
+        "Nombre": "Kotori Minami",
+        "Imagen": "https://lovelive-sif2.com/wp-content/uploads/2022/12/21185234/img_kotori_ap8wAYYJHHrQ.png",
+        "Fuente": "Love Live",
+        "Valor": 9500
+      },
+      {
+        "Nombre": "Gojo Satoru",
+        "Imagen": "https://i.imgur.com/WzRHR8D.jpeg",
+        "Fuente": "Jujutsu Kaisen",
+        "Valor": 950000
+      },
+      {
+        "Nombre": "Mitsuru Kirijo",
+        "Imagen": "https://megatenwiki.com/images/7/7d/P3R_Mitsuru_Kirijo_Artwork.png?version=5b6ab784ba5211b19d391e1277923214",
+        "Fuente": "Persona 3",
+        "Valor": 13000
+      },
+      {
+        "Nombre": "Madoka Kaname",
+        "Imagen": "https://static.wikia.nocookie.net/madoka/images/9/99/Madoka_Kaname_Thousand_Memories.png/revision/latest?cb=20221023201504",
+        "Fuente": "Puella Magi Madoka Magica",
+        "Valor": 1080000
+      },
+      {
+        "Nombre": "Asia Argento",
+        "Imagen": "https://static.wikia.nocookie.net/highschooldxd/images/9/90/High_School_D%C3%97D_Vol.2_Colored_LN_Illustration.jpeg/revision/latest?cb=20210628225054",
+        "Fuente": "High School DxD",
+        "Valor": 5600
+      },
+      {
+        "Nombre": "Rin Hoshizora",
+        "Imagen": "https://static.wikia.nocookie.net/love-live-fanon/images/7/72/LL-SIF-ASA-Rin.png/revision/latest?cb=20240813083711",
+        "Fuente": "Love Live",
+        "Valor": 8500
+      },
+      {
+        "Nombre": "Rangiku Matsumoto",
+        "Imagen": "https://static.wikia.nocookie.net/bleach/images/b/b6/-16Rangiku_profile.png/revision/latest/scale-to-width/360?cb=20220625045948&path-prefix=en",
+        "Fuente": "Bleach",
+        "Valor": 30000
+      },
+      {
+        "Nombre": "Accelerator",
+        "Imagen": "https://static.wikia.nocookie.net/to-aru-majutsu-no-index/images/5/59/Toaru_Kagaku_no_Railgun_S_E15_19m_32s_stitch.jpg/revision/latest?cb=20130722070805",
+        "Fuente": "Toaru Majutsu no Index",
+        "Valor": 150000
+      },
+      {
+        "Nombre": "Spike Spiegel",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/11/516853.jpg",
+        "Fuente": "Cowboy Bebop",
+        "Valor": 8000
+      },
+      {
+        "Nombre": "Cha Hae-In",
+        "Imagen": "https://cdn.myanimelist.net/images/characters/9/536361.jpg",
+        "Fuente": "Solo Leveling",
+        "Valor": 5600
+      },
+      {
+        "Nombre": "Echidna",
+        "Imagen": "https://static.wikia.nocookie.net/rezero/images/4/4c/Echidna_LN_character_design.png/revision/latest?cb=20230628150117",
+        "Fuente": "Re:Zero",
+        "Valor": 22000
       }
     ]
   }
