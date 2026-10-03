@@ -16,11 +16,16 @@
       "Corona del Magnate": 100,
       "Lata de aire de alta montaña": 100000,
       "Poción de reset": 992,
-      "Dado de la suerte": 500,
+      "Dado de la suerte": 499,
       "Pase VIP": 596,
       "Amuleto del ludópata": 200
     },
-    "buffs": {},
+    "buffs": {
+      "suerte_rw": {
+        "valor": 0.05,
+        "expira": 1790988461.2715788
+      }
+    },
     "efectos_unicos": {
       "pase_vip": 6
     },
