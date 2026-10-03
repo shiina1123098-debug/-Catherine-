@@ -1639,6 +1639,18 @@
         "Imagen": "https://static.wikia.nocookie.net/godofhighschool/images/5/5a/Miraworldt.png/revision/latest?cb=20160502232609",
         "Fuente": "The God of High School",
         "Valor": 120000
+      },
+      {
+        "Nombre": "Yotsuba Nakano",
+        "Imagen": "https://i.namu.wiki/i/5cZn_6yVBTUg8rEKBUyQ-MlZGo8C_69OfeqNe9f-KeGbtBdpL35JKqtkBEDffdX9ArYYMdettsC9BFphWfZypQ.webp",
+        "Fuente": "Quintessential Quintuplets",
+        "Valor": 12500
+      },
+      {
+        "Nombre": "Ruan Mei",
+        "Imagen": "https://static.wikia.nocookie.net/houkai-star-rail/images/d/d5/Character_Ruan_Mei_Splash_Art.png/revision/latest/scale-to-width-down/1200?cb=20231227021137",
+        "Fuente": "Honkai: Star Rail",
+        "Valor": 400000
       }
     ]
   }
