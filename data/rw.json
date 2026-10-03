@@ -5095,7 +5095,7 @@
   },
   {
     "Nombre": "Kureha Suminoya",
-    "Imagen": "",
+    "Imagen": "https://static.wikia.nocookie.net/soranowoto/images/3/3e/Rtgreyrtfy.png/revision/latest?cb=20140214234143",
     "Fuente": "Sound of the Sky",
     "Valor": 35000
   },
@@ -5233,7 +5233,7 @@
   },
   {
     "Nombre": "Miyu Aida",
-    "Imagen": "",
+    "Imagen": "https://m.media-amazon.com/images/M/MV5BZjVkNDIwMjItOGRkMC00NzI4LTk0MWQtNmU4MmNmMzg0NjFiXkEyXkFqcGc@._V1_.jpg",
     "Fuente": "Asteroid in Love",
     "Valor": 20000
   },
@@ -5657,203 +5657,1198 @@
     "Fuente": "Nichijou",
     "Valor": 12000
   },
-{"Nombre":"Ayumu Kasuga","Imagen":"","Fuente":"Azumanga Daioh","Valor":18000},
-{"Nombre":"Tomo Takino","Imagen":"","Fuente":"Azumanga Daioh","Valor":16000},
-{"Nombre":"Koyomi Mizuhara","Imagen":"","Fuente":"Azumanga Daioh","Valor":12000},
-{"Nombre":"Sakaki","Imagen":"","Fuente":"Azumanga Daioh","Valor":20000},
-{"Nombre":"Kagura (Azumanga)","Imagen":"","Fuente":"Azumanga Daioh","Valor":12000},
-{"Nombre":"Chiyo Mihama","Imagen":"","Fuente":"Azumanga Daioh","Valor":18000},
-{"Nombre":"Yukari Tanizaki","Imagen":"","Fuente":"Azumanga Daioh","Valor":12000},
-{"Nombre":"Konata Izumi","Imagen":"","Fuente":"Lucky Star","Valor":22000},
-{"Nombre":"Kagami Hiiragi","Imagen":"","Fuente":"Lucky Star","Valor":20000},
-{"Nombre":"Tsukasa Hiiragi","Imagen":"","Fuente":"Lucky Star","Valor":20000},
-{"Nombre":"Miyuki Takara","Imagen":"","Fuente":"Lucky Star","Valor":18000},
-{"Nombre":"Yutaka Kobayakawa","Imagen":"","Fuente":"Lucky Star","Valor":15000},
-{"Nombre":"Minami Iwasaki","Imagen":"","Fuente":"Lucky Star","Valor":15000},
-{"Nombre":"Patricia Martin","Imagen":"","Fuente":"Lucky Star","Valor":12000},
-{"Nombre":"Yuno (Hidamari Sketch)","Imagen":"","Fuente":"Hidamari Sketch","Valor":15000},
-{"Nombre":"Miyako (Hidamari Sketch)","Imagen":"","Fuente":"Hidamari Sketch","Valor":15000},
-{"Nombre":"Hiro (Hidamari Sketch)","Imagen":"","Fuente":"Hidamari Sketch","Valor":12000},
-{"Nombre":"Sae (Hidamari Sketch)","Imagen":"","Fuente":"Hidamari Sketch","Valor":12000},
-{"Nombre":"Nazuna (Hidamari Sketch)","Imagen":"","Fuente":"Hidamari Sketch","Valor":10000},
-{"Nombre":"Ayu Tsukimiya","Imagen":"","Fuente":"Kanon","Valor":20000},
-{"Nombre":"Makoto Sawatari","Imagen":"","Fuente":"Kanon","Valor":18000},
-{"Nombre":"Mai Kawasumi","Imagen":"","Fuente":"Kanon","Valor":20000},
-{"Nombre":"Shiori Misaka","Imagen":"","Fuente":"Kanon","Valor":15000},
-{"Nombre":"Nayuki Minase","Imagen":"","Fuente":"Kanon","Valor":18000},
-{"Nombre":"Misuzu Kamio","Imagen":"","Fuente":"Air","Valor":15000},
-{"Nombre":"Kano Kirishima","Imagen":"","Fuente":"Air","Valor":12000},
-{"Nombre":"Minagi Tohno","Imagen":"","Fuente":"Air","Valor":12000},
-{"Nombre":"Nagisa Furukawa","Imagen":"","Fuente":"Clannad","Valor":24000},
-{"Nombre":"Ushio Okazaki","Imagen":"","Fuente":"Clannad","Valor":20000},
-{"Nombre":"Kyou Fujibayashi","Imagen":"","Fuente":"Clannad","Valor":22000},
-{"Nombre":"Ryou Fujibayashi","Imagen":"","Fuente":"Clannad","Valor":18000},
-{"Nombre":"Tomoyo Sakagami","Imagen":"","Fuente":"Clannad","Valor":22000},
-{"Nombre":"Kotomi Ichinose","Imagen":"","Fuente":"Clannad","Valor":20000},
-{"Nombre":"Fuko Ibuki","Imagen":"","Fuente":"Clannad","Valor":20000},
-{"Nombre":"Mei Sunohara","Imagen":"","Fuente":"Clannad","Valor":15000},
-{"Nombre":"Rikka Takanashi","Imagen":"","Fuente":"Chuunibyou","Valor":22000},
-{"Nombre":"Shinka Nibutani","Imagen":"","Fuente":"Chuunibyou","Valor":20000},
-{"Nombre":"Sanae Dekomori","Imagen":"","Fuente":"Chuunibyou","Valor":18000},
-{"Nombre":"Kumin Tsuyuri","Imagen":"","Fuente":"Chuunibyou","Valor":18000},
-{"Nombre":"Akari Mizunashi","Imagen":"","Fuente":"Aria","Valor":18000},
-{"Nombre":"Aika S. Granzchesta","Imagen":"","Fuente":"Aria","Valor":18000},
-{"Nombre":"Alice Carroll","Imagen":"","Fuente":"Aria","Valor":18000},
-{"Nombre":"Alicia Florence","Imagen":"","Fuente":"Aria","Valor":20000},
-{"Nombre":"Akira E. Ferrari","Imagen":"","Fuente":"Aria","Valor":18000},
-{"Nombre":"Athena Glory","Imagen":"","Fuente":"Aria","Valor":18000},
-{"Nombre":"Chito (Girls' Last Tour)","Imagen":"","Fuente":"Girls' Last Tour","Valor":18000},
-{"Nombre":"Yuuri (Girls' Last Tour)","Imagen":"","Fuente":"Girls' Last Tour","Valor":18000},
-{"Nombre":"Riko (Made in Abyss)","Imagen":"","Fuente":"Made in Abyss","Valor":20000},
-{"Nombre":"Kino","Imagen":"","Fuente":"Kino's Journey","Valor":20000},
-{"Nombre":"Rakka","Imagen":"","Fuente":"Haibane Renmei","Valor":15000},
-{"Nombre":"Reki (Haibane Renmei)","Imagen":"","Fuente":"Haibane Renmei","Valor":18000},
-{"Nombre":"Lain Iwakura","Imagen":"","Fuente":"Serial Experiments Lain","Valor":20000},
-{"Nombre":"Haruhi Fujioka","Imagen":"","Fuente":"Ouran High School Host Club","Valor":24000},
-{"Nombre":"Misaki Ayuzawa","Imagen":"","Fuente":"Kaichou wa Maid-sama","Valor":24000},
-{"Nombre":"Kyoko Mogami","Imagen":"","Fuente":"Skip Beat","Valor":22000},
-{"Nombre":"Sawako Kuronuma","Imagen":"","Fuente":"Kimi ni Todoke","Valor":24000},
-{"Nombre":"Risa Koizumi","Imagen":"","Fuente":"Lovely Complex","Valor":20000},
-{"Nombre":"Shizuku Mizutani","Imagen":"","Fuente":"Tonari no Kaibutsu-kun","Valor":22000},
-{"Nombre":"Shirayuki","Imagen":"","Fuente":"Akagami no Shirayukihime","Valor":24000},
-{"Nombre":"Yona","Imagen":"","Fuente":"Akatsuki no Yona","Valor":24000},
-{"Nombre":"Miaka Yuuki","Imagen":"","Fuente":"Fushigi Yuugi","Valor":18000},
-{"Nombre":"Hiyori Iki","Imagen":"","Fuente":"Noragami","Valor":22000},
-{"Nombre":"Nanami Momozono","Imagen":"","Fuente":"Kamisama Kiss","Valor":24000},
-{"Nombre":"Ririchiyo Shirakiin","Imagen":"","Fuente":"Inu x Boku SS","Valor":20000},
-{"Nombre":"Tamako Kitashirakawa","Imagen":"","Fuente":"Tamako Market","Valor":20000},
-{"Nombre":"Tenma Tsukamoto","Imagen":"","Fuente":"School Rumble","Valor":20000},
-{"Nombre":"Eri Sawachika","Imagen":"","Fuente":"School Rumble","Valor":22000},
-{"Nombre":"Mikoto Suou","Imagen":"","Fuente":"School Rumble","Valor":18000},
-{"Nombre":"Akira Takano","Imagen":"","Fuente":"School Rumble","Valor":18000},
-{"Nombre":"Yakumo Tsukamoto","Imagen":"","Fuente":"School Rumble","Valor":20000},
-{"Nombre":"Karen Ichijou","Imagen":"","Fuente":"School Rumble","Valor":15000},
-{"Nombre":"Chitoge Kirisaki","Imagen":"","Fuente":"Nisekoi","Valor":24000},
-{"Nombre":"Kosaki Onodera","Imagen":"","Fuente":"Nisekoi","Valor":24000},
-{"Nombre":"Seishirou Tsugumi","Imagen":"","Fuente":"Nisekoi","Valor":22000},
-{"Nombre":"Marika Tachibana","Imagen":"","Fuente":"Nisekoi","Valor":20000},
-{"Nombre":"Ruri Miyamoto","Imagen":"","Fuente":"Nisekoi","Valor":18000},
-{"Nombre":"Haru Onodera","Imagen":"","Fuente":"Nisekoi","Valor":18000},
-{"Nombre":"Fumino Furuhashi","Imagen":"","Fuente":"Bokutachi wa Benkyou ga Dekinai","Valor":24000},
-{"Nombre":"Rizu Ogata","Imagen":"","Fuente":"Bokutachi wa Benkyou ga Dekinai","Valor":22000},
-{"Nombre":"Uruka Takemoto","Imagen":"","Fuente":"Bokutachi wa Benkyou ga Dekinai","Valor":22000},
-{"Nombre":"Mafuyu Kirisu","Imagen":"","Fuente":"Bokutachi wa Benkyou ga Dekinai","Valor":24000},
-{"Nombre":"Asumi Kominami","Imagen":"","Fuente":"Bokutachi wa Benkyou ga Dekinai","Valor":20000},
-{"Nombre":"Miia","Imagen":"","Fuente":"Monster Musume","Valor":20000},
-{"Nombre":"Papi","Imagen":"","Fuente":"Monster Musume","Valor":18000},
-{"Nombre":"Centorea Shianus","Imagen":"","Fuente":"Monster Musume","Valor":20000},
-{"Nombre":"Suu","Imagen":"","Fuente":"Monster Musume","Valor":15000},
-{"Nombre":"Meroune Lorelei","Imagen":"","Fuente":"Monster Musume","Valor":18000},
-{"Nombre":"Rachnera Arachnera","Imagen":"","Fuente":"Monster Musume","Valor":20000},
-{"Nombre":"Gabriel Tenma White","Imagen":"","Fuente":"Gabriel DropOut","Valor":24000},
-{"Nombre":"Vignette April Tsukinose","Imagen":"","Fuente":"Gabriel DropOut","Valor":22000},
-{"Nombre":"Satanichia Kurumizawa McDowell","Imagen":"","Fuente":"Gabriel DropOut","Valor":24000},
-{"Nombre":"Raphiel Ainsworth Shiraha","Imagen":"","Fuente":"Gabriel DropOut","Valor":22000},
-{"Nombre":"Hana Ichinose","Imagen":"","Fuente":"Slow Start","Valor":18000},
-{"Nombre":"Tamate Momochi","Imagen":"","Fuente":"Slow Start","Valor":15000},
-{"Nombre":"Eiko Tokura","Imagen":"","Fuente":"Slow Start","Valor":15000},
-{"Nombre":"Kamuri Sengoku","Imagen":"","Fuente":"Slow Start","Valor":15000},
-{"Nombre":"Kaoruko Moeta","Imagen":"","Fuente":"Comic Girls","Valor":20000},
-{"Nombre":"Koyume Koizuka","Imagen":"","Fuente":"Comic Girls","Valor":18000},
-{"Nombre":"Ruki Irokawa","Imagen":"","Fuente":"Comic Girls","Valor":18000},
-{"Nombre":"Tsubasa Katsuki","Imagen":"","Fuente":"Comic Girls","Valor":18000},
-{"Nombre":"Hinata Hoshino","Imagen":"","Fuente":"Watashi ni Tenshi ga Maiorita","Valor":22000},
-{"Nombre":"Hana Shirosaki","Imagen":"","Fuente":"Watashi ni Tenshi ga Maiorita","Valor":22000},
-{"Nombre":"Noa Himesaka","Imagen":"","Fuente":"Watashi ni Tenshi ga Maiorita","Valor":20000},
-{"Nombre":"Miyako Hoshino","Imagen":"","Fuente":"Watashi ni Tenshi ga Maiorita","Valor":20000},
-{"Nombre":"Yuko Yoshida","Imagen":"","Fuente":"Machikado Mazoku","Valor":22000},
-{"Nombre":"Momo Chiyoda","Imagen":"","Fuente":"Machikado Mazoku","Valor":22000},
-{"Nombre":"Maple","Imagen":"","Fuente":"Bofuri","Valor":24000},
-{"Nombre":"Sally","Imagen":"","Fuente":"Bofuri","Valor":24000},
-{"Nombre":"Kasumi (Bofuri)","Imagen":"","Fuente":"Bofuri","Valor":18000},
-{"Nombre":"Yuna (Kuma Kuma Kuma Bear)","Imagen":"","Fuente":"Kuma Kuma Kuma Bear","Valor":22000},
-{"Nombre":"Azusa Aizawa","Imagen":"","Fuente":"Slime 300","Valor":22000},
-{"Nombre":"Laika","Imagen":"","Fuente":"Slime 300","Valor":18000},
-{"Nombre":"Falfa","Imagen":"","Fuente":"Slime 300","Valor":18000},
-{"Nombre":"Shalsha","Imagen":"","Fuente":"Slime 300","Valor":18000},
-{"Nombre":"Halkara","Imagen":"","Fuente":"Slime 300","Valor":18000},
-{"Nombre":"Beelzebub (Slime 300)","Imagen":"","Fuente":"Slime 300","Valor":20000},
-{"Nombre":"Catarina Claes","Imagen":"","Fuente":"Hamefura","Valor":22000},
-{"Nombre":"Mary Hunt","Imagen":"","Fuente":"Hamefura","Valor":20000},
-{"Nombre":"Sophia Ascart","Imagen":"","Fuente":"Hamefura","Valor":20000},
-{"Nombre":"Sei Takanashi","Imagen":"","Fuente":"Saint's Magic Power","Valor":22000},
-{"Nombre":"Princess Syalis","Imagen":"","Fuente":"Sleepy Princess","Valor":22000},
-{"Nombre":"Belldandy","Imagen":"","Fuente":"Ah My Goddess","Valor":24000},
-{"Nombre":"Urd","Imagen":"","Fuente":"Ah My Goddess","Valor":20000},
-{"Nombre":"Skuld","Imagen":"","Fuente":"Ah My Goddess","Valor":18000},
-{"Nombre":"Ryoko (Tenchi Muyo)","Imagen":"","Fuente":"Tenchi Muyo","Valor":20000},
-{"Nombre":"Ayeka","Imagen":"","Fuente":"Tenchi Muyo","Valor":18000},
-{"Nombre":"Sasami","Imagen":"","Fuente":"Tenchi Muyo","Valor":15000},
-{"Nombre":"Mihoshi","Imagen":"","Fuente":"Tenchi Muyo","Valor":15000},
-{"Nombre":"Washu","Imagen":"","Fuente":"Tenchi Muyo","Valor":20000},
-{"Nombre":"Akane Tendo","Imagen":"","Fuente":"Ranma 1/2","Valor":22000},
-{"Nombre":"Shampoo","Imagen":"","Fuente":"Ranma 1/2","Valor":40000},
-{"Nombre":"Ukyo Kuonji","Imagen":"","Fuente":"Ranma 1/2","Valor":30000},
-{"Nombre":"Kodachi Kuno","Imagen":"","Fuente":"Ranma 1/2","Valor":25000},
-{"Nombre":"Nabiki Tendo","Imagen":"","Fuente":"Ranma 1/2","Valor":28000},
-{"Nombre":"Kasumi Tendo","Imagen":"","Fuente":"Ranma 1/2","Valor":30000},
-{"Nombre":"Lina Inverse","Imagen":"","Fuente":"Slayers","Valor":70000},
-{"Nombre":"Amelia Wil Tesla Seyruun","Imagen":"","Fuente":"Slayers","Valor":50000},
-{"Nombre":"Naga the Serpent","Imagen":"","Fuente":"Slayers","Valor":55000},
-{"Nombre":"Sylphiel Nels Lahda","Imagen":"","Fuente":"Slayers","Valor":40000},
-{"Nombre":"Hikaru Shidou","Imagen":"","Fuente":"Magic Knight Rayearth","Valor":60000},
-{"Nombre":"Umi Ryuuzaki","Imagen":"","Fuente":"Magic Knight Rayearth","Valor":60000},
-{"Nombre":"Fuu Hououji","Imagen":"","Fuente":"Magic Knight Rayearth","Valor":60000},
-{"Nombre":"Hitomi Kanzaki","Imagen":"","Fuente":"Escaflowne","Valor":50000},
-{"Nombre":"Utena Tenjou","Imagen":"","Fuente":"Revolutionary Girl Utena","Valor":60000},
-{"Nombre":"Anthy Himemiya","Imagen":"","Fuente":"Revolutionary Girl Utena","Valor":55000},
-{"Nombre":"Rei Hino","Imagen":"","Fuente":"Sailor Moon","Valor":70000},
-{"Nombre":"Makoto Kino","Imagen":"","Fuente":"Sailor Moon","Valor":65000},
-{"Nombre":"Minako Aino","Imagen":"","Fuente":"Sailor Moon","Valor":65000},
-{"Nombre":"Chibiusa","Imagen":"","Fuente":"Sailor Moon","Valor":60000},
-{"Nombre":"Setsuna Meiou","Imagen":"","Fuente":"Sailor Moon","Valor":65000},
-{"Nombre":"Haruka Tenou","Imagen":"","Fuente":"Sailor Moon","Valor":70000},
-{"Nombre":"Michiru Kaiou","Imagen":"","Fuente":"Sailor Moon","Valor":70000},
-{"Nombre":"Hotaru Tomoe","Imagen":"","Fuente":"Sailor Moon","Valor":65000},
-{"Nombre":"Tomoyo Daidouji","Imagen":"","Fuente":"Cardcaptor Sakura","Valor":65000},
-{"Nombre":"Meiling Li","Imagen":"","Fuente":"Cardcaptor Sakura","Valor":40000},
-{"Nombre":"Ichigo Momomiya","Imagen":"","Fuente":"Tokyo Mew Mew","Valor":50000},
-{"Nombre":"Mint Aizawa","Imagen":"","Fuente":"Tokyo Mew Mew","Valor":45000},
-{"Nombre":"Lettuce Midorikawa","Imagen":"","Fuente":"Tokyo Mew Mew","Valor":45000},
-{"Nombre":"Pudding Fong","Imagen":"","Fuente":"Tokyo Mew Mew","Valor":40000},
-{"Nombre":"Zakuro Fujiwara","Imagen":"","Fuente":"Tokyo Mew Mew","Valor":50000},
-{"Nombre":"Lucia Nanami","Imagen":"","Fuente":"Mermaid Melody","Valor":45000},
-{"Nombre":"Hanon Hosho","Imagen":"","Fuente":"Mermaid Melody","Valor":40000},
-{"Nombre":"Rina Toin","Imagen":"","Fuente":"Mermaid Melody","Valor":40000},
-{"Nombre":"Doremi Harukaze","Imagen":"","Fuente":"Ojamajo Doremi","Valor":50000},
-{"Nombre":"Hazuki Fujiwara","Imagen":"","Fuente":"Ojamajo Doremi","Valor":45000},
-{"Nombre":"Aiko Senoo","Imagen":"","Fuente":"Ojamajo Doremi","Valor":45000},
-{"Nombre":"Onpu Segawa","Imagen":"","Fuente":"Ojamajo Doremi","Valor":50000},
-{"Nombre":"Momoko Asuka","Imagen":"","Fuente":"Ojamajo Doremi","Valor":45000},
-{"Nombre":"Kyoko Otonashi","Imagen":"","Fuente":"Maison Ikkoku","Valor":60000},
-{"Nombre":"Kozue Nanao","Imagen":"","Fuente":"Maison Ikkoku","Valor":35000},
-{"Nombre":"Nagisa Misumi","Imagen":"","Fuente":"Precure","Valor":70000},
-{"Nombre":"Honoka Yukishiro","Imagen":"","Fuente":"Precure","Valor":70000},
-{"Nombre":"Hikari Kujou","Imagen":"","Fuente":"Precure","Valor":50000},
-{"Nombre":"Saki Hyuuga","Imagen":"","Fuente":"Precure","Valor":60000},
-{"Nombre":"Mai Mishou","Imagen":"","Fuente":"Precure","Valor":60000},
-{"Nombre":"Nozomi Yumehara","Imagen":"","Fuente":"Precure","Valor":65000},
-{"Nombre":"Rin Natsuki","Imagen":"","Fuente":"Precure","Valor":55000},
-{"Nombre":"Urara Kasugano","Imagen":"","Fuente":"Precure","Valor":55000},
-{"Nombre":"Komachi Akimoto","Imagen":"","Fuente":"Precure","Valor":50000},
-{"Nombre":"Karen Minazuki","Imagen":"","Fuente":"Precure","Valor":55000},
-{"Nombre":"Love Momozono","Imagen":"","Fuente":"Precure","Valor":100000},
-{"Nombre":"Miki Aono","Imagen":"","Fuente":"Precure","Valor":90000},
-{"Nombre":"Inori Yamabuki","Imagen":"","Fuente":"Precure","Valor":85000},
-{"Nombre":"Tsubomi Hanasaki","Imagen":"","Fuente":"Precure","Valor":100000},
-{"Nombre":"Erika Kurumi","Imagen":"","Fuente":"Precure","Valor":100000},
-{"Nombre":"Itsuki Myoudouin","Imagen":"","Fuente":"Precure","Valor":90000},
-{"Nombre":"Yuri Tsukikage","Imagen":"","Fuente":"Precure","Valor":100000},
-{"Nombre":"Hibiki Houjou","Imagen":"","Fuente":"Precure","Valor":100000},
-{"Nombre":"Kanade Minamino","Imagen":"","Fuente":"Precure","Valor":100000},
-{"Nombre":"Miyuki Hoshizora","Imagen":"","Fuente":"Precure","Valor":100000},
-{"Nombre":"Ichigo Hoshimiya","Imagen":"","Fuente":"Aikatsu","Valor":120000},
-{"Nombre":"Aoi Kiriya","Imagen":"","Fuente":"Aikatsu","Valor":110000},
-{"Nombre":"Ran Shibuki","Imagen":"","Fuente":"Aikatsu","Valor":100000},
-{"Nombre":"Otome Arisugawa","Imagen":"","Fuente":"Aikatsu","Valor":100000},
-{"Nombre":"Lucina","Imagen":"","Fuente":"Fire Emblem","Valor":250000},
-{"Nombre":"Edelgard von Hresvelg","Imagen":"","Fuente":"Fire Emblem","Valor":250000},
-{"Nombre":"Corrin","Imagen":"","Fuente":"Fire Emblem","Valor":200000},
-{"Nombre":"Bernadetta von Varley","Imagen":"","Fuente":"Fire Emblem","Valor":200000},
-{"Nombre":"Lysithea von Ordelia","Imagen":"","Fuente":"Fire Emblem","Valor":200000}
+  {
+    "Nombre": "Ayumu Kasuga",
+    "Imagen": "https://static.wikia.nocookie.net/azumanga/images/e/e8/Osakamanga.jpg/revision/latest?cb=20220918012953",
+    "Fuente": "Azumanga Daioh",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Tomo Takino",
+    "Imagen": "https://static.wikia.nocookie.net/azumanga-daioh-fanon/images/0/0f/Tomo_%281st_Year%29.png/revision/latest?cb=20170704194018",
+    "Fuente": "Azumanga Daioh",
+    "Valor": 16000
+  },
+  {
+    "Nombre": "Koyomi Mizuhara",
+    "Imagen": "https://static.wikia.nocookie.net/azumanga/images/2/25/Yomimanga.jpg/revision/latest?cb=20220918013233",
+    "Fuente": "Azumanga Daioh",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Sakaki",
+    "Imagen": "https://static.wikia.nocookie.net/azumanga/images/2/2b/Sakakimanga.jpg/revision/latest?cb=20220918013126",
+    "Fuente": "Azumanga Daioh",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Kagura (Azumanga)",
+    "Imagen": "https://static.wikia.nocookie.net/azumanga/images/6/6f/KaguraAnime.png/revision/latest?cb=20241217110115",
+    "Fuente": "Azumanga Daioh",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Chiyo Mihama",
+    "Imagen": "https://static.wikia.nocookie.net/azumanga/images/a/ab/Chiyoanime.jpg/revision/latest/scale-to-width-down/1200?cb=20260828205743",
+    "Fuente": "Azumanga Daioh",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Yukari Tanizaki",
+    "Imagen": "https://static.wikitide.net/azudaiohwiki/f/fb/YukariAnime.png",
+    "Fuente": "Azumanga Daioh",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Konata Izumi",
+    "Imagen": "https://static.wikia.nocookie.net/luckystar/images/f/fe/Konata-san2.png/revision/latest?cb=20240612064611",
+    "Fuente": "Lucky Star",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Kagami Hiiragi",
+    "Imagen": "https://static.wikia.nocookie.net/luckystar/images/c/c9/Kagami-san.gif/revision/latest?cb=20120723133124",
+    "Fuente": "Lucky Star",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Tsukasa Hiiragi",
+    "Imagen": "https://static.wikia.nocookie.net/luckystar/images/9/92/Tsukasa-san.gif/revision/latest?cb=20120723133432",
+    "Fuente": "Lucky Star",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Miyuki Takara",
+    "Imagen": "https://static.wikia.nocookie.net/luckystar/images/b/b7/Miyuki-san.png/revision/latest?cb=20140612112910",
+    "Fuente": "Lucky Star",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Yutaka Kobayakawa",
+    "Imagen": "https://static.wikia.nocookie.net/luckystar/images/0/05/YutakaKobayakawaeyui.png/revision/latest?cb=20190703202424",
+    "Fuente": "Lucky Star",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Minami Iwasaki",
+    "Imagen": "https://static.wikia.nocookie.net/luckystar/images/5/57/MinamiIwasakihed.png/revision/latest?cb=20190703203423",
+    "Fuente": "Lucky Star",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Patricia Martin",
+    "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/7/7c/Patricia_Martin_99.jpg/revision/latest?cb=20210830021806",
+    "Fuente": "Lucky Star",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Yuno (Hidamari Sketch)",
+    "Imagen": "https://static.wikia.nocookie.net/hidamarisketch/images/6/63/Yuno_Render.webp/revision/latest?cb=20240625060157",
+    "Fuente": "Hidamari Sketch",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Miyako (Hidamari Sketch)",
+    "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/a/af/Miyako_%28Hidamari_Sketch%29_Render_01.png/revision/latest?cb=20231028104232",
+    "Fuente": "Hidamari Sketch",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Hiro (Hidamari Sketch)",
+    "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/6/68/Hiro_%28Hidamari_Sketch%29_Render_01.png/revision/latest?cb=20231028101530",
+    "Fuente": "Hidamari Sketch",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Sae (Hidamari Sketch)",
+    "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/c/ca/Sae_%28Hidamari_Sketch%29_Render_01.png/revision/latest/scale-to-width-down/250?cb=20231028103320",
+    "Fuente": "Hidamari Sketch",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Nazuna (Hidamari Sketch)",
+    "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/e/e2/Nazuna_%28Hidamari_Sketch%29_Render_01.png/revision/latest/scale-to-width-down/340?cb=20231028102455",
+    "Fuente": "Hidamari Sketch",
+    "Valor": 10000
+  },
+  {
+    "Nombre": "Ayu Tsukimiya",
+    "Imagen": "https://static.wikia.nocookie.net/neoencyclopedia/images/f/f9/Ayu_Tsukimiya_Key.jpg/revision/latest?cb=20140125045852",
+    "Fuente": "Kanon",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Makoto Sawatari",
+    "Imagen": "https://static.wikia.nocookie.net/kanon/images/e/e6/FGMK01.png/revision/latest?cb=20150305155653",
+    "Fuente": "Kanon",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Mai Kawasumi",
+    "Imagen": "https://static.wikia.nocookie.net/kanon/images/6/67/FGMI01.png/revision/latest?cb=20150305141934",
+    "Fuente": "Kanon",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Shiori Misaka",
+    "Imagen": "https://static.wikia.nocookie.net/kanon/images/e/ed/0131.jpg/revision/latest?cb=20161018040636",
+    "Fuente": "Kanon",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Nayuki Minase",
+    "Imagen": "https://static.wikia.nocookie.net/kanon/images/3/3f/FGNY02A.png/revision/latest?cb=20150305160822",
+    "Fuente": "Kanon",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Misuzu Kamio",
+    "Imagen": "https://static.wikia.nocookie.net/airtv/images/5/58/CGMZ10-e.png/revision/latest?cb=20150320140412",
+    "Fuente": "Air",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Kano Kirishima",
+    "Imagen": "https://static.wikia.nocookie.net/airtv/images/5/5b/CGKA10-e.png/revision/latest?cb=20150320141016",
+    "Fuente": "Air",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Minagi Tohno",
+    "Imagen": "https://i.namu.wiki/i/S9jA2N_8n7q7eeVZ0HgBKr3XXGqVwe2x09fmOKiUDAeXZEn7bMKYYh_MPlhZLmmzj6dv-MbYyRJOkRT2H3e2oQ.webp",
+    "Fuente": "Air",
+    "Valor": 12000
+  },
+  {
+    "Nombre": "Nagisa Furukawa",
+    "Imagen": "https://static.wikia.nocookie.net/c__/images/2/29/Furukawa_nagisa.png/revision/latest?cb=20100410125003&path-prefix=clannad",
+    "Fuente": "Clannad",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Ushio Okazaki",
+    "Imagen": "https://static.wikia.nocookie.net/c__/images/c/c9/Okazaki_ushio.png/revision/latest?cb=20100410125429&path-prefix=clannad",
+    "Fuente": "Clannad",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Kyou Fujibayashi",
+    "Imagen": "https://static.wikia.nocookie.net/c__/images/d/d7/Fujibayashi_kyo.png/revision/latest?cb=20100410125000&path-prefix=clannad",
+    "Fuente": "Clannad",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Ryou Fujibayashi",
+    "Imagen": "https://static.wikia.nocookie.net/c__/images/9/9a/Fujibayashi_ryo.png/revision/latest?cb=20100410125002&path-prefix=clannad",
+    "Fuente": "Clannad",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Tomoyo Sakagami",
+    "Imagen": "https://static.wikia.nocookie.net/c__/images/2/2f/Sakagami_tomoyo.png/revision/latest?cb=20100410125430&path-prefix=clannad",
+    "Fuente": "Clannad",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Kotomi Ichinose",
+    "Imagen": "https://static.wikia.nocookie.net/c__/images/3/33/Kotomi_Ichinose.png/revision/latest?cb=20100410020846&path-prefix=clannad",
+    "Fuente": "Clannad",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Fuko Ibuki",
+    "Imagen": "https://static.wikia.nocookie.net/umineko/images/7/70/Fuko_mei_%281%29.png/revision/latest?cb=20210813135013",
+    "Fuente": "Clannad",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Mei Sunohara",
+    "Imagen": "https://static.wikia.nocookie.net/c__/images/c/c0/Sunohara_mei.png/revision/latest?cb=20100410125431&path-prefix=clannad",
+    "Fuente": "Clannad",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Rikka Takanashi",
+    "Imagen": "https://static.wikia.nocookie.net/chuunibyou-demo-koi-ga-shitai/images/0/0a/Chu2movierikka.png/revision/latest?cb=20170721095316",
+    "Fuente": "Chuunibyou",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Shinka Nibutani",
+    "Imagen": "https://static.wikia.nocookie.net/chuunibyou-demo-koi-ga-shitai/images/2/2f/Chu2movienibutani.png/revision/latest?cb=20170721095317",
+    "Fuente": "Chuunibyou",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Sanae Dekomori",
+    "Imagen": "https://static.wikia.nocookie.net/p__/images/6/60/Sanae_Dekomori.png/revision/latest?cb=20180422231024&path-prefix=protagonist",
+    "Fuente": "Chuunibyou",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Kumin Tsuyuri",
+    "Imagen": "https://static.wikia.nocookie.net/chuunibyou-demo-koi-ga-shitai/images/f/f8/Chu2moviekumin.png/revision/latest?cb=20170721095317",
+    "Fuente": "Chuunibyou",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Akari Mizunashi",
+    "Imagen": "https://static.wikia.nocookie.net/aria/images/0/07/Akari_Avvenire_Flashback.jpeg/revision/latest/scale-to-width-down/250?cb=20210824120610",
+    "Fuente": "Aria",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Aika S. Granzchesta",
+    "Imagen": "https://static.wikia.nocookie.net/aria/images/5/53/Aika_Pre_Timeskip.png/revision/latest?cb=20220915161353",
+    "Fuente": "Aria",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Alice Carroll",
+    "Imagen": "https://static.wikia.nocookie.net/aria/images/d/d6/Alice_Post_Timeskip.png/revision/latest?cb=20220915162010",
+    "Fuente": "Aria",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Alicia Florence",
+    "Imagen": "https://static.wikia.nocookie.net/aria/images/4/48/Alicia_Pre_Timeskip.png/revision/latest?cb=20220915163525",
+    "Fuente": "Aria",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Akira E. Ferrari",
+    "Imagen": "https://static.wikia.nocookie.net/aria/images/f/f4/Akira_Post_Timeskip.png/revision/latest?cb=20220915164232",
+    "Fuente": "Aria",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Athena Glory",
+    "Imagen": "https://static.wikia.nocookie.net/aria/images/3/32/Athena_Pre_Timeskip.png/revision/latest?cb=20220915164934",
+    "Fuente": "Aria",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Chito (Girls' Last Tour)",
+    "Imagen": "https://static.wikitide.net/girlslasttourwiki/2/28/Chito_Full_Body.png",
+    "Fuente": "Girls' Last Tour",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Yuuri (Girls' Last Tour)",
+    "Imagen": "https://static.wikitide.net/girlslasttourwiki/e/e0/Yuuri_Appearance.jpg",
+    "Fuente": "Girls' Last Tour",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Riko (Made in Abyss)",
+    "Imagen": "https://static.wikia.nocookie.net/miabsfid/images/1/1b/Riko.png/revision/latest?cb=20241031184249",
+    "Fuente": "Made in Abyss",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Kino",
+    "Imagen": "https://upload.wikimedia.org/wikipedia/en/8/87/Kino_no_Tabi_volume_1_cover.jpg?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original",
+    "Fuente": "Kino's Journey",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Rakka",
+    "Imagen": "",
+    "Fuente": "Haibane Renmei",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Reki (Haibane Renmei)",
+    "Imagen": "",
+    "Fuente": "Haibane Renmei",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Lain Iwakura",
+    "Imagen": "",
+    "Fuente": "Serial Experiments Lain",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Haruhi Fujioka",
+    "Imagen": "",
+    "Fuente": "Ouran High School Host Club",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Misaki Ayuzawa",
+    "Imagen": "",
+    "Fuente": "Kaichou wa Maid-sama",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Kyoko Mogami",
+    "Imagen": "",
+    "Fuente": "Skip Beat",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Sawako Kuronuma",
+    "Imagen": "",
+    "Fuente": "Kimi ni Todoke",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Risa Koizumi",
+    "Imagen": "",
+    "Fuente": "Lovely Complex",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Shizuku Mizutani",
+    "Imagen": "",
+    "Fuente": "Tonari no Kaibutsu-kun",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Shirayuki",
+    "Imagen": "",
+    "Fuente": "Akagami no Shirayukihime",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Yona",
+    "Imagen": "",
+    "Fuente": "Akatsuki no Yona",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Miaka Yuuki",
+    "Imagen": "",
+    "Fuente": "Fushigi Yuugi",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Hiyori Iki",
+    "Imagen": "",
+    "Fuente": "Noragami",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Nanami Momozono",
+    "Imagen": "",
+    "Fuente": "Kamisama Kiss",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Ririchiyo Shirakiin",
+    "Imagen": "",
+    "Fuente": "Inu x Boku SS",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Tamako Kitashirakawa",
+    "Imagen": "",
+    "Fuente": "Tamako Market",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Tenma Tsukamoto",
+    "Imagen": "",
+    "Fuente": "School Rumble",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Eri Sawachika",
+    "Imagen": "",
+    "Fuente": "School Rumble",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Mikoto Suou",
+    "Imagen": "",
+    "Fuente": "School Rumble",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Akira Takano",
+    "Imagen": "",
+    "Fuente": "School Rumble",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Yakumo Tsukamoto",
+    "Imagen": "",
+    "Fuente": "School Rumble",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Karen Ichijou",
+    "Imagen": "",
+    "Fuente": "School Rumble",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Chitoge Kirisaki",
+    "Imagen": "",
+    "Fuente": "Nisekoi",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Kosaki Onodera",
+    "Imagen": "",
+    "Fuente": "Nisekoi",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Seishirou Tsugumi",
+    "Imagen": "",
+    "Fuente": "Nisekoi",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Marika Tachibana",
+    "Imagen": "",
+    "Fuente": "Nisekoi",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Ruri Miyamoto",
+    "Imagen": "",
+    "Fuente": "Nisekoi",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Haru Onodera",
+    "Imagen": "",
+    "Fuente": "Nisekoi",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Fumino Furuhashi",
+    "Imagen": "",
+    "Fuente": "Bokutachi wa Benkyou ga Dekinai",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Rizu Ogata",
+    "Imagen": "",
+    "Fuente": "Bokutachi wa Benkyou ga Dekinai",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Uruka Takemoto",
+    "Imagen": "",
+    "Fuente": "Bokutachi wa Benkyou ga Dekinai",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Mafuyu Kirisu",
+    "Imagen": "",
+    "Fuente": "Bokutachi wa Benkyou ga Dekinai",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Asumi Kominami",
+    "Imagen": "",
+    "Fuente": "Bokutachi wa Benkyou ga Dekinai",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Miia",
+    "Imagen": "",
+    "Fuente": "Monster Musume",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Papi",
+    "Imagen": "",
+    "Fuente": "Monster Musume",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Centorea Shianus",
+    "Imagen": "",
+    "Fuente": "Monster Musume",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Suu",
+    "Imagen": "",
+    "Fuente": "Monster Musume",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Meroune Lorelei",
+    "Imagen": "",
+    "Fuente": "Monster Musume",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Rachnera Arachnera",
+    "Imagen": "",
+    "Fuente": "Monster Musume",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Gabriel Tenma White",
+    "Imagen": "",
+    "Fuente": "Gabriel DropOut",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Vignette April Tsukinose",
+    "Imagen": "",
+    "Fuente": "Gabriel DropOut",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Satanichia Kurumizawa McDowell",
+    "Imagen": "",
+    "Fuente": "Gabriel DropOut",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Raphiel Ainsworth Shiraha",
+    "Imagen": "",
+    "Fuente": "Gabriel DropOut",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Hana Ichinose",
+    "Imagen": "",
+    "Fuente": "Slow Start",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Tamate Momochi",
+    "Imagen": "",
+    "Fuente": "Slow Start",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Eiko Tokura",
+    "Imagen": "",
+    "Fuente": "Slow Start",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Kamuri Sengoku",
+    "Imagen": "",
+    "Fuente": "Slow Start",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Kaoruko Moeta",
+    "Imagen": "",
+    "Fuente": "Comic Girls",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Koyume Koizuka",
+    "Imagen": "",
+    "Fuente": "Comic Girls",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Ruki Irokawa",
+    "Imagen": "",
+    "Fuente": "Comic Girls",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Tsubasa Katsuki",
+    "Imagen": "",
+    "Fuente": "Comic Girls",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Hinata Hoshino",
+    "Imagen": "",
+    "Fuente": "Watashi ni Tenshi ga Maiorita",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Hana Shirosaki",
+    "Imagen": "",
+    "Fuente": "Watashi ni Tenshi ga Maiorita",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Noa Himesaka",
+    "Imagen": "",
+    "Fuente": "Watashi ni Tenshi ga Maiorita",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Miyako Hoshino",
+    "Imagen": "",
+    "Fuente": "Watashi ni Tenshi ga Maiorita",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Yuko Yoshida",
+    "Imagen": "",
+    "Fuente": "Machikado Mazoku",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Momo Chiyoda",
+    "Imagen": "",
+    "Fuente": "Machikado Mazoku",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Maple",
+    "Imagen": "",
+    "Fuente": "Bofuri",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Sally",
+    "Imagen": "",
+    "Fuente": "Bofuri",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Kasumi (Bofuri)",
+    "Imagen": "",
+    "Fuente": "Bofuri",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Yuna (Kuma Kuma Kuma Bear)",
+    "Imagen": "",
+    "Fuente": "Kuma Kuma Kuma Bear",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Azusa Aizawa",
+    "Imagen": "",
+    "Fuente": "Slime 300",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Laika",
+    "Imagen": "",
+    "Fuente": "Slime 300",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Falfa",
+    "Imagen": "",
+    "Fuente": "Slime 300",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Shalsha",
+    "Imagen": "",
+    "Fuente": "Slime 300",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Halkara",
+    "Imagen": "",
+    "Fuente": "Slime 300",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Beelzebub (Slime 300)",
+    "Imagen": "",
+    "Fuente": "Slime 300",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Catarina Claes",
+    "Imagen": "",
+    "Fuente": "Hamefura",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Mary Hunt",
+    "Imagen": "",
+    "Fuente": "Hamefura",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Sophia Ascart",
+    "Imagen": "",
+    "Fuente": "Hamefura",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Sei Takanashi",
+    "Imagen": "",
+    "Fuente": "Saint's Magic Power",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Princess Syalis",
+    "Imagen": "",
+    "Fuente": "Sleepy Princess",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Belldandy",
+    "Imagen": "",
+    "Fuente": "Ah My Goddess",
+    "Valor": 24000
+  },
+  {
+    "Nombre": "Urd",
+    "Imagen": "",
+    "Fuente": "Ah My Goddess",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Skuld",
+    "Imagen": "",
+    "Fuente": "Ah My Goddess",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Ryoko (Tenchi Muyo)",
+    "Imagen": "",
+    "Fuente": "Tenchi Muyo",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Ayeka",
+    "Imagen": "",
+    "Fuente": "Tenchi Muyo",
+    "Valor": 18000
+  },
+  {
+    "Nombre": "Sasami",
+    "Imagen": "",
+    "Fuente": "Tenchi Muyo",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Mihoshi",
+    "Imagen": "",
+    "Fuente": "Tenchi Muyo",
+    "Valor": 15000
+  },
+  {
+    "Nombre": "Washu",
+    "Imagen": "",
+    "Fuente": "Tenchi Muyo",
+    "Valor": 20000
+  },
+  {
+    "Nombre": "Akane Tendo",
+    "Imagen": "",
+    "Fuente": "Ranma 1/2",
+    "Valor": 22000
+  },
+  {
+    "Nombre": "Shampoo",
+    "Imagen": "",
+    "Fuente": "Ranma 1/2",
+    "Valor": 40000
+  },
+  {
+    "Nombre": "Ukyo Kuonji",
+    "Imagen": "",
+    "Fuente": "Ranma 1/2",
+    "Valor": 30000
+  },
+  {
+    "Nombre": "Kodachi Kuno",
+    "Imagen": "",
+    "Fuente": "Ranma 1/2",
+    "Valor": 25000
+  },
+  {
+    "Nombre": "Nabiki Tendo",
+    "Imagen": "",
+    "Fuente": "Ranma 1/2",
+    "Valor": 28000
+  },
+  {
+    "Nombre": "Kasumi Tendo",
+    "Imagen": "",
+    "Fuente": "Ranma 1/2",
+    "Valor": 30000
+  },
+  {
+    "Nombre": "Lina Inverse",
+    "Imagen": "",
+    "Fuente": "Slayers",
+    "Valor": 70000
+  },
+  {
+    "Nombre": "Amelia Wil Tesla Seyruun",
+    "Imagen": "",
+    "Fuente": "Slayers",
+    "Valor": 50000
+  },
+  {
+    "Nombre": "Naga the Serpent",
+    "Imagen": "",
+    "Fuente": "Slayers",
+    "Valor": 55000
+  },
+  {
+    "Nombre": "Sylphiel Nels Lahda",
+    "Imagen": "",
+    "Fuente": "Slayers",
+    "Valor": 40000
+  },
+  {
+    "Nombre": "Hikaru Shidou",
+    "Imagen": "",
+    "Fuente": "Magic Knight Rayearth",
+    "Valor": 60000
+  },
+  {
+    "Nombre": "Umi Ryuuzaki",
+    "Imagen": "",
+    "Fuente": "Magic Knight Rayearth",
+    "Valor": 60000
+  },
+  {
+    "Nombre": "Fuu Hououji",
+    "Imagen": "",
+    "Fuente": "Magic Knight Rayearth",
+    "Valor": 60000
+  },
+  {
+    "Nombre": "Hitomi Kanzaki",
+    "Imagen": "",
+    "Fuente": "Escaflowne",
+    "Valor": 50000
+  },
+  {
+    "Nombre": "Utena Tenjou",
+    "Imagen": "",
+    "Fuente": "Revolutionary Girl Utena",
+    "Valor": 60000
+  },
+  {
+    "Nombre": "Anthy Himemiya",
+    "Imagen": "",
+    "Fuente": "Revolutionary Girl Utena",
+    "Valor": 55000
+  },
+  {
+    "Nombre": "Rei Hino",
+    "Imagen": "",
+    "Fuente": "Sailor Moon",
+    "Valor": 70000
+  },
+  {
+    "Nombre": "Makoto Kino",
+    "Imagen": "",
+    "Fuente": "Sailor Moon",
+    "Valor": 65000
+  },
+  {
+    "Nombre": "Minako Aino",
+    "Imagen": "",
+    "Fuente": "Sailor Moon",
+    "Valor": 65000
+  },
+  {
+    "Nombre": "Chibiusa",
+    "Imagen": "",
+    "Fuente": "Sailor Moon",
+    "Valor": 60000
+  },
+  {
+    "Nombre": "Setsuna Meiou",
+    "Imagen": "",
+    "Fuente": "Sailor Moon",
+    "Valor": 65000
+  },
+  {
+    "Nombre": "Haruka Tenou",
+    "Imagen": "",
+    "Fuente": "Sailor Moon",
+    "Valor": 70000
+  },
+  {
+    "Nombre": "Michiru Kaiou",
+    "Imagen": "",
+    "Fuente": "Sailor Moon",
+    "Valor": 70000
+  },
+  {
+    "Nombre": "Hotaru Tomoe",
+    "Imagen": "",
+    "Fuente": "Sailor Moon",
+    "Valor": 65000
+  },
+  {
+    "Nombre": "Tomoyo Daidouji",
+    "Imagen": "",
+    "Fuente": "Cardcaptor Sakura",
+    "Valor": 65000
+  },
+  {
+    "Nombre": "Meiling Li",
+    "Imagen": "",
+    "Fuente": "Cardcaptor Sakura",
+    "Valor": 40000
+  },
+  {
+    "Nombre": "Ichigo Momomiya",
+    "Imagen": "",
+    "Fuente": "Tokyo Mew Mew",
+    "Valor": 50000
+  },
+  {
+    "Nombre": "Mint Aizawa",
+    "Imagen": "",
+    "Fuente": "Tokyo Mew Mew",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Lettuce Midorikawa",
+    "Imagen": "",
+    "Fuente": "Tokyo Mew Mew",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Pudding Fong",
+    "Imagen": "",
+    "Fuente": "Tokyo Mew Mew",
+    "Valor": 40000
+  },
+  {
+    "Nombre": "Zakuro Fujiwara",
+    "Imagen": "",
+    "Fuente": "Tokyo Mew Mew",
+    "Valor": 50000
+  },
+  {
+    "Nombre": "Lucia Nanami",
+    "Imagen": "",
+    "Fuente": "Mermaid Melody",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Hanon Hosho",
+    "Imagen": "",
+    "Fuente": "Mermaid Melody",
+    "Valor": 40000
+  },
+  {
+    "Nombre": "Rina Toin",
+    "Imagen": "",
+    "Fuente": "Mermaid Melody",
+    "Valor": 40000
+  },
+  {
+    "Nombre": "Doremi Harukaze",
+    "Imagen": "",
+    "Fuente": "Ojamajo Doremi",
+    "Valor": 50000
+  },
+  {
+    "Nombre": "Hazuki Fujiwara",
+    "Imagen": "",
+    "Fuente": "Ojamajo Doremi",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Aiko Senoo",
+    "Imagen": "",
+    "Fuente": "Ojamajo Doremi",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Onpu Segawa",
+    "Imagen": "",
+    "Fuente": "Ojamajo Doremi",
+    "Valor": 50000
+  },
+  {
+    "Nombre": "Momoko Asuka",
+    "Imagen": "",
+    "Fuente": "Ojamajo Doremi",
+    "Valor": 45000
+  },
+  {
+    "Nombre": "Kyoko Otonashi",
+    "Imagen": "",
+    "Fuente": "Maison Ikkoku",
+    "Valor": 60000
+  },
+  {
+    "Nombre": "Kozue Nanao",
+    "Imagen": "",
+    "Fuente": "Maison Ikkoku",
+    "Valor": 35000
+  },
+  {
+    "Nombre": "Nagisa Misumi",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 70000
+  },
+  {
+    "Nombre": "Honoka Yukishiro",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 70000
+  },
+  {
+    "Nombre": "Hikari Kujou",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 50000
+  },
+  {
+    "Nombre": "Saki Hyuuga",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 60000
+  },
+  {
+    "Nombre": "Mai Mishou",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 60000
+  },
+  {
+    "Nombre": "Nozomi Yumehara",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 65000
+  },
+  {
+    "Nombre": "Rin Natsuki",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 55000
+  },
+  {
+    "Nombre": "Urara Kasugano",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 55000
+  },
+  {
+    "Nombre": "Komachi Akimoto",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 50000
+  },
+  {
+    "Nombre": "Karen Minazuki",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 55000
+  },
+  {
+    "Nombre": "Love Momozono",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 100000
+  },
+  {
+    "Nombre": "Miki Aono",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 90000
+  },
+  {
+    "Nombre": "Inori Yamabuki",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 85000
+  },
+  {
+    "Nombre": "Tsubomi Hanasaki",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 100000
+  },
+  {
+    "Nombre": "Erika Kurumi",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 100000
+  },
+  {
+    "Nombre": "Itsuki Myoudouin",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 90000
+  },
+  {
+    "Nombre": "Yuri Tsukikage",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 100000
+  },
+  {
+    "Nombre": "Hibiki Houjou",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 100000
+  },
+  {
+    "Nombre": "Kanade Minamino",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 100000
+  },
+  {
+    "Nombre": "Miyuki Hoshizora",
+    "Imagen": "",
+    "Fuente": "Precure",
+    "Valor": 100000
+  },
+  {
+    "Nombre": "Ichigo Hoshimiya",
+    "Imagen": "",
+    "Fuente": "Aikatsu",
+    "Valor": 120000
+  },
+  {
+    "Nombre": "Aoi Kiriya",
+    "Imagen": "",
+    "Fuente": "Aikatsu",
+    "Valor": 110000
+  },
+  {
+    "Nombre": "Ran Shibuki",
+    "Imagen": "",
+    "Fuente": "Aikatsu",
+    "Valor": 100000
+  },
+  {
+    "Nombre": "Otome Arisugawa",
+    "Imagen": "",
+    "Fuente": "Aikatsu",
+    "Valor": 100000
+  },
+  {
+    "Nombre": "Lucina",
+    "Imagen": "",
+    "Fuente": "Fire Emblem",
+    "Valor": 250000
+  },
+  {
+    "Nombre": "Edelgard von Hresvelg",
+    "Imagen": "",
+    "Fuente": "Fire Emblem",
+    "Valor": 250000
+  },
+  {
+    "Nombre": "Corrin",
+    "Imagen": "",
+    "Fuente": "Fire Emblem",
+    "Valor": 200000
+  },
+  {
+    "Nombre": "Bernadetta von Varley",
+    "Imagen": "",
+    "Fuente": "Fire Emblem",
+    "Valor": 200000
+  },
+  {
+    "Nombre": "Lysithea von Ordelia",
+    "Imagen": "",
+    "Fuente": "Fire Emblem",
+    "Valor": 200000
+  }
 ]
