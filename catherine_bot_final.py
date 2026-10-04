@@ -14,6 +14,7 @@ import difflib
 from collections import defaultdict
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
+from PIL import Image, ImageDraw
 
 # --- Mini servidor web falso (solo para que Render detecte un puerto abierto) ---
 class HealthCheckHandler(BaseHTTPRequestHandler):
@@ -169,6 +170,7 @@ MODEL_NAME = "openai/gpt-oss-120b"
 # Historial de conversaciones por canal
 conversation_history = defaultdict(list)
 message_count = defaultdict(int)
+mensajes_usuario_count = defaultdict(int)  # user_id (str) -> cantidad de mensajes que le mandó a Catherine
 
 # Personalidad de Catherine
 PERSONALIDAD = """Eres †Catherine†, una chica introvertida y observadora. Prefieres la tranquilidad. Aunque a primera vista pareces fría, distante o demasiado seria, en realidad eres tímida y tienes un corazón amable que te cuesta demostrar abiertamente.
@@ -225,6 +227,7 @@ GITHUB_ARCHIVO_CHARACTERS = "data/characters.json"
 GITHUB_ARCHIVO_SHOP = "data/shop.json"
 GITHUB_ARCHIVO_INVENTARIO = "data/inventario.json"
 GITHUB_ARCHIVO_MATRIMONIOS = "data/matrimonios.json"
+GITHUB_ARCHIVO_MEMORIA = "data/bot_memory.json"
 
 # Los balances viven en RAM mientras el bot corre; solo se sincronizan con
 # GitHub cada 6hs (o a mano con !datasave) para no golpear la API todo el tiempo
@@ -237,6 +240,12 @@ hubo_cambios_sin_guardar = False
 matrimonios_cache = {}
 matrimonios_sha = None
 matrimonios_cargados = False
+
+# Memoria de Catherine sobre cada usuario (bot_memory.json): {user_id: {nombre, personalidad, gustos, hablamos_de, ultima_actualizacion}}
+memoria_cache = {}
+memoria_sha = None
+memoria_cargada = False
+hubo_cambios_memoria_sin_guardar = False
 hubo_cambios_matrimonios_sin_guardar = False
 
 # Personajes para !rw: se cargan desde data/rw.json en el repo. Normalmente lo
@@ -411,6 +420,123 @@ def eliminar_matrimonio(usuario_id):
     if pareja_id:
         matrimonios_cache.pop(str(pareja_id), None)
     hubo_cambios_matrimonios_sin_guardar = True
+
+async def cargar_memoria_desde_github():
+    global memoria_cache, memoria_sha, memoria_cargada
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_MEMORIA}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 404:
+                memoria_cache, memoria_sha = {}, None
+            else:
+                resp.raise_for_status()
+                data = await resp.json()
+                contenido = base64.b64decode(data["content"]).decode("utf-8")
+                memoria_cache = json.loads(contenido)
+                memoria_sha = data["sha"]
+    memoria_cargada = True
+
+async def guardar_memoria_en_github():
+    """Sube el estado actual de memoria_cache a GitHub. Devuelve True si guardó algo."""
+    global memoria_sha, hubo_cambios_memoria_sin_guardar
+    if not hubo_cambios_memoria_sin_guardar:
+        return False
+
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_MEMORIA}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp_get:
+            if resp_get.status == 200:
+                data_actual = await resp_get.json()
+                memoria_sha = data_actual["sha"]
+            elif resp_get.status == 404:
+                memoria_sha = None
+            else:
+                resp_get.raise_for_status()
+
+        contenido_b64 = base64.b64encode(json.dumps(memoria_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+        body = {"message": "Actualizar memoria de Catherine", "content": contenido_b64}
+        if memoria_sha:
+            body["sha"] = memoria_sha
+
+        async with session.put(url, headers=headers, json=body) as resp:
+            if resp.status not in (200, 201):
+                texto_error = await resp.text()
+                raise RuntimeError(f"{resp.status}: {texto_error}")
+            data = await resp.json()
+            memoria_sha = data["content"]["sha"]
+
+    hubo_cambios_memoria_sin_guardar = False
+    return True
+
+async def actualizar_memoria_usuario(user_id, nombre_discord, intercambio_reciente):
+    """Le pide a Groq que actualice lo que Catherine sabe de este usuario
+    (nombre, personalidad, gustos, de qué estuvieron hablando), a partir del
+    intercambio más reciente y de lo que ya tenía guardado. Se corre en
+    segundo plano DESPUÉS de responderle al usuario (asyncio.create_task),
+    para no sumarle espera a la respuesta."""
+    global hubo_cambios_memoria_sin_guardar
+
+    anterior = memoria_cache.get(user_id, {})
+    prompt = f"""Es un usuario de Discord (nombre de Discord: {nombre_discord}) que estuvo hablando con Catherine. Actualizá lo que ella sabe de él/ella.
+
+LO QUE CATHERINE YA SABÍA DE ESTA PERSONA:
+Nombre: {anterior.get("nombre") or "(todavía no lo sabe)"}
+Personalidad: {anterior.get("personalidad") or "(todavía no la notó)"}
+Gustos: {anterior.get("gustos") or "(todavía no los sabe)"}
+Estuvieron hablando de: {anterior.get("hablamos_de") or "(nada en particular todavía)"}
+
+INTERCAMBIO MÁS RECIENTE:
+{intercambio_reciente}
+
+Actualizá los 4 campos de abajo en base a TODO lo de arriba (lo que ya sabía + lo nuevo). Si el intercambio reciente no agrega nada nuevo a un campo, dejalo exactamente como estaba. Sé breve en cada campo (1-2 oraciones como mucho). Respondé SOLO con un objeto JSON, sin texto antes ni después ni backticks, con exactamente estas 4 claves: nombre, personalidad, gustos, hablamos_de."""
+
+    try:
+        completion = await client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        texto = completion.choices[0].message.content.strip()
+        texto = re.sub(r"^```(?:json)?|```$", "", texto, flags=re.MULTILINE).strip()
+        datos = json.loads(texto)
+    except Exception as e:
+        print(f"⚠️ No pude actualizar la memoria de {user_id}: {e}", flush=True)
+        return
+
+    memoria_cache[user_id] = {
+        "nombre": datos.get("nombre") or anterior.get("nombre") or nombre_discord,
+        "personalidad": datos.get("personalidad") or anterior.get("personalidad", ""),
+        "gustos": datos.get("gustos") or anterior.get("gustos", ""),
+        "hablamos_de": datos.get("hablamos_de") or anterior.get("hablamos_de", ""),
+        "ultima_actualizacion": int(time.time()),
+    }
+    hubo_cambios_memoria_sin_guardar = True
+    try:
+        await guardar_memoria_en_github()
+    except Exception as e:
+        print(f"⚠️ No pude guardar la memoria tras actualizarla: {e}", flush=True)
+
+def bloque_memoria_usuario(user_id):
+    """Arma el bloque de texto con lo que Catherine recuerda de este usuario,
+    para meter en el contexto antes de llamar a Groq. Vacío si todavía no hay nada."""
+    datos = memoria_cache.get(user_id)
+    if not datos:
+        return ""
+    return (
+        f"LO QUE YA SABÉS DE ESTA PERSONA (de conversaciones anteriores):\n"
+        f"Nombre: {datos.get('nombre') or '???'}\n"
+        f"Personalidad: {datos.get('personalidad') or '(todavía no la notaste)'}\n"
+        f"Gustos: {datos.get('gustos') or '(todavía no los sabés)'}\n"
+        f"Estuvieron hablando de: {datos.get('hablamos_de') or '(nada en particular todavía)'}\n\n"
+    )
 
 # Colección de personajes reclamados por cada usuario (characters.json)
 characters_cache = {}
@@ -808,6 +934,9 @@ async def guardado_periodico():
     guardado_matrimonios = await guardar_matrimonios_en_github()
     if guardado_matrimonios:
         print("💍 Matrimonios sincronizados con GitHub (guardado periódico)")
+    guardado_memoria = await guardar_memoria_en_github()
+    if guardado_memoria:
+        print("🧠 Memoria de Catherine sincronizada con GitHub (guardado periódico)")
 
 INTERES_BANCO_DIARIO = 0.05
 SEGUNDOS_POR_DIA = 24 * 60 * 60
@@ -891,6 +1020,11 @@ async def on_ready():
         await cargar_matrimonios_desde_github()
         print(f"💍 Matrimonios cargados desde GitHub ({len(matrimonios_cache) // 2} parejas)")
 
+    global memoria_cargada
+    if not memoria_cargada and GITHUB_TOKEN and GITHUB_REPO:
+        await cargar_memoria_desde_github()
+        print(f"🧠 Memoria de Catherine cargada desde GitHub ({len(memoria_cache)} usuarios)")
+
 @bot.event
 async def on_presence_update(before, after):
     """Trackea cuándo se desconecta/reconecta cada usuario, para el cooldown
@@ -958,16 +1092,24 @@ async def on_message(message):
                     return
 
                 channel_id = message.channel.id
+                user_id = str(message.author.id)
+                nombre_discord = message.author.display_name
 
-                # Agregar mensaje del usuario al historial
+                # Agregar mensaje del usuario al historial (con quién lo dijo,
+                # así en canales con varios usuarios Catherine no los mezcla)
                 conversation_history[channel_id].append({
                     "role": "usuario",
+                    "autor": nombre_discord,
                     "content": contenido
                 })
                 message_count[channel_id] += 1
+                mensajes_usuario_count[user_id] += 1
 
                 # Construir el contexto para Groq
                 contexto = ""
+
+                # Lo que Catherine ya sabe de esta persona de charlas anteriores
+                contexto += bloque_memoria_usuario(user_id)
 
                 # Si hay resumen cada 6-8 mensajes, agregarlo
                 if message_count[channel_id] % 7 == 0 and len(conversation_history[channel_id]) > 4:
@@ -979,12 +1121,12 @@ async def on_message(message):
                 if len(conversation_history[channel_id]) > 1:
                     contexto += "CONTEXTO RECIENTE:\n"
                     for msg in conversation_history[channel_id][-5:-1]:
-                        rol = "Usuario" if msg['role'] == 'usuario' else "Catherine"
+                        rol = msg.get("autor", "Usuario") if msg['role'] == 'usuario' else "Catherine"
                         contexto += f"{rol}: {msg['content'][:150]}\n"
                     contexto += "\n"
 
                 # El nuevo mensaje
-                contexto += f"Usuario: {contenido}"
+                contexto += f"{nombre_discord}: {contenido}"
 
                 # Llamar a Groq (chat completions, con la personalidad como mensaje system)
                 completion = await client.chat.completions.create(
@@ -1012,6 +1154,13 @@ async def on_message(message):
                         await message.reply(texto_respuesta[i:i+2000])
                 else:
                     await message.reply(texto_respuesta)
+
+                # Actualizar la memoria de este usuario cada 3 mensajes suyos con
+                # Catherine. En segundo plano (create_task) para no hacerlo esperar
+                # la respuesta de arriba, que ya le llegó.
+                if mensajes_usuario_count[user_id] % 6 == 0 and GITHUB_TOKEN and GITHUB_REPO:
+                    intercambio = f"{nombre_discord}: {contenido}\nCatherine: {texto_respuesta}"
+                    asyncio.create_task(actualizar_memoria_usuario(user_id, nombre_discord, intercambio))
 
             except Exception as e:
                 await message.reply(f"❌ Hubo un error: {str(e)}")
@@ -2676,6 +2825,254 @@ async def buscar_imagenes_bing(query, cantidad=3):
             break
     return resultado
 
+async def _descargar_imagen_bytes(session, url):
+    """Baja una imagen como bytes crudos. Devuelve None si falla (link roto,
+    timeout, lo que sea) — el collage la muestra como "Sin imagen" en vez de
+    romperse."""
+    try:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=12), headers=_HEADERS_NAVEGADOR) as resp:
+            if resp.status != 200:
+                return None
+            return await resp.read()
+    except Exception:
+        return None
+
+def _armar_collage(imagenes_bytes):
+    """Arma un collage horizontal con hasta 3 imágenes, numeradas 1/2/3 arriba
+    de cada una, todas a la misma altura. Devuelve un BytesIO con el PNG, o
+    None si ninguna de las 3 se pudo abrir."""
+    ALTO = 350
+    SEPARACION = 10
+    ANCHO_PLACEHOLDER = 180
+
+    abiertas = []
+    for b in imagenes_bytes:
+        if b is None:
+            abiertas.append(None)
+            continue
+        try:
+            img = Image.open(io.BytesIO(b)).convert("RGB")
+            ratio = ALTO / img.height
+            img = img.resize((max(1, int(img.width * ratio)), ALTO))
+            abiertas.append(img)
+        except Exception:
+            abiertas.append(None)
+
+    if not any(img is not None for img in abiertas):
+        return None
+
+    ancho_total = sum((img.width if img else ANCHO_PLACEHOLDER) for img in abiertas) + SEPARACION * (len(abiertas) - 1)
+    collage = Image.new("RGB", (ancho_total, ALTO + 36), (32, 32, 36))
+    draw = ImageDraw.Draw(collage)
+
+    x = 0
+    for i, img in enumerate(abiertas, start=1):
+        if img is None:
+            draw.rectangle([x, 36, x + ANCHO_PLACEHOLDER, 36 + ALTO], outline=(120, 120, 120), width=2)
+            draw.text((x + ANCHO_PLACEHOLDER // 2 - 30, 36 + ALTO // 2), "Sin imagen", fill=(200, 200, 200))
+            ancho = ANCHO_PLACEHOLDER
+        else:
+            collage.paste(img, (x, 36))
+            ancho = img.width
+        draw.text((x + ancho // 2 - 4, 8), str(i), fill=(255, 255, 255))
+        x += ancho + SEPARACION
+
+    buffer = io.BytesIO()
+    collage.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer
+
+class ComparacionImagenesView(discord.ui.View):
+    """Como BusquedaImagenesView, pero en vez de mostrar las candidatas una
+    por una, arma un collage con las 3 juntas y numeradas para elegir de un
+    solo vistazo (pensado para personajes que no conocés: comparando las 3
+    confirmás que son el mismo antes de guardar)."""
+
+    def __init__(self, autor, pendientes):
+        super().__init__(timeout=600)
+        self.autor = autor
+        self.pendientes = pendientes
+        self.indice_personaje = 0
+        self.candidatos = []
+        self.guardados = 0
+        self.saltados = 0
+        self.terminado = False
+        self.procesando = False
+        self.mensaje = None
+
+    async def cargar_siguiente_pendiente(self):
+        """Devuelve (embed, archivo_o_None) del siguiente personaje con candidatas,
+        o el embed final (sin archivo) si ya no quedan."""
+        while self.indice_personaje < len(self.pendientes):
+            personaje = self.pendientes[self.indice_personaje]
+            nombre = campo_personaje(personaje, "Nombre", "nombre")
+            fuente = campo_personaje(personaje, "Fuente", "fuente")
+            self.candidatos = await buscar_candidatas_imagen(nombre, fuente, cantidad=3)
+            if self.candidatos:
+                return await self.armar_mensaje_actual()
+            self.saltados += 1
+            self.indice_personaje += 1
+        return await self.finalizar(), None
+
+    async def armar_mensaje_actual(self):
+        personaje = self.pendientes[self.indice_personaje]
+        nombre = campo_personaje(personaje, "Nombre", "nombre")
+        fuente = campo_personaje(personaje, "Fuente", "fuente")
+
+        async with aiohttp.ClientSession() as session:
+            bytes_imagenes = await asyncio.gather(*[_descargar_imagen_bytes(session, u) for u in self.candidatos])
+        buffer = _armar_collage(bytes_imagenes)
+
+        for i, boton in enumerate((self.opcion1, self.opcion2, self.opcion3), start=1):
+            boton.disabled = i > len(self.candidatos)
+
+        embed = crear_embed(
+            titulo=nombre,
+            footer=f"Personaje {self.indice_personaje + 1}/{len(self.pendientes)}",
+        )
+        embed.add_field(name="Fuente", value=str(fuente), inline=False)
+
+        if buffer is not None:
+            archivo = discord.File(buffer, filename="collage.png")
+            embed.set_image(url="attachment://collage.png")
+            return embed, archivo
+
+        embed.description = "Ninguna de las 3 candidatas se pudo abrir como imagen. Probá `🔄 Recargar`."
+        return embed, None
+
+    async def finalizar(self):
+        global hubo_cambios_personajes_sin_guardar
+        self.terminado = True
+        for item in self.children:
+            item.disabled = True
+
+        texto = f"Guardé imagen a **{self.guardados}** personaje(s). Salteé **{self.saltados}** (sin resultados o ninguna te sirvió)."
+        if hubo_cambios_personajes_sin_guardar:
+            try:
+                await guardar_personajes_en_github()
+                texto += "\n💾 Ya quedó subido a `rw.json` en GitHub."
+            except Exception as e:
+                texto += f"\n❌ Pero hubo un error al subirlo a GitHub: {e}"
+        else:
+            texto += "\n(No guardaste ninguna, así que no hizo falta tocar GitHub.)"
+
+        return crear_embed(titulo="🖼️ Comparación de imágenes terminada", descripcion=texto)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Solo quien inició esto puede decidir.", ephemeral=True)
+            return False
+        if self.procesando:
+            await interaction.response.send_message("Esperá, todavía estoy armando el collage anterior.", ephemeral=True)
+            return False
+        return True
+
+    async def _actualizar_mensaje(self, interaction, resultado):
+        embed, archivo = resultado
+        if archivo is not None:
+            await interaction.edit_original_response(embed=embed, attachments=[archivo], view=self)
+        else:
+            await interaction.edit_original_response(embed=embed, attachments=[], view=self)
+
+    async def _elegir(self, interaction, indice):
+        global hubo_cambios_personajes_sin_guardar
+        await interaction.response.defer()
+        self.procesando = True
+        try:
+            personaje = self.pendientes[self.indice_personaje]
+            personaje["Imagen"] = self.candidatos[indice]
+            hubo_cambios_personajes_sin_guardar = True
+            self.guardados += 1
+            self.indice_personaje += 1
+            resultado = await self.cargar_siguiente_pendiente()
+        finally:
+            self.procesando = False
+        await self._actualizar_mensaje(interaction, resultado)
+
+    @discord.ui.button(label="1️⃣", style=discord.ButtonStyle.success, row=0)
+    async def opcion1(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._elegir(interaction, 0)
+
+    @discord.ui.button(label="2️⃣", style=discord.ButtonStyle.success, row=0)
+    async def opcion2(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._elegir(interaction, 1)
+
+    @discord.ui.button(label="3️⃣", style=discord.ButtonStyle.success, row=0)
+    async def opcion3(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._elegir(interaction, 2)
+
+    @discord.ui.button(label="❌ Ninguna sirve", style=discord.ButtonStyle.danger, row=1)
+    async def ninguna(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.procesando = True
+        try:
+            self.saltados += 1
+            self.indice_personaje += 1
+            resultado = await self.cargar_siguiente_pendiente()
+        finally:
+            self.procesando = False
+        await self._actualizar_mensaje(interaction, resultado)
+
+    @discord.ui.button(label="🔄 Recargar", style=discord.ButtonStyle.secondary, row=1)
+    async def recargar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.procesando = True
+        try:
+            personaje = self.pendientes[self.indice_personaje]
+            nombre = campo_personaje(personaje, "Nombre", "nombre")
+            fuente = campo_personaje(personaje, "Fuente", "fuente")
+            nuevas = await buscar_candidatas_imagen(nombre, fuente, cantidad=3)
+            if nuevas:
+                self.candidatos = nuevas
+            resultado = await self.armar_mensaje_actual()
+        finally:
+            self.procesando = False
+        await self._actualizar_mensaje(interaction, resultado)
+
+    async def on_timeout(self):
+        if self.terminado or self.mensaje is None:
+            return
+        embed = await self.finalizar()
+        try:
+            await self.mensaje.edit(embed=embed, view=self, attachments=[])
+        except discord.HTTPException:
+            pass
+
+@bot.command(name="imgcompare", aliases=["comparaimg"], hidden=True)
+async def imgcompare(ctx, cantidad: int = None):
+    """Como !buscarimagenes, pero arma un collage con las 3 candidatas juntas
+    y numeradas para elegir de un vistazo, en vez de ir pasando una por una.
+    Solo vos."""
+    if str(ctx.author.id) != ID_BANCA:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
+        return
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
+        return
+    if not personajes_cache:
+        await ctx.reply(embed=crear_embed(descripcion="No hay personajes cargados. Corré `!rwreload` primero."))
+        return
+
+    pendientes = [p for p in personajes_cache if not str(campo_personaje(p, "Imagen", "imagen", default="")).strip()]
+    if not pendientes:
+        await ctx.reply(embed=crear_embed(descripcion="Ningún personaje de `rw.json` está sin imagen. 🎉"))
+        return
+
+    if cantidad is not None and cantidad > 0:
+        pendientes = pendientes[:cantidad]
+
+    aviso = await ctx.reply(embed=crear_embed(
+        descripcion=f"🔎 Armando collages para **{len(pendientes)}** personaje(s) sin foto. Puede tardar un toque por cada uno..."
+    ))
+
+    vista = ComparacionImagenesView(ctx.author, pendientes)
+    embed_inicial, archivo_inicial = await vista.cargar_siguiente_pendiente()
+    if archivo_inicial is not None:
+        await aviso.edit(embed=embed_inicial, attachments=[archivo_inicial], view=vista)
+    else:
+        await aviso.edit(embed=embed_inicial, attachments=[], view=vista)
+    vista.mensaje = aviso
+
 class BusquedaImagenesView(discord.ui.View):
     """Recorre los personajes sin Imagen en rw.json, busca 2 candidatas por
     Google Imágenes para cada uno, y deja que vos elijas Guardar/Rechazar.
@@ -3620,6 +4017,50 @@ async def buffs(ctx, miembro: discord.Member = None):
 
 # ===================== FIN COMANDOS DE ITEMS =====================
 
+@bot.command(name="memoria")
+async def memoria(ctx, miembro: discord.Member = None):
+    """Muestra qué recuerda Catherine de vos (o de otro usuario)"""
+    objetivo = miembro or ctx.author
+    user_id = str(objetivo.id)
+    datos = memoria_cache.get(user_id)
+
+    if not datos:
+        posesivo = "de vos" if objetivo.id == ctx.author.id else f"de **{objetivo.display_name}**"
+        await ctx.reply(embed=crear_embed(descripcion=f"Catherine todavía no tiene memoria guardada {posesivo}. Hablale un poco por acá primero."))
+        return
+
+    descripcion = (
+        f"👤 **Nombre**\n> {datos.get('nombre') or '???'}\n\n"
+        f"🎭 **Personalidad**\n> {datos.get('personalidad') or '(todavía no la notó)'}\n\n"
+        f"💭 **Gustos**\n> {datos.get('gustos') or '(todavía no los sabe)'}\n\n"
+        f"💬 **Estuvieron hablando de**\n> {datos.get('hablamos_de') or '(nada en particular todavía)'}"
+    )
+    footer = None
+    if datos.get("ultima_actualizacion"):
+        footer = f"Actualizado por última vez el {time.strftime('%d/%m/%Y', time.localtime(datos['ultima_actualizacion']))}"
+
+    embed = crear_embed(titulo=f"🧠 Lo que Catherine recuerda de {objetivo.display_name}", descripcion=descripcion, footer=footer)
+    await ctx.reply(embed=embed)
+
+@bot.command(name="olvidarme", aliases=["forgetme"])
+async def olvidarme(ctx):
+    """Borra lo que Catherine recuerda de vos"""
+    global hubo_cambios_memoria_sin_guardar
+    user_id = str(ctx.author.id)
+
+    if user_id not in memoria_cache:
+        await ctx.reply(embed=crear_embed(descripcion="Catherine no tenía nada guardado sobre vos."))
+        return
+
+    del memoria_cache[user_id]
+    hubo_cambios_memoria_sin_guardar = True
+    try:
+        await guardar_memoria_en_github()
+    except Exception as e:
+        print(f"⚠️ No pude guardar el borrado de memoria: {e}", flush=True)
+
+    await ctx.reply(embed=crear_embed(descripcion="🗑️ Listo, Catherine se olvidó de todo lo que sabía de vos."))
+
 @bot.command(name="help")
 async def ayuda(ctx):
     """Lista los comandos disponibles para todos los usuarios"""
@@ -3676,10 +4117,13 @@ async def adminhelp(ctx):
         "`!rwreload` — recarga el `rw.json` desde GitHub sin reiniciar el bot",
         "`!checkimg` — revisa qué links de imagen de los personajes están rotos",
         "`!buscarimagenes [cantidad]` o `!imgsearch` — busca fotos para los personajes sin imagen (Guardar/Rechazar/Recargar)",
+        "`!imgcompare [cantidad]` o `!comparaimg` — como arriba, pero con las 3 candidatas juntas en un collage para elegir de un vistazo",
         "`!galeria` — recorrer los personajes uno por uno para revisar imágenes",
         "",
         "**🛍️ Tienda / datos**",
         "`!shopreload` — recarga el `shop.json` desde GitHub sin reiniciar el bot",
+        "`!memoria [@alguien]` — qué recuerda Catherine de vos (o de otro usuario)",
+        "`!olvidarme` — borra lo que Catherine recuerda de vos",
         "`!datasave` — fuerza el guardado inmediato de TODOS los datos a GitHub",
     ]
     embed = crear_embed(descripcion="\n".join(lineas))
@@ -3809,7 +4253,8 @@ async def datasave(ctx):
         guardado_personajes = await guardar_personajes_en_github()
         guardado_inventario = await guardar_inventario_en_github()
         guardado_matrimonios = await guardar_matrimonios_en_github()
-        if guardado_balances or guardado_characters or guardado_personajes or guardado_inventario or guardado_matrimonios:
+        guardado_memoria = await guardar_memoria_en_github()
+        if guardado_balances or guardado_characters or guardado_personajes or guardado_inventario or guardado_matrimonios or guardado_memoria:
             await aviso.edit(embed=crear_embed(descripcion="💾 Listo, quedó todo guardado en GitHub. Podés estar tranquilo/a."))
         else:
             await aviso.edit(embed=crear_embed(descripcion="No había cambios nuevos desde el último guardado, así que no hizo falta tocar nada."))
