@@ -158,8 +158,8 @@ usuarios_desconectados_desde = {}
 # Cooldowns manuales para !rw y !w. Los hacemos a mano (en vez de usar
 # @commands.cooldown) porque los items de la tienda necesitan poder
 # reducirlos o resetearlos dinámicamente.
-COOLDOWN_RW_SEGUNDOS = 6 * 60 * 60
-COOLDOWN_W_SEGUNDOS = 5 * 60
+COOLDOWN_RW_SEGUNDOS = 4 * 60 * 60
+COOLDOWN_W_SEGUNDOS = 3 * 60
 cooldown_rw_usuario = {}   # user_id (str) -> timestamp hasta el que no puede tirar !rw
 cooldown_w_usuario = {}    # user_id (str) -> timestamp hasta el que no puede usar !w
 
@@ -1994,7 +1994,7 @@ async def ejecutar_w(ctx):
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
     balances_cache[user_id].setdefault("banco", 0)
 
-    ganancia = random.randint(1500, 3000)
+    ganancia = random.randint(5000, 6500)
 
     # Aplicar buff del Bono del gobierno (+20% de ganancia)
     buff_bono = obtener_buff(user_id, "bono_w")
@@ -2037,6 +2037,133 @@ async def work_admin(ctx):
         await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
         return
     await ejecutar_w(ctx)
+
+COOLDOWN_MENDIGAR_SEGUNDOS = 20 * 60
+cooldown_mendigar_usuario = {}  # user_id (str) -> timestamp hasta el que no puede volver a mendigar
+
+class DonarModal(discord.ui.Modal):
+    def __init__(self, vista):
+        super().__init__(title="Donar plata")
+        self.vista = vista
+        self.cantidad_input = discord.ui.TextInput(
+            label="¿Cuánto querés donar?",
+            placeholder="Ej: 5000, 100k, all...",
+            required=True,
+            max_length=20,
+        )
+        self.add_item(self.cantidad_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        global hubo_cambios_sin_guardar
+
+        if self.vista.terminado:
+            await interaction.response.send_message("Esta colecta ya terminó.", ephemeral=True)
+            return
+        if interaction.user.id == self.vista.mendigo.id:
+            await interaction.response.send_message("No te podés donar plata a vos mismo.", ephemeral=True)
+            return
+
+        donante_id = str(interaction.user.id)
+        if donante_id not in balances_cache:
+            balances_cache[donante_id] = {"nombre": interaction.user.display_name, "balance": 0, "banco": 0}
+        balance_donante = balances_cache[donante_id].get("balance", 0)
+
+        cantidad = parsear_cantidad(self.cantidad_input.value)
+        if cantidad == "all":
+            cantidad = balance_donante
+        if cantidad is None or cantidad <= 0:
+            await interaction.response.send_message("Esa cantidad no es válida.", ephemeral=True)
+            return
+        if balance_donante < cantidad:
+            await interaction.response.send_message(
+                f"No tenés esa plata afuera del banco. Tenés **{formatear_pesos(balance_donante)}**.", ephemeral=True
+            )
+            return
+
+        balances_cache[donante_id]["balance"] = balance_donante - cantidad
+        self.vista.total_donado += cantidad
+        hubo_cambios_sin_guardar = True
+
+        await interaction.response.edit_message(embed=self.vista.construir_embed(), view=self.vista)
+        await interaction.followup.send(
+            f"Donaste **{formatear_pesos(cantidad)}** a **{self.vista.mendigo.display_name}**.", ephemeral=True
+        )
+
+class MendigarView(discord.ui.View):
+    """Colecta abierta a cualquiera (no solo a quien la inició, por eso no hay
+    interaction_check acá) durante 10 minutos. Al vencer el timeout de la View,
+    se le paga al mendigo todo lo donado de una."""
+
+    DURACION_SEGUNDOS = 10 * 60
+
+    def __init__(self, mendigo):
+        super().__init__(timeout=self.DURACION_SEGUNDOS)
+        self.mendigo = mendigo
+        self.total_donado = 0
+        self.terminado = False
+        self.mensaje = None
+
+    def construir_embed(self):
+        descripcion = (
+            f"te sentaste en la esquina y le pediste a los miembros que te den plata\n"
+            f"{SEPARADOR}\n\n"
+            f"**Donado**: {formatear_pesos(self.total_donado)}"
+        )
+        return crear_embed(titulo="🪙 Mendigar", descripcion=descripcion, footer=f"{self.mendigo.display_name} está mendigando")
+
+    @discord.ui.button(label="💰 Donar", style=discord.ButtonStyle.success)
+    async def donar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.terminado:
+            await interaction.response.send_message("Esta colecta ya terminó.", ephemeral=True)
+            return
+        if interaction.user.id == self.mendigo.id:
+            await interaction.response.send_message("No te podés donar plata a vos mismo.", ephemeral=True)
+            return
+        await interaction.response.send_modal(DonarModal(self))
+
+    async def on_timeout(self):
+        global hubo_cambios_sin_guardar
+        self.terminado = True
+        for item in self.children:
+            item.disabled = True
+
+        if self.total_donado > 0:
+            user_id = str(self.mendigo.id)
+            if user_id not in balances_cache:
+                balances_cache[user_id] = {"nombre": self.mendigo.display_name, "balance": 0, "banco": 0}
+            balances_cache[user_id]["balance"] = balances_cache[user_id].get("balance", 0) + self.total_donado
+            hubo_cambios_sin_guardar = True
+            try:
+                await guardar_balances_en_github()
+            except Exception as e:
+                print(f"⚠️ No pude guardar lo recaudado en !mendigar: {e}", flush=True)
+
+        if self.mensaje is None:
+            return
+        descripcion = (
+            f"La colecta terminó, gracias a todos los que donaron.\n"
+            f"{SEPARADOR}\n\n"
+            f"**Donado**: {formatear_pesos(self.total_donado)}"
+        )
+        embed = crear_embed(titulo="🪙 Mendigar (terminado)", descripcion=descripcion, footer=f"{self.mendigo.display_name} dejó de mendigar")
+        try:
+            await self.mensaje.edit(embed=embed, view=self)
+        except discord.HTTPException:
+            pass
+
+@bot.command(name="mendigar")
+async def mendigar(ctx):
+    """Abrís una colecta de 10 minutos para que te donen plata (cooldown: 20 min)"""
+    user_id = str(ctx.author.id)
+    restante = cooldown_restante(cooldown_mendigar_usuario, user_id)
+    if restante > 0:
+        await ctx.reply(embed=crear_embed(descripcion=f"⏳ Todavía no. Probá de nuevo en **{formatear_tiempo_restante(restante)}**."))
+        return
+
+    poner_cooldown(cooldown_mendigar_usuario, user_id, COOLDOWN_MENDIGAR_SEGUNDOS)
+
+    vista = MendigarView(ctx.author)
+    vista.mensaje = await ctx.reply(embed=vista.construir_embed(), view=vista)
 
 @bot.command(name="cf")
 async def coinflip(ctx, opcion: str = None, cantidad: str = None):
@@ -2408,7 +2535,7 @@ def agrupar_personajes_por_rareza():
         grupos[i].append(p)
     return grupos
 
-COOLDOWN_RECLAMO_SEGUNDOS = 4 * 60 * 60
+COOLDOWN_RECLAMO_SEGUNDOS = 3 * 60 * 60
 
 class RWClaimView(discord.ui.View):
     """Botón de reclamo: 30s exclusivos para quien usó !rw, 60s más libres para
@@ -3729,7 +3856,7 @@ async def aplicar_efecto_item(ctx, item, efecto):
 
     if efecto == "pase_vip":
         agregar_efecto_unico(ctx.author, "pase_vip", 1)
-        return "🎟️ Guardaste un **Pase VIP**. La próxima vez que reclames un personaje en `!rw`, ignorás el cooldown de 4hs del reclamo."
+        return "🎟️ Guardaste un **Pase VIP**. La próxima vez que reclames un personaje en `!rw`, ignorás el cooldown de 3hs del reclamo."
 
     if efecto == "cristal_reroll":
         agregar_efecto_unico(ctx.author, "cristal_reroll", 1)
@@ -4061,27 +4188,30 @@ async def olvidarme(ctx):
 
     await ctx.reply(embed=crear_embed(descripcion="🗑️ Listo, Catherine se olvidó de todo lo que sabía de vos."))
 
-@bot.command(name="help")
-async def ayuda(ctx):
-    """Lista los comandos disponibles para todos los usuarios"""
-    lineas = [
+CATEGORIAS_HELP = [
+    ("💰", "Economía", [
         "`!balance [@alguien]` (o `!bal` / `!saldo`) — ver tu balance (o el de otro), lo bancado y el total",
         "`!top` — top 10 de plata total (balance + banco)",
         "`!perfil [@alguien]` — resumen completo: plata, matrimonio, colección e inventario",
         "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
         "`!retirar cantidad` — saca plata del banco",
         "`!pay @usuario cantidad` — le pasás plata de tu balance a otro usuario",
-        "`!givechar personaje @usuario` — le regalás un personaje de tu colección a otro usuario",
-        "`!vender personaje` — vendés un personaje de tu colección y te doy el 70% de su valor en Pesos",
-        "`!tasacion personaje` — te digo cuánto te darían por venderlo, sin venderlo",
+        "`!w` — trabajar, ganás entre 5.000 y 6.500 Pesos (cooldown: 3 min)",
+        "`!mendigar` — abrís una colecta de 10 min para que te donen plata (cooldown: 20 min)",
+        "_En cualquier `cantidad` de este bot podés poner `all` (todo), o abreviar: `100k`, `2m`, `1b`, `1t`_",
+    ]),
+    ("👥", "Social", [
         "`!marry @usuario` — te casás con otro usuario",
         "`!divorcio` — te divorciás (cuesta 5.000 a cada uno)",
+        "`!givechar personaje @usuario` — le regalás un personaje de tu colección a otro usuario",
         "`!robar @usuario` — si está desconectado hace 6hs+: 10% de afanarle todo, 10% de perder vos el 5%, 80% nada",
-        "`!w` — trabajar, ganás entre 1.500 y 3.000 Pesos (cooldown: 5 min)",
+    ]),
+    ("🎰", "Casino", [
         "`!cf cara/cruz cantidad` — apostar a cara o cruz",
         "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
         "`!rt rojo/negro cantidad` o `!roulette rojo/negro cantidad` — jugar a la ruleta",
-        "_En cualquier `cantidad` de arriba podés poner `all` (todo), o abreviar: `100k`, `2m`, `1b`, `1t`_",
+    ]),
+    ("🛍️", "Tienda", [
         "`!shop` o `!tienda` — ver el catálogo de la tienda, por categorías",
         "`!buy nombre del ítem [cantidad]` o `!comprar ...` — comprar algo de la tienda",
         "`!usar nombre del ítem` — usar un item de tu inventario (buffs, cooldowns, efectos)",
@@ -4089,45 +4219,110 @@ async def ayuda(ctx):
         "`!autouse nombre del ítem` — hace que ese item se use solo en su momento (de nuevo para desactivar)",
         "`!inv` o `!inventario` [@alguien] — ver los objetos que compraste (paginado)",
         "`!invfo nombre del ítem` — ver la ficha de un ítem puntual de la tienda",
-        "`!rw` — tirar un personaje random (cooldown: 6hs; reclamar tiene su propio cooldown de 4hs)",
+    ]),
+    ("🎴", "Gacha", [
+        "`!rw` — tirar un personaje random (cooldown: 4hs; reclamar tiene su propio cooldown de 3hs)",
         "`!winfo nombre` — ver la ficha de un personaje puntual (sin reclamo)",
         "`!coleccion` o `!harem` [@alguien] — ver los personajes reclamados",
+        "`!vender personaje` — vendés un personaje de tu colección y te doy el 70% de su valor en Pesos",
+        "`!tasacion personaje` — te digo cuánto te darían por venderlo, sin venderlo",
+    ]),
+    ("🎵", "Multimedia", [
         "`!mp3 búsqueda` o `!mp3 link` — te paso el audio de un video",
-    ]
-    embed = crear_embed(titulo="Comandos de Catherine", descripcion="\n".join(lineas))
-    await ctx.reply(embed=embed)
+    ]),
+]
 
-@bot.command(name="adminhelp", hidden=True)
-async def adminhelp(ctx):
-    """Lista los comandos de administración (solo dueño de la banca)"""
-    if str(ctx.author.id) != ID_BANCA:
-        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
-        return
-
-    lineas = [
-        "### 🛠️ Comandos de administración",
-        "",
-        "**💰 Economía**",
+CATEGORIAS_ADMINHELP = [
+    ("💰", "Economía", [
         "`!addmoney @usuario cantidad` — le agregás plata a alguien",
         "`!wAdmin` — igual que `!w` pero sin cooldown",
         "`!5porcentforce` — fuerza el 5% de interés diario a tu banco ahora mismo",
-        "",
-        "**🎴 Gacha / rw**",
+    ]),
+    ("🎴", "Gacha / rw", [
         "`!rwAdmin` — igual que `!rw` pero sin cooldown (ni de tirada ni de reclamo)",
         "`!rwreload` — recarga el `rw.json` desde GitHub sin reiniciar el bot",
         "`!checkimg` — revisa qué links de imagen de los personajes están rotos",
         "`!buscarimagenes [cantidad]` o `!imgsearch` — busca fotos para los personajes sin imagen (Guardar/Rechazar/Recargar)",
         "`!imgcompare [cantidad]` o `!comparaimg` — como arriba, pero con las 3 candidatas juntas en un collage para elegir de un vistazo",
         "`!galeria` — recorrer los personajes uno por uno para revisar imágenes",
-        "",
-        "**🛍️ Tienda / datos**",
+    ]),
+    ("🛍️", "Tienda / datos", [
         "`!shopreload` — recarga el `shop.json` desde GitHub sin reiniciar el bot",
         "`!memoria [@alguien]` — qué recuerda Catherine de vos (o de otro usuario)",
         "`!olvidarme` — borra lo que Catherine recuerda de vos",
         "`!datasave` — fuerza el guardado inmediato de TODOS los datos a GitHub",
-    ]
-    embed = crear_embed(descripcion="\n".join(lineas))
-    await ctx.reply(embed=embed)
+    ]),
+]
+
+class HelpView(discord.ui.View):
+    """Help paginado por categorías con Previous/Next, igual que
+    ColeccionView/ShopView/InventarioView/GaleriaView. Solo quien pidió el
+    help puede cambiar de página (interaction_check)."""
+
+    def __init__(self, autor, titulo, categorias):
+        super().__init__(timeout=180)
+        self.autor = autor  # solo quien pidió el help puede cambiar de página
+        self.titulo = titulo
+        self.categorias = categorias
+        self.pagina = 0
+        self.mensaje = None
+        self._actualizar_botones()
+
+    def _actualizar_botones(self):
+        self.anterior.disabled = self.pagina == 0
+        self.siguiente.disabled = self.pagina >= len(self.categorias) - 1
+
+    def construir_embed(self):
+        emoji, nombre, lineas = self.categorias[self.pagina]
+        return crear_embed(
+            titulo=f"{self.titulo} — {emoji} {nombre}",
+            descripcion="\n".join(lineas),
+            footer=f"Categoría {self.pagina + 1}/{len(self.categorias)}",
+        )
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Pedí tu propio `!help` para moverte por las categorías.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="◀ Previous", style=discord.ButtonStyle.secondary)
+    async def anterior(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina -= 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.secondary)
+    async def siguiente(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.pagina += 1
+        self._actualizar_botones()
+        await interaction.response.edit_message(embed=self.construir_embed(), view=self)
+
+    async def on_timeout(self):
+        if self.mensaje is None:
+            return
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.mensaje.edit(view=self)
+        except discord.HTTPException:
+            pass
+
+@bot.command(name="help")
+async def ayuda(ctx):
+    """Lista los comandos disponibles para todos los usuarios, por categorías"""
+    vista = HelpView(ctx.author, "Comandos de Catherine", CATEGORIAS_HELP)
+    vista.mensaje = await ctx.reply(embed=vista.construir_embed(), view=vista)
+
+@bot.command(name="adminhelp", hidden=True)
+async def adminhelp(ctx):
+    """Lista los comandos de administración (solo dueño de la banca), por categorías"""
+    if str(ctx.author.id) != ID_BANCA:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
+        return
+
+    vista = HelpView(ctx.author, "🛠️ Comandos de administración", CATEGORIAS_ADMINHELP)
+    vista.mensaje = await ctx.reply(embed=vista.construir_embed(), view=vista)
 
 _HEADERS_NAVEGADOR = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
