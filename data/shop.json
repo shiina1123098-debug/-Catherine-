@@ -37,6 +37,13 @@
     {"nombre": "Retrato del Dueño", "emoji": "🖼️", "precio": 10000000000, "descripcion": null, "imagen": null},
     {"nombre": "Estatua de Alice Von Ataraxia", "emoji": "🗿", "precio": 25000000000, "descripcion": null, "imagen": null},
     {"nombre": "Fragmento de la Luna", "emoji": "🌑", "precio": 100000000000, "descripcion": null, "imagen": null},
-    {"nombre": "Agujero Negro Portátil", "emoji": "🕳️", "precio": 1000000000000, "descripcion": null, "imagen": null}
+    {"nombre": "Agujero Negro Portátil", "emoji": "🕳️", "precio": 1000000000000, "descripcion": null, "imagen": null},
+    {
+    "nombre": "Café de especialidad",
+    "precio": 1500000,
+    "emoji": "☕",
+    "descripcion": "Reduce **permanentemente** 2 min el cooldown de `!w`. Acumulable hasta eliminarlo por completo.",
+    "efecto": "reducir_cooldown_w_permanente"
+    }
   ]
 }
