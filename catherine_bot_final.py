@@ -60,6 +60,13 @@ COSTO_DIVORCIO_POR_PERSONA = 5_000
 # El resto (1 - PORCENTAJE_VENTA) va a la banca del dueño del bot.
 PORCENTAJE_VENTA = 0.70
 
+# --- Dólar Catherine: cotización que sube/baja cada 4hs, comprable/vendible como un ítem más ---
+DOLAR_VALOR_INICIAL = 1000
+DOLAR_VALOR_MINIMO = 300  # piso: nunca vale menos que esto
+DOLAR_UMBRAL_RECUPERACION = 500  # si está en esto o menos, el próximo cambio se fuerza a ser positivo
+DOLAR_CAMBIO_MAX_PORCENTAJE = 4  # cada 4hs cambia entre -4% y +4% (como el !w, un número al azar entre dos límites)
+COMISION_VENTA_DOLAR = 0.02  # al vender Dólares de vuelta, el 2% va a la banca del dueño del bot
+
 def sumar_a_banca(cantidad):
     """Le suma al dueño de la banca lo que cualquiera pierde apostando (o el
     porcentaje que se queda el bot al vender un personaje)."""
@@ -160,8 +167,14 @@ usuarios_desconectados_desde = {}
 # reducirlos o resetearlos dinámicamente.
 COOLDOWN_RW_SEGUNDOS = 4 * 60 * 60
 COOLDOWN_W_SEGUNDOS = 3 * 60
+COOLDOWN_W_MINIMO = 60  # piso del cooldown de !w, ni el Café de especialidad lo baja de acá
 cooldown_rw_usuario = {}   # user_id (str) -> timestamp hasta el que no puede tirar !rw
 cooldown_w_usuario = {}    # user_id (str) -> timestamp hasta el que no puede usar !w
+
+def cooldown_w_efectivo(user_id):
+    """Devuelve el cooldown real de !w para un usuario, aplicándole su reducción permanente."""
+    reduccion = inventario_cache.get(str(user_id), {}).get("reduccion_cooldown_w", 0)
+    return max(COOLDOWN_W_MINIMO, COOLDOWN_W_SEGUNDOS - reduccion)
 
 # Configurar Groq (cliente async, para no bloquear el event loop del bot mientras espera la respuesta)
 client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -228,6 +241,7 @@ GITHUB_ARCHIVO_SHOP = "data/shop.json"
 GITHUB_ARCHIVO_INVENTARIO = "data/inventario.json"
 GITHUB_ARCHIVO_MATRIMONIOS = "data/matrimonios.json"
 GITHUB_ARCHIVO_MEMORIA = "data/bot_memory.json"
+GITHUB_ARCHIVO_DOLAR = "data/dolar.json"
 
 # Los balances viven en RAM mientras el bot corre; solo se sincronizan con
 # GitHub cada 6hs (o a mano con !datasave) para no golpear la API todo el tiempo
@@ -247,6 +261,15 @@ memoria_sha = None
 memoria_cargada = False
 hubo_cambios_memoria_sin_guardar = False
 hubo_cambios_matrimonios_sin_guardar = False
+
+# Cotización del Dólar Catherine (dolar.json): sube/baja cada 4hs, comprable/vendible como ítem
+dolar_valor = DOLAR_VALOR_INICIAL
+dolar_canal_anuncios = None  # id del canal donde se anuncian las subas/bajadas
+dolar_ultima_actualizacion = None
+dolar_sha = None
+dolar_cargado = False
+hubo_cambios_dolar_sin_guardar = False
+_item_dolar = None  # referencia al dict del ítem "Dólar" dentro de shop_cache, para actualizarle el precio in-place
 
 # Personajes para !rw: se cargan desde data/rw.json en el repo. Normalmente lo
 # editás a mano en GitHub, pero !buscarimagenes también puede escribirlo.
@@ -538,6 +561,70 @@ def bloque_memoria_usuario(user_id):
         f"Estuvieron hablando de: {datos.get('hablamos_de') or '(nada en particular todavía)'}\n\n"
     )
 
+async def cargar_dolar_desde_github():
+    global dolar_valor, dolar_canal_anuncios, dolar_ultima_actualizacion, dolar_sha, dolar_cargado
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_DOLAR}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 404:
+                dolar_valor, dolar_canal_anuncios, dolar_ultima_actualizacion, dolar_sha = DOLAR_VALOR_INICIAL, None, None, None
+            else:
+                resp.raise_for_status()
+                data = await resp.json()
+                contenido = base64.b64decode(data["content"]).decode("utf-8")
+                datos = json.loads(contenido)
+                dolar_valor = datos.get("valor", DOLAR_VALOR_INICIAL)
+                dolar_canal_anuncios = datos.get("canal_anuncios")
+                dolar_ultima_actualizacion = datos.get("ultima_actualizacion")
+                dolar_sha = data["sha"]
+    dolar_cargado = True
+
+async def guardar_dolar_en_github():
+    """Sube el estado actual del dólar a GitHub. Devuelve True si guardó algo."""
+    global dolar_sha, hubo_cambios_dolar_sin_guardar
+    if not hubo_cambios_dolar_sin_guardar:
+        return False
+
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_DOLAR}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp_get:
+            if resp_get.status == 200:
+                data_actual = await resp_get.json()
+                dolar_sha = data_actual["sha"]
+            elif resp_get.status == 404:
+                dolar_sha = None
+            else:
+                resp_get.raise_for_status()
+
+        datos = {
+            "valor": dolar_valor,
+            "canal_anuncios": dolar_canal_anuncios,
+            "ultima_actualizacion": dolar_ultima_actualizacion,
+        }
+        contenido_b64 = base64.b64encode(json.dumps(datos, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+        body = {"message": "Actualizar cotización del dólar", "content": contenido_b64}
+        if dolar_sha:
+            body["sha"] = dolar_sha
+
+        async with session.put(url, headers=headers, json=body) as resp:
+            if resp.status not in (200, 201):
+                texto_error = await resp.text()
+                raise RuntimeError(f"{resp.status}: {texto_error}")
+            data = await resp.json()
+            dolar_sha = data["content"]["sha"]
+
+    hubo_cambios_dolar_sin_guardar = False
+    return True
+
 # Colección de personajes reclamados por cada usuario (characters.json)
 characters_cache = {}
 characters_sha = None
@@ -644,6 +731,29 @@ async def cargar_shop_desde_github():
                 shop_cache = json.loads(contenido)
                 shop_sha = data["sha"]
     shop_cargado = True
+    inyectar_dolar_en_shop()
+
+def inyectar_dolar_en_shop():
+    """Mete (o refresca) el ítem 'Dólar' dentro de shop_cache, bajo la categoría
+    'Inversiones', con el precio actual. Guardamos la referencia al dict en
+    _item_dolar para poder actualizarle el precio in-place cada 4hs sin tener
+    que tocar shop_cache de nuevo. Como cargar_shop_desde_github() PISA
+    shop_cache entero (viene de un JSON que vos editás a mano y no sabe nada
+    del dólar), esta función hay que llamarla de nuevo cada vez que se
+    recarga la tienda — por eso vive adentro de cargar_shop_desde_github()."""
+    global _item_dolar
+    item = {
+        "nombre": "Dólar",
+        "precio": dolar_valor,
+        "emoji": "💵",
+        "descripcion": "Cotización que sube o baja cada 4hs. Comprás con `!buy Dólar cantidad`, vendés con `!vender Dólar cantidad` (2% de comisión).",
+        "vendible": True,
+    }
+    shop_cache.setdefault("Inversiones", [])
+    # Sacamos cualquier "Dólar" viejo (de una carga anterior) antes de meter el nuevo
+    shop_cache["Inversiones"] = [i for i in shop_cache["Inversiones"] if i.get("nombre") != "Dólar"]
+    shop_cache["Inversiones"].append(item)
+    _item_dolar = item
 
 def aplanar_shop():
     """Devuelve una lista de (categoria, item) recorriendo todas las categorías de la tienda."""
@@ -937,6 +1047,53 @@ async def guardado_periodico():
     guardado_memoria = await guardar_memoria_en_github()
     if guardado_memoria:
         print("🧠 Memoria de Catherine sincronizada con GitHub (guardado periódico)")
+    guardado_dolar = await guardar_dolar_en_github()
+    if guardado_dolar:
+        print("💵 Dólar sincronizado con GitHub (guardado periódico)")
+
+@tasks.loop(hours=4)
+async def actualizar_dolar():
+    """Mueve la cotización del dólar entre -4% y +4% (al azar, como el !w),
+    con un piso duro de 300 y, si está muy bajo, fuerza que el próximo
+    movimiento sea para arriba en vez de dejarlo pegado al piso para
+    siempre. Después anuncia el cambio en el canal configurado."""
+    global dolar_valor, dolar_ultima_actualizacion, hubo_cambios_dolar_sin_guardar
+
+    valor_anterior = dolar_valor
+
+    if dolar_valor <= DOLAR_UMBRAL_RECUPERACION:
+        cambio_pct = random.uniform(0, DOLAR_CAMBIO_MAX_PORCENTAJE)
+    else:
+        cambio_pct = random.uniform(-DOLAR_CAMBIO_MAX_PORCENTAJE, DOLAR_CAMBIO_MAX_PORCENTAJE)
+
+    dolar_valor = max(round(valor_anterior * (1 + cambio_pct / 100)), DOLAR_VALOR_MINIMO)
+    dolar_ultima_actualizacion = time.time()
+    hubo_cambios_dolar_sin_guardar = True
+    inyectar_dolar_en_shop()  # para que !buy/!shop/!invfo vean el precio nuevo al toque
+
+    try:
+        await guardar_dolar_en_github()
+    except Exception as e:
+        print(f"⚠️ No pude guardar el dólar: {e}", flush=True)
+
+    diferencia = dolar_valor - valor_anterior
+    porcentaje_real = (diferencia / valor_anterior * 100) if valor_anterior else 0
+    if dolar_canal_anuncios:
+        canal = bot.get_channel(dolar_canal_anuncios)
+        if canal:
+            flecha = "📈" if diferencia > 0 else ("📉" if diferencia < 0 else "➖")
+            signo = "+" if diferencia >= 0 else ""
+            embed = crear_embed(
+                titulo=f"{flecha} Dólar Catherine",
+                descripcion=(
+                    f"**Valor actual**: {formatear_pesos(dolar_valor)}\n"
+                    f"**Cambio**: {signo}{formatear_numero(diferencia)} Pesos ({signo}{porcentaje_real:.2f}%)"
+                ),
+            )
+            try:
+                await canal.send(embed=embed)
+            except discord.HTTPException as e:
+                print(f"⚠️ No pude anunciar el dólar en el canal configurado: {e}", flush=True)
 
 INTERES_BANCO_DIARIO = 0.05
 SEGUNDOS_POR_DIA = 24 * 60 * 60
@@ -1024,6 +1181,14 @@ async def on_ready():
     if not memoria_cargada and GITHUB_TOKEN and GITHUB_REPO:
         await cargar_memoria_desde_github()
         print(f"🧠 Memoria de Catherine cargada desde GitHub ({len(memoria_cache)} usuarios)")
+
+    global dolar_cargado
+    if not dolar_cargado and GITHUB_TOKEN and GITHUB_REPO:
+        await cargar_dolar_desde_github()
+        inyectar_dolar_en_shop()  # por si la tienda ya se había cargado antes con un precio viejo/default
+        print(f"💵 Dólar cargado desde GitHub (vale {formatear_pesos(dolar_valor)})")
+        if not actualizar_dolar.is_running():
+            actualizar_dolar.start()
 
 @bot.event
 async def on_presence_update(before, after):
@@ -1193,7 +1358,7 @@ async def balance(ctx, miembro: discord.Member = None):
             if objetivo.id != ctx.author.id:
                 await ctx.reply(embed=crear_embed(descripcion=f"**{objetivo.display_name}** todavía no tiene cuenta."))
                 return
-            balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+            balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0, "caja": 0}
             hubo_cambios_sin_guardar = True
             embed = crear_embed(
                 descripcion=(
@@ -1211,12 +1376,14 @@ async def balance(ctx, miembro: discord.Member = None):
         else:
             datos = balances_cache[user_id]
             datos.setdefault("banco", 0)
+            datos.setdefault("caja", 0)
             balance_actual = datos.get("balance", 0)
             banco_actual = datos.get("banco", 0)
+            caja_actual = datos.get("caja", 0)
             total = balance_actual + banco_actual
 
             ranking_ordenado = sorted(
-                (item for item in balances_cache.items() if item[0] != ID_BANCA),
+                balances_cache.items(),
                 key=lambda item: item[1].get("balance", 0) + item[1].get("banco", 0),
                 reverse=True,
             )
@@ -1229,7 +1396,9 @@ async def balance(ctx, miembro: discord.Member = None):
                 f"> {formatear_pesos(balance_actual)}\n\n"
                 f"> 🏦 **Banco**\n"
                 f"> {formatear_pesos(banco_actual)}\n\n"
-                f"> 💰 **Total**\n"
+                f"> 🔒 **Caja de ahorros**\n"
+                f"> {formatear_pesos(caja_actual)}\n\n"
+                f"> 💰 **Total** _(no incluye la Caja de ahorros)_\n"
                 f"> {formatear_pesos(total)}"
             )
             if posicion:
@@ -1252,7 +1421,7 @@ async def top(ctx):
         return
 
     ranking_ordenado = sorted(
-        (item for item in balances_cache.items() if item[0] != ID_BANCA),  # el dueño de la banca no compite, tiene ventaja infinita
+        balances_cache.items(),
         key=lambda item: item[1].get("balance", 0) + item[1].get("banco", 0),
         reverse=True,
     )[:10]
@@ -1268,6 +1437,35 @@ async def top(ctx):
     embed = crear_embed(titulo="🏆 Top de balances", descripcion="\n".join(lineas))
     await ctx.reply(embed=embed)
 
+@bot.command(name="topdolar", aliases=["topdólar"])
+async def topdolar(ctx):
+    """Muestra el top 10 de usuarios con más Dólares guardados ahora mismo"""
+    tenedores = [
+        (datos.get("nombre", "???"), datos["items"]["Dólar"])
+        for datos in inventario_cache.values()
+        if datos.get("items", {}).get("Dólar", 0) > 0
+    ]
+
+    if not tenedores:
+        await ctx.reply(embed=crear_embed(descripcion="Nadie tiene Dólares guardados todavía. Probá `!buy Dólar cantidad`."))
+        return
+
+    tenedores.sort(key=lambda t: t[1], reverse=True)
+    medallas = ["🥇", "🥈", "🥉"]
+
+    lineas = []
+    for i, (nombre, cantidad) in enumerate(tenedores[:10]):
+        posicion = medallas[i] if i < 3 else f"`#{i+1}`"
+        equivalente = cantidad * dolar_valor
+        lineas.append(f"{posicion} **{nombre}** — {formatear_numero(cantidad)} 💵 (≈{formatear_pesos(equivalente)})")
+
+    embed = crear_embed(
+        titulo="💵 Top de Dólares",
+        descripcion="\n".join(lineas),
+        footer=f"Cotización actual: {formatear_pesos(dolar_valor)}",
+    )
+    await ctx.reply(embed=embed)
+
 @bot.command(name="perfil", aliases=["profile"])
 async def perfil(ctx, miembro: discord.Member = None):
     """Resumen completo de un usuario: plata, matrimonio, colección e inventario"""
@@ -1277,15 +1475,21 @@ async def perfil(ctx, miembro: discord.Member = None):
     embed = crear_embed(titulo=f"👤 {objetivo.display_name}")
     embed.set_thumbnail(url=objetivo.display_avatar.url)
 
+    # Separador que se usa como "field" entre secciones (zero-width space en el name,
+    # el separador como value, inline=False para que ocupe su propia línea)
+    def agregar_separador():
+        embed.add_field(name="\u200b", value=SEPARADOR, inline=False)
+
     # --- Plata ---
     datos_balance = balances_cache.get(user_id)
     if datos_balance:
         balance = datos_balance.get("balance", 0)
         banco = datos_balance.get("banco", 0)
+        caja = datos_balance.get("caja", 0)
         total = balance + banco
 
         ranking = sorted(
-            (item for item in balances_cache.items() if item[0] != ID_BANCA),
+            balances_cache.items(),
             key=lambda item: item[1].get("balance", 0) + item[1].get("banco", 0),
             reverse=True,
         )
@@ -1297,12 +1501,15 @@ async def perfil(ctx, miembro: discord.Member = None):
             value=(
                 f"> Balance: **{formatear_pesos(balance)}**\n"
                 f"> Banco: **{formatear_pesos(banco)}**\n"
+                f"> Caja de ahorros: **{formatear_pesos(caja)}**\n"
                 f"> Total: **{formatear_pesos(total)}**{puesto_txt}"
             ),
             inline=False,
         )
     else:
         embed.add_field(name="💰 Plata", value="-# Todavía no tiene cuenta.", inline=False)
+
+    agregar_separador()
 
     # --- Matrimonio ---
     datos_matrimonio = matrimonios_cache.get(user_id)
@@ -1312,6 +1519,8 @@ async def perfil(ctx, miembro: discord.Member = None):
         embed.add_field(name="💍 Matrimonio", value=f"Casado/a con **{pareja}** ({desde}).", inline=False)
     else:
         embed.add_field(name="💍 Matrimonio", value="-# Soltero/a.", inline=False)
+
+    agregar_separador()
 
     # --- Colección ---
     datos_char = characters_cache.get(user_id)
@@ -1333,6 +1542,8 @@ async def perfil(ctx, miembro: discord.Member = None):
         )
     else:
         embed.add_field(name="📚 Colección", value="-# No reclamó ningún personaje todavía.", inline=False)
+
+    agregar_separador()
 
     # --- Inventario ---
     datos_inv = inventario_cache.get(user_id)
@@ -1436,6 +1647,85 @@ async def retirar(ctx, cantidad: str = None):
             f"Sacaste **{formatear_pesos(cantidad)}** del banco.\n"
             f"Balance: **{formatear_pesos(balances_cache[user_id]['balance'])}** — "
             f"Banco: **{formatear_pesos(balances_cache[user_id]['banco'])}**"
+        ),
+    ))
+
+@bot.command(name="depositarcaja")
+async def depositarcaja(ctx, cantidad: str = None):
+    """Guarda plata en tu Caja de ahorros: a salvo de !robar como el banco,
+    pero sin el interés del 5% diario, y no cuenta en !top ni en el ranking de !balance."""
+    global hubo_cambios_sin_guardar
+    user_id = str(ctx.author.id)
+
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+    balances_cache[user_id].setdefault("caja", 0)
+
+    cantidad = parsear_cantidad(cantidad)
+    if cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="Decime cuánto. Ejemplo: `!depositarcaja 5000`, `!depositarcaja 100k` o `!depositarcaja all`"))
+        return
+    if cantidad == "all":
+        cantidad = balances_cache[user_id]["balance"]
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés plata para depositar." if balances_cache[user_id]["balance"] == 0 else "La cantidad tiene que ser mayor a 0."))
+        return
+
+    if balances_cache[user_id]["balance"] < cantidad:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"No tenés esa plata afuera del banco. Tenés **{formatear_pesos(balances_cache[user_id]['balance'])}**."
+        ))
+        return
+
+    balances_cache[user_id]["balance"] -= cantidad
+    balances_cache[user_id]["caja"] += cantidad
+    hubo_cambios_sin_guardar = True
+
+    await ctx.reply(embed=crear_embed(
+        titulo="🔒 Guardado en la Caja de ahorros",
+        descripcion=(
+            f"Guardaste **{formatear_pesos(cantidad)}** en tu Caja de ahorros.\n"
+            f"Balance: **{formatear_pesos(balances_cache[user_id]['balance'])}** — "
+            f"Caja: **{formatear_pesos(balances_cache[user_id]['caja'])}**"
+        ),
+    ))
+
+@bot.command(name="retirarcaja")
+async def retirarcaja(ctx, cantidad: str = None):
+    """Saca plata de tu Caja de ahorros de vuelta al balance"""
+    global hubo_cambios_sin_guardar
+    user_id = str(ctx.author.id)
+
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+    balances_cache[user_id].setdefault("caja", 0)
+
+    cantidad = parsear_cantidad(cantidad)
+    if cantidad is None:
+        await ctx.reply(embed=crear_embed(descripcion="Decime cuánto. Ejemplo: `!retirarcaja 5000`, `!retirarcaja 100k` o `!retirarcaja all`"))
+        return
+    if cantidad == "all":
+        cantidad = balances_cache[user_id]["caja"]
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés plata en la Caja de ahorros para retirar." if balances_cache[user_id]["caja"] == 0 else "La cantidad tiene que ser mayor a 0."))
+        return
+
+    if balances_cache[user_id]["caja"] < cantidad:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"No tenés esa plata en la Caja de ahorros. Tenés **{formatear_pesos(balances_cache[user_id]['caja'])}**."
+        ))
+        return
+
+    balances_cache[user_id]["caja"] -= cantidad
+    balances_cache[user_id]["balance"] += cantidad
+    hubo_cambios_sin_guardar = True
+
+    await ctx.reply(embed=crear_embed(
+        titulo="🔓 Retirado de la Caja de ahorros",
+        descripcion=(
+            f"Sacaste **{formatear_pesos(cantidad)}** de tu Caja de ahorros.\n"
+            f"Balance: **{formatear_pesos(balances_cache[user_id]['balance'])}** — "
+            f"Caja: **{formatear_pesos(balances_cache[user_id]['caja'])}**"
         ),
     ))
 
@@ -1563,6 +1853,72 @@ async def givechar(ctx, *, texto: str = None):
         embed.set_thumbnail(url=imagen)
     await ctx.reply(embed=embed)
 
+async def vender_item_inventario(ctx, entrada):
+    """Intenta vender un ítem del inventario (hoy en día, solo el Dólar tiene
+    'vendible': True) en vez de un personaje. Devuelve True si se hizo cargo
+    del pedido (venta hecha, o un error propio de vender ítems que ya le
+    mostró al usuario), False si ni siquiera encontró un ítem con ese nombre
+    — así !vender puede mostrar su propio mensaje de 'no encontré nada'."""
+    global hubo_cambios_sin_guardar, hubo_cambios_inventario_sin_guardar
+
+    partes = entrada.strip().rsplit(" ", 1)
+    cantidad = 1
+    nombre_item_buscado = entrada.strip()
+    if len(partes) == 2 and partes[1].isdigit():
+        nombre_item_buscado, cantidad = partes[0].strip(), int(partes[1])
+
+    categoria, item = buscar_item_shop(nombre_item_buscado)
+    if item is None or not item.get("vendible"):
+        return False
+
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="La cantidad tiene que ser mayor a 0."))
+        return True
+
+    user_id = str(ctx.author.id)
+    items_usuario = inventario_cache.get(user_id, {}).get("items", {})
+    tiene = items_usuario.get(item["nombre"], 0)
+    if tiene < cantidad:
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"No tenés esa cantidad de **{item['emoji']} {item['nombre']}**. Tenés **{tiene}**."
+        ))
+        return True
+
+    precio_unitario = item["precio"]
+    bruto = precio_unitario * cantidad
+    comision = int(bruto * COMISION_VENTA_DOLAR)
+    ganancia = bruto - comision
+
+    quitar_item_del_inventario(ctx.author, item["nombre"], cantidad)
+    hubo_cambios_inventario_sin_guardar = True
+
+    if user_id not in balances_cache:
+        balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
+    balances_cache[user_id].setdefault("banco", 0)
+    balances_cache[user_id]["balance"] += ganancia
+    hubo_cambios_sin_guardar = True
+    sumar_a_banca(comision)
+
+    embed = crear_embed(
+        titulo=f"{item['emoji']} {item['nombre']} vendido",
+        descripcion=(
+            f"Vendiste **{cantidad}x {item['nombre']}** a {formatear_pesos(precio_unitario)} c/u.\n\n"
+            f"> 💵 Bruto: **{formatear_pesos(bruto)}**\n"
+            f"> 📈 Te dieron ({int((1 - COMISION_VENTA_DOLAR) * 100)}%): **{formatear_pesos(ganancia)}**\n"
+            f"> 🏦 Comisión ({int(COMISION_VENTA_DOLAR * 100)}%): **{formatear_pesos(comision)}**\n\n"
+            f"Balance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
+        ),
+    )
+    await ctx.reply(embed=embed)
+
+    try:
+        await guardar_inventario_en_github()
+        await guardar_balances_en_github()
+    except Exception as e:
+        print(f"⚠️ No pude guardar tras vender un ítem: {e}", flush=True)
+
+    return True
+
 @bot.command(name="vender", aliases=["sell"])
 async def vender(ctx, *, nombre_buscado: str = None):
     """Vende un personaje de tu colección a cambio de Pesos. Te doy el 70% del
@@ -1584,7 +1940,7 @@ async def vender(ctx, *, nombre_buscado: str = None):
         await ctx.reply(embed=crear_embed(descripcion="No tenés ningún personaje para vender. Probá `!rw` para conseguir alguno."))
         return
 
-    # Buscar el personaje: nombre exacto > parcial único > error
+    # Buscar el personaje: nombre exacto > parcial único > probar si es un ítem (ej. Dólar) > error
     buscado = nombre_buscado.casefold().strip()
     exactos = [p for p in mis_personajes if str(campo_personaje(p, "Nombre", "nombre")).casefold() == buscado]
     if exactos:
@@ -1598,7 +1954,10 @@ async def vender(ctx, *, nombre_buscado: str = None):
             await ctx.reply(embed=crear_embed(descripcion=f"Hay varios que coinciden: {nombres}. Poné el nombre completo."))
             return
         else:
-            await ctx.reply(embed=crear_embed(descripcion=f"No tenés ningún personaje llamado **{nombre_buscado}** en tu colección. Mirá `!coleccion`."))
+            vendido = await vender_item_inventario(ctx, nombre_buscado)
+            if vendido:
+                return
+            await ctx.reply(embed=crear_embed(descripcion=f"No tenés ningún personaje ni ítem llamado **{nombre_buscado}**. Mirá `!coleccion` o `!inv`."))
             return
 
     nombre_personaje = campo_personaje(elegido, "Nombre", "nombre")
@@ -2019,7 +2378,7 @@ async def ejecutar_w(ctx):
 
 @bot.command(name="w")
 async def work(ctx):
-    """Da una cantidad random de Pesos (1.500 a 3.000) con un mensaje random"""
+    """Da una cantidad random de Pesos (5.000 a 6.500) con un mensaje random"""
     user_id = str(ctx.author.id)
     restante = cooldown_restante(cooldown_w_usuario, user_id)
     if restante > 0:
@@ -2028,7 +2387,7 @@ async def work(ctx):
         ))
         return
     await ejecutar_w(ctx)
-    poner_cooldown(cooldown_w_usuario, user_id, COOLDOWN_W_SEGUNDOS)
+    poner_cooldown(cooldown_w_usuario, user_id, cooldown_w_efectivo(user_id))
 
 @bot.command(name="wAdmin", aliases=["wadmin"], hidden=True)
 async def work_admin(ctx):
@@ -2164,6 +2523,42 @@ async def mendigar(ctx):
 
     vista = MendigarView(ctx.author)
     vista.mensaje = await ctx.reply(embed=vista.construir_embed(), view=vista)
+
+@bot.command(name="dolar", aliases=["dólar", "usd"])
+async def dolar(ctx):
+    """Muestra la cotización actual del Dólar Catherine (sube/baja cada 4hs)"""
+    descripcion = (
+        f"**Valor actual**: {formatear_pesos(dolar_valor)}\n\n"
+        f"Se compra con `!buy Dólar cantidad` y se vende con `!vender Dólar cantidad` "
+        f"(comisión de venta: {int(COMISION_VENTA_DOLAR * 100)}%). Cambia cada 4hs, nunca baja de {formatear_pesos(DOLAR_VALOR_MINIMO)}."
+    )
+    footer = None
+    if dolar_ultima_actualizacion:
+        proxima = dolar_ultima_actualizacion + 4 * 60 * 60
+        restante = proxima - time.time()
+        if restante > 0:
+            footer = f"Próximo cambio en {formatear_tiempo_restante(restante)}"
+
+    embed = crear_embed(titulo="💵 Dólar Catherine", descripcion=descripcion, footer=footer)
+    await ctx.reply(embed=embed)
+
+@bot.command(name="setgeneralchannel", hidden=True)
+async def setgeneralchannel(ctx):
+    """Configura este canal para que Catherine anuncie las subas/bajadas del dólar. Solo vos."""
+    global dolar_canal_anuncios, hubo_cambios_dolar_sin_guardar
+
+    if str(ctx.author.id) != ID_BANCA:
+        await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
+        return
+
+    dolar_canal_anuncios = ctx.channel.id
+    hubo_cambios_dolar_sin_guardar = True
+    try:
+        await guardar_dolar_en_github()
+    except Exception as e:
+        print(f"⚠️ No pude guardar el canal del dólar: {e}", flush=True)
+
+    await ctx.reply(embed=crear_embed(descripcion=f"✅ Listo, voy a anunciar los cambios del dólar en {ctx.channel.mention}."))
 
 @bot.command(name="cf")
 async def coinflip(ctx, opcion: str = None, cantidad: str = None):
@@ -3801,6 +4196,7 @@ async def invfo(ctx, *, nombre_buscado: str = None):
 async def aplicar_efecto_item(ctx, item, efecto):
     """Aplica el efecto del item. Devuelve el texto de resultado o None si no se pudo
     (en cuyo caso ya mandó un mensaje explicando por qué)."""
+    global hubo_cambios_inventario_sin_guardar
     user_id = str(ctx.author.id)
 
     if efecto == "buff_suerte_rw":
@@ -3846,6 +4242,24 @@ async def aplicar_efecto_item(ctx, item, efecto):
         if restante_despues <= 0:
             return f"☕ Le sacaste **{formatear_tiempo_restante(reduccion)}** a tu cooldown de `!w`. ¡Ya podés trabajar de nuevo!"
         return f"☕ Le sacaste **{formatear_tiempo_restante(reduccion)}** a tu cooldown de `!w`.\nTe quedan **{formatear_tiempo_restante(restante_despues)}**."
+
+    if efecto == "reducir_cooldown_w_permanente":
+        segundos = item.get("valor", 120)
+        datos = inventario_cache.setdefault(user_id, {"nombre": ctx.author.display_name, "items": {}})
+        if datos.get("reduccion_cooldown_w", 0) > 0:
+            await ctx.reply(embed=crear_embed(descripcion="Ya usaste un **Café de especialidad**. No es acumulable y no gastaste este."))
+            return None
+        reduccion_maxima = COOLDOWN_W_SEGUNDOS - COOLDOWN_W_MINIMO
+        nueva_reduccion = min(segundos, reduccion_maxima)
+        datos["reduccion_cooldown_w"] = nueva_reduccion
+        hubo_cambios_inventario_sin_guardar = True
+        cooldown_nuevo = COOLDOWN_W_SEGUNDOS - nueva_reduccion
+        return (
+            f"⏱️ Reducción permanente aplicada.\n"
+            f"Tu cooldown de `!w` ahora es de **{formatear_tiempo_restante(cooldown_nuevo)}** "
+            f"(base: {formatear_tiempo_restante(COOLDOWN_W_SEGUNDOS)}).\n"
+            f"-# Ya no podés usar otro Café de especialidad."
+        )
 
     if efecto == "resetear_cooldown_rw":
         restante = resetear_cooldown(cooldown_rw_usuario, user_id)
@@ -4109,6 +4523,13 @@ async def buffs(ctx, miembro: discord.Member = None):
     else:
         lineas.append("**Buffs activos:**\n> *Ninguno.*")
 
+    # --- Mejoras permanentes ---
+    if datos.get("reduccion_cooldown_w", 0) > 0:
+        cooldown_actual = max(COOLDOWN_W_MINIMO, COOLDOWN_W_SEGUNDOS - datos["reduccion_cooldown_w"])
+        lineas.append("")
+        lineas.append("**Mejoras permanentes:**")
+        lineas.append(f"> ⏱️ `!w` — cooldown reducido a {formatear_tiempo_restante(cooldown_actual)} (base: {formatear_tiempo_restante(COOLDOWN_W_SEGUNDOS)})")
+
     # --- Efectos únicos guardados ---
     efectos = datos.get("efectos_unicos", {})
     efectos_activos = {k: v for k, v in efectos.items() if v > 0}
@@ -4195,9 +4616,13 @@ CATEGORIAS_HELP = [
         "`!perfil [@alguien]` — resumen completo: plata, matrimonio, colección e inventario",
         "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
         "`!retirar cantidad` — saca plata del banco",
+        "`!depositarcaja cantidad` — guarda plata en tu Caja de ahorros: a salvo de `!robar` igual que el banco, pero SIN el interés del 5% diario, y no cuenta en `!top` ni en tu ranking",
+        "`!retirarcaja cantidad` — saca plata de tu Caja de ahorros",
         "`!pay @usuario cantidad` — le pasás plata de tu balance a otro usuario",
         "`!w` — trabajar, ganás entre 5.000 y 6.500 Pesos (cooldown: 3 min)",
         "`!mendigar` — abrís una colecta de 10 min para que te donen plata (cooldown: 20 min)",
+        "`!dolar` — cotización actual del Dólar Catherine (sube/baja cada 4hs; se compra y vende como un ítem más)",
+        "`!topdolar` — top 10 de quién tiene más Dólares guardados",
         "_En cualquier `cantidad` de este bot podés poner `all` (todo), o abreviar: `100k`, `2m`, `1b`, `1t`_",
     ]),
     ("👥", "Social", [
@@ -4237,6 +4662,7 @@ CATEGORIAS_ADMINHELP = [
         "`!addmoney @usuario cantidad` — le agregás plata a alguien",
         "`!wAdmin` — igual que `!w` pero sin cooldown",
         "`!5porcentforce` — fuerza el 5% de interés diario a tu banco ahora mismo",
+        "`!setgeneralchannel` — configura ESTE canal para que Catherine anuncie las subas/bajadas del dólar",
     ]),
     ("🎴", "Gacha / rw", [
         "`!rwAdmin` — igual que `!rw` pero sin cooldown (ni de tirada ni de reclamo)",
@@ -4449,7 +4875,8 @@ async def datasave(ctx):
         guardado_inventario = await guardar_inventario_en_github()
         guardado_matrimonios = await guardar_matrimonios_en_github()
         guardado_memoria = await guardar_memoria_en_github()
-        if guardado_balances or guardado_characters or guardado_personajes or guardado_inventario or guardado_matrimonios or guardado_memoria:
+        guardado_dolar = await guardar_dolar_en_github()
+        if guardado_balances or guardado_characters or guardado_personajes or guardado_inventario or guardado_matrimonios or guardado_memoria or guardado_dolar:
             await aviso.edit(embed=crear_embed(descripcion="💾 Listo, quedó todo guardado en GitHub. Podés estar tranquilo/a."))
         else:
             await aviso.edit(embed=crear_embed(descripcion="No había cambios nuevos desde el último guardado, así que no hizo falta tocar nada."))
