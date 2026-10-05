@@ -19,10 +19,14 @@
       "Dado de la suerte": 497,
       "Pase VIP": 461,
       "Amuleto del ludópata": 200,
-      "Dólar": 1000,
-      "Bono del gobierno": 1
+      "Dólar": 1000
     },
-    "buffs": {},
+    "buffs": {
+      "bono_w": {
+        "valor": 0.2,
+        "expira": 1791486896.2525637
+      }
+    },
     "efectos_unicos": {
       "pase_vip": 8
     },
