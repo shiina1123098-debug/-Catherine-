@@ -28,7 +28,15 @@
     {"nombre": "Cristal de reroll", "emoji": "💠", "precio": 900000, "descripcion": "Te deja tirar !rw una vez más aunque estés en cooldown (sin resetearlo).", "imagen": null, "efecto": "cristal_reroll"},
     {"nombre": "Poción de reset", "emoji": "🧪", "precio": 1000000, "descripcion": "Resetea completamente tu cooldown de !rw.", "imagen": null, "efecto": "resetear_cooldown_rw"},
     {"nombre": "Máquina del tiempo", "emoji": "⏰", "precio": 1500000, "descripcion": "Resetea completamente tu cooldown de !rw.", "imagen": null, "efecto": "resetear_cooldown_rw"},
-    {"nombre": "Bono del gobierno", "emoji": "🏛️", "precio": 2000000, "descripcion": "+20% de ganancia en !w durante 3 días.", "imagen": null, "efecto": "buff_bono_w", "valor": 0.20, "duracion": 259200}
+    {"nombre": "Bono del gobierno", "emoji": "🏛️", "precio": 2000000, "descripcion": "+20% de ganancia en !w durante 3 días.", "imagen": null, "efecto": "buff_bono_w", "valor": 0.20, "duracion": 259200},
+    {
+    "nombre": "Café de especialidad",
+    "precio": 1500000,
+    "emoji": "☕",
+    "descripcion": "Reduce **permanentemente** 2 min el cooldown de `!w`. Acumulable hasta eliminarlo por completo.",
+    "efecto": "reducir_cooldown_w_permanente",
+    "valor": 120
+    }
   ],
   "🏆 Objetos absurdamente caros (E inútiles)": [
     {"nombre": "Diamante de Catherine", "emoji": "💎", "precio": 500000000, "descripcion": null, "imagen": null},
@@ -37,13 +45,7 @@
     {"nombre": "Retrato del Dueño", "emoji": "🖼️", "precio": 10000000000, "descripcion": null, "imagen": null},
     {"nombre": "Estatua de Alice Von Ataraxia", "emoji": "🗿", "precio": 25000000000, "descripcion": null, "imagen": null},
     {"nombre": "Fragmento de la Luna", "emoji": "🌑", "precio": 100000000000, "descripcion": null, "imagen": null},
-    {"nombre": "Agujero Negro Portátil", "emoji": "🕳️", "precio": 1000000000000, "descripcion": null, "imagen": null},
-    {
-    "nombre": "Café de especialidad",
-    "precio": 1500000,
-    "emoji": "☕",
-    "descripcion": "Reduce **permanentemente** 2 min el cooldown de `!w`. Acumulable hasta eliminarlo por completo.",
-    "efecto": "reducir_cooldown_w_permanente"
+    {"nombre": "Agujero Negro Portátil", "emoji": "🕳️", "precio": 1000000000000, "descripcion": null, "imagen": null}
     }
   ]
 }
