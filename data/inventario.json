@@ -17,7 +17,7 @@
       "Lata de aire de alta montaña": 100000,
       "Poción de reset": 726,
       "Dado de la suerte": 497,
-      "Pase VIP": 460,
+      "Pase VIP": 459,
       "Amuleto del ludópata": 200,
       "Dólar": 1000
     },
@@ -28,7 +28,7 @@
       }
     },
     "efectos_unicos": {
-      "pase_vip": 9
+      "pase_vip": 10
     },
     "autouse": {
       "despues_de_reclamar": "Pase VIP",
