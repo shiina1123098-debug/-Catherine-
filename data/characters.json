@@ -2287,6 +2287,108 @@
         "Imagen": "https://static.wikia.nocookie.net/nekopara/images/c/c3/Chocola.png/revision/latest?cb=20260515045046",
         "Fuente": "Nekopara",
         "Valor": 550000
+      },
+      {
+        "Nombre": "Yachiyo Todoroki",
+        "Imagen": "https://m.media-amazon.com/images/I/61UIs6dxqnL._UF1000,1000_QL80_.jpg",
+        "Fuente": "Working!!",
+        "Valor": 40000
+      },
+      {
+        "Nombre": "Fuyumi Todoroki",
+        "Imagen": "https://static.wikia.nocookie.net/bokunoheroacademia/images/0/0c/Fuyumi_Todoroki_Anime_Profile.png/revision/latest/scale-to-width/360?cb=20251115183932",
+        "Fuente": "My Hero Academia",
+        "Valor": 18000
+      },
+      {
+        "Nombre": "Mabui",
+        "Imagen": "https://static.wikia.nocookie.net/naruto/images/d/d3/Mabui.png/revision/latest?cb=20160226234939",
+        "Fuente": "Naruto",
+        "Valor": 12000
+      },
+      {
+        "Nombre": "Wing",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/8/85/Fledging_wing.png/revision/latest?cb=20250513221833&path-prefix=protagonist",
+        "Fuente": "Hunter x Hunter",
+        "Valor": 12000
+      },
+      {
+        "Nombre": "Cologne",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/4/49/Cologne_2024_Render.png/revision/latest?cb=20250828193952&path-prefix=protagonist",
+        "Fuente": "Ranma 1/2",
+        "Valor": 30000
+      },
+      {
+        "Nombre": "Kagome Higurashi",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/7/7b/Kagome_Yashahime.png/revision/latest/scale-to-width/360?cb=20210906030839&path-prefix=protagonist",
+        "Fuente": "Inuyasha",
+        "Valor": 180000
+      },
+      {
+        "Nombre": "Ayu Tsukimiya",
+        "Imagen": "https://static.wikia.nocookie.net/neoencyclopedia/images/f/f9/Ayu_Tsukimiya_Key.jpg/revision/latest?cb=20140125045852",
+        "Fuente": "Kanon",
+        "Valor": 100000
+      },
+      {
+        "Nombre": "Ikalgo",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/d/d2/Ikalgo_hxh.webp/revision/latest?cb=20250223022208&path-prefix=protagonist",
+        "Fuente": "Hunter x Hunter",
+        "Valor": 15000
+      },
+      {
+        "Nombre": "Yangyang",
+        "Imagen": "https://static.wikia.nocookie.net/wutheringwaves/images/a/a7/Yangyang_Card.png/revision/latest?cb=20240813182233",
+        "Fuente": "Wuthering Waves",
+        "Valor": 30000
+      },
+      {
+        "Nombre": "Natsume (Konohana Kitan)",
+        "Imagen": "https://static.wikia.nocookie.net/lgbt-characters/images/d/de/Natsume.png/revision/latest?cb=20210824205359",
+        "Fuente": "Konohana Kitan",
+        "Valor": 20000
+      },
+      {
+        "Nombre": "Kanon Nakagawa",
+        "Imagen": "https://static.wikia.nocookie.net/kaminomi/images/6/6f/Muxed-Subs_The_World_God_Only_Knows_OVA_704x396p_H264-AACBA53864D.mkv_snapshot_09.04_20.jpg/revision/latest?cb=20130329191313",
+        "Fuente": "The World God Only Knows",
+        "Valor": 20000
+      },
+      {
+        "Nombre": "Pixie-Bob",
+        "Imagen": "https://static.wikia.nocookie.net/bokunoheroacademia/images/8/82/Ryuko_Tsuchikawa_Hero_Costume_%28Anime%29.png/revision/latest?cb=20251115181647",
+        "Fuente": "My Hero Academia",
+        "Valor": 12000
+      },
+      {
+        "Nombre": "Yor Forger (base)",
+        "Imagen": "https://static.wikia.nocookie.net/spy-x-family9171/images/7/79/Yor_Forger_Manga_Infobox.png/revision/latest/scale-to-width/360?cb=20250920235133",
+        "Fuente": "Spy x Family",
+        "Valor": 21000
+      },
+      {
+        "Nombre": "Noa Himesaka",
+        "Imagen": "https://static.wikia.nocookie.net/watashi-ni-tenshi-ga-maiorita/images/b/bd/Noa_Portrait.png/revision/latest?cb=20211205072830",
+        "Fuente": "Watashi ni Tenshi ga Maiorita",
+        "Valor": 40000
+      },
+      {
+        "Nombre": "Sesshomaru",
+        "Imagen": "https://static.wikia.nocookie.net/villains/images/d/d3/Sesshomaru.png/revision/latest?cb=20200302133201",
+        "Fuente": "Inuyasha",
+        "Valor": 150000
+      },
+      {
+        "Nombre": "Momiji Inubashiri",
+        "Imagen": "https://static.wikia.nocookie.net/touhou/images/1/1d/Momizi_Whos_Who.png/revision/latest?cb=20251207212025",
+        "Fuente": "Touhou Project",
+        "Valor": 62000
+      },
+      {
+        "Nombre": "Ruka Urushibara",
+        "Imagen": "https://static.wikia.nocookie.net/steins-gate/images/e/e7/Luka_Urushibara_Portrait.png/revision/latest?cb=20180718210237",
+        "Fuente": "Steins;Gate",
+        "Valor": 13500
       }
     ]
   }
