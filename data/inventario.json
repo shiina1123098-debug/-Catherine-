@@ -16,7 +16,7 @@
       "Corona del Magnate": 100,
       "Lata de aire de alta montaña": 100000,
       "Poción de reset": 724,
-      "Dado de la suerte": 497,
+      "Dado de la suerte": 496,
       "Pase VIP": 457,
       "Amuleto del ludópata": 200,
       "Dólar": 1000
@@ -25,6 +25,10 @@
       "bono_w": {
         "valor": 0.2,
         "expira": 1791486896.2525637
+      },
+      "suerte_rw": {
+        "valor": 0.05,
+        "expira": 1791249737.631136
       }
     },
     "efectos_unicos": {
