@@ -2266,9 +2266,27 @@
       },
       {
         "Nombre": "Touko Nanami",
-        "Imagen": "",
+        "Imagen": "https://static.wikia.nocookie.net/p__/images/2/20/Nanami1.jpg/revision/latest?cb=20201109204838&path-prefix=protagonist",
         "Fuente": "Bloom Into You",
         "Valor": 55000
+      },
+      {
+        "Nombre": "Udon Ise",
+        "Imagen": "https://static.wikia.nocookie.net/naruto/images/7/76/Udon_p1.png/revision/latest?cb=20150122130939",
+        "Fuente": "Naruto",
+        "Valor": 8000
+      },
+      {
+        "Nombre": "Tomoe Koga",
+        "Imagen": "https://static.wikia.nocookie.net/aobuta/images/e/e0/TomoeS2.jpg/revision/latest/scale-to-width/360?cb=20250728074046",
+        "Fuente": "Bunny Girl Senpai",
+        "Valor": 22000
+      },
+      {
+        "Nombre": "Chocola (Nekopara)",
+        "Imagen": "https://static.wikia.nocookie.net/nekopara/images/c/c3/Chocola.png/revision/latest?cb=20260515045046",
+        "Fuente": "Nekopara",
+        "Valor": 550000
       }
     ]
   }
