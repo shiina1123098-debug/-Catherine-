@@ -2449,6 +2449,12 @@
         "Imagen": "https://static.wikia.nocookie.net/all-worlds-alliance/images/1/1d/Nie_Li_%281%29.png/revision/latest?cb=20181125040340",
         "Fuente": "Tales of Demons and Gods",
         "Valor": 100000
+      },
+      {
+        "Nombre": "Ragyo Kiryuin",
+        "Imagen": "https://www.kill-la-kill-game.jp/img/character/08/chara.png",
+        "Fuente": "Kill la Kill",
+        "Valor": 13000
       }
     ]
   }
