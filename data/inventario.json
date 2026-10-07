@@ -15,7 +15,7 @@
       "Diamante de Catherine": 100,
       "Corona del Magnate": 100,
       "Lata de aire de alta montaña": 100000,
-      "Poción de reset": 702,
+      "Poción de reset": 701,
       "Dado de la suerte": 496,
       "Pase VIP": 440,
       "Amuleto del ludópata": 200
@@ -24,10 +24,6 @@
       "bono_w": {
         "valor": 0.2,
         "expira": 1791486896.2525637
-      },
-      "suerte_rw": {
-        "valor": 0.05,
-        "expira": 1791249737.631136
       }
     },
     "efectos_unicos": {
