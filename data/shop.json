@@ -27,7 +27,7 @@
     {"nombre": "Reloj de arena", "emoji": "⏳", "precio": 800000, "descripcion": "Reduce 2 horas de tu cooldown actual de !rw.", "imagen": null, "efecto": "reducir_cooldown_rw", "valor": 7200},
     {"nombre": "Cristal de reroll", "emoji": "💠", "precio": 1000000, "descripcion": "Te deja tirar !rw una vez más aunque estés en cooldown (sin resetearlo).", "imagen": null, "efecto": "cristal_reroll"},
     {"nombre": "Poción de reset", "emoji": "🧪", "precio": 850000, "descripcion": "Resetea completamente tu cooldown de !rw.", "imagen": null, "efecto": "resetear_cooldown_rw"},
-    {"nombre": "Máquina del tiempo", "emoji": "⏰", "precio": 1500000, "descripcion": "Resetea completamente tu cooldown de !rw.", "imagen": null, "efecto": "resetear_cooldown_rw"},
+    {"nombre": "Máquina del tiempo", "emoji": "⏰", "precio": 1500000, "descripcion": "Resetea completamente tu cooldown de !rw.", "imagen": null, "efecto": "resetear_todos_cooldowns"},
     {"nombre": "Bono del gobierno", "emoji": "🏛️", "precio": 2000000, "descripcion": "+20% de ganancia en !w durante 3 días.", "imagen": null, "efecto": "buff_bono_w", "valor": 0.20, "duracion": 259200},
     {
     "nombre": "Café de especialidad",
