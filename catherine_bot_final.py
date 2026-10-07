@@ -224,9 +224,6 @@ Está bien, déjame ver qué es. Si no entiendes algo, dímelo y te lo explicar�
 RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
 RAPIDAPI_HOST = "youtube-mp36.p.rapidapi.com"
 
-# Config de YouTube Data API v3 (oficial de Google) para buscar por texto
-YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
-
 # Config de Serper.dev (API real de Google Imágenes, no scraping) para !buscarimagenes.
 # Capa gratis: 2500 consultas de una sola vez, sin tarjeta. https://serper.dev
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
@@ -1334,12 +1331,50 @@ async def on_message(message):
 
 @bot.event
 async def on_command_error(ctx, error):
+    # Cooldown de discord.py (solo !robar lo usa)
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.reply(embed=crear_embed(
             descripcion=f"⏳ Todavía no. Probá de nuevo en **{formatear_tiempo_restante(error.retry_after)}**."
         ))
         return
-    await ctx.reply(embed=crear_embed(descripcion=f"❌ Error al ejecutar el comando: {error}"))
+
+    # Comando inexistente: ni respondemos, sería spam
+    if isinstance(error, commands.CommandNotFound):
+        return
+
+    # Mencionaste a alguien que no existe / no está en el server
+    if isinstance(error, commands.MemberNotFound):
+        await ctx.reply(embed=crear_embed(
+            descripcion="❌ No encontré a ese usuario. Asegurate de mencionarlo bien con `@`."
+        ))
+        return
+
+    # Te faltó pasar un argumento obligatorio
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.reply(embed=crear_embed(
+            descripcion=f"❌ Te falta decir **{error.param.name}**. Mirá `!help` para ver cómo se usa el comando."
+        ))
+        return
+
+    # Un argumento vino con formato raro (ej: una mención donde va un número)
+    if isinstance(error, commands.BadArgument):
+        await ctx.reply(embed=crear_embed(
+            descripcion="❌ No entendí bien uno de los argumentos. Revisá el formato con `!help`."
+        ))
+        return
+
+    # Cualquier otra excepción dentro del comando: logueamos el traceback real pero
+    # al usuario le damos un mensaje limpio, sin tirarle la excepción cruda en la cara
+    if isinstance(error, commands.CommandInvokeError):
+        print(f"⚠️ Error en !{ctx.command}: {error.original!r}", flush=True)
+        await ctx.reply(embed=crear_embed(
+            descripcion="❌ Algo se rompió ejecutando eso. Avisale al dueño de la banca."
+        ))
+        return
+
+    # Fallback por si aparece algo que no contemplamos
+    print(f"⚠️ Error no manejado en !{ctx.command}: {error!r}", flush=True)
+    await ctx.reply(embed=crear_embed(descripcion=f"❌ Error inesperado: {error}"))
 
 @bot.command(name="balance", aliases=["saldo", "bal"])
 async def balance(ctx, miembro: discord.Member = None):
@@ -1861,22 +1896,35 @@ async def vender_item_inventario(ctx, entrada):
     — así !vender puede mostrar su propio mensaje de 'no encontré nada'."""
     global hubo_cambios_sin_guardar, hubo_cambios_inventario_sin_guardar
 
+    # Acepta cantidad con sufijo (100k, 2m, all, etc) usando el mismo parser que el resto del bot
     partes = entrada.strip().rsplit(" ", 1)
     cantidad = 1
     nombre_item_buscado = entrada.strip()
-    if len(partes) == 2 and partes[1].isdigit():
-        nombre_item_buscado, cantidad = partes[0].strip(), int(partes[1])
+    if len(partes) == 2:
+        cant_parseada = parsear_cantidad(partes[1])
+        if cant_parseada is not None:
+            nombre_item_buscado = partes[0].strip()
+            cantidad = cant_parseada
 
     categoria, item = buscar_item_shop(nombre_item_buscado)
     if item is None or not item.get("vendible"):
         return False
 
+    user_id = str(ctx.author.id)
+    items_usuario = inventario_cache.get(user_id, {}).get("items", {})
+
+    if cantidad == "all":
+        cantidad = items_usuario.get(item["nombre"], 0)
+        if cantidad <= 0:
+            await ctx.reply(embed=crear_embed(
+                descripcion=f"No tenés ningún **{item['emoji']} {item['nombre']}** para vender."
+            ))
+            return True
+
     if cantidad <= 0:
         await ctx.reply(embed=crear_embed(descripcion="La cantidad tiene que ser mayor a 0."))
         return True
 
-    user_id = str(ctx.author.id)
-    items_usuario = inventario_cache.get(user_id, {}).get("items", {})
     tiene = items_usuario.get(item["nombre"], 0)
     if tiene < cantidad:
         await ctx.reply(embed=crear_embed(
@@ -2867,15 +2915,20 @@ async def blackjack(ctx, cantidad: str = None):
 
     view = BlackjackView(ctx.author, cantidad)
 
-    # Blackjack natural con las 2 primeras cartas: se resuelve directo, sin botones
-    if valor_mano(view.mano_jugador) == 21:
-        while valor_mano(view.mano_crupier) < 17:
-            view.mano_crupier.append(view.baraja.pop())
+    # Regla de casino: el crupier revela su carta tapada ANTES de que el jugador
+    # pueda pedir. Si tiene blackjack natural, la mano se resuelve al toque (con
+    # o sin empate) sin mostrar botones, así el jugador no puede pedir cartas
+    # "de más" contra un blackjack que ya estaba en la mesa.
+    jugador_bj = valor_mano(view.mano_jugador) == 21
+    crupier_bj = valor_mano(view.mano_crupier) == 21
 
-        if valor_mano(view.mano_crupier) == 21 and len(view.mano_crupier) == 2:
+    if jugador_bj or crupier_bj:
+        if jugador_bj and crupier_bj:
             resultado_tipo = "empata"
-        else:
+        elif jugador_bj:
             resultado_tipo = "blackjack"
+        else:
+            resultado_tipo = "pierde"
 
         texto = view._liquidar(resultado_tipo)
         view._deshabilitar_botones()
@@ -3912,16 +3965,16 @@ class ShopView(discord.ui.View):
         nombre_categoria, items = self.categorias[self.pagina]
 
         if items:
-            lineas = []
+            bloques = []
             for item in items:
-                lineas.append(f"> {item['emoji']} **{item['nombre']}** — {formatear_pesos(item['precio'])}")
+                bloque = f"{item['emoji']} {item['nombre']} — {formatear_pesos(item['precio'])}"
                 desc = item.get("descripcion")
                 if desc:
-                    if len(desc) > 80:
-                        desc = desc[:77] + "..."
-                    lineas.append(f"> -# {desc}")
-                lineas.append("")
-            descripcion = f"### {nombre_categoria}\n{SEPARADOR}\n\n" + "\n".join(lineas).rstrip()
+                    if len(desc) > 90:
+                        desc = desc[:87] + "..."
+                    bloque += f"\n└ {desc}"
+                bloques.append(bloque)
+            descripcion = f"### {nombre_categoria}\n{SEPARADOR}\n\n" + "\n\n".join(bloques)
         else:
             descripcion = f"### {nombre_categoria}\n{SEPARADOR}\n\n-# No hay ítems acá todavía."
 
@@ -3996,18 +4049,23 @@ async def buy(ctx, *, entrada: str = None):
         return
 
     if not entrada:
-        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!buy Peluche de Ado` o `!buy Peluche de Ado 3`"))
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!buy Peluche de Ado`, `!buy Peluche de Ado 3` o `!buy Dólar 10k`"))
         return
 
-    # Si termina en un número, esa es la cantidad; si no, cantidad = 1
+    # Acepta cantidad con sufijo (100k, 2m, all, etc) usando el mismo parser que el resto del bot.
+    # Si el último "token" del mensaje no es una cantidad válida, se asume que todo
+    # el texto es el nombre del ítem (y la cantidad = 1).
     partes = entrada.strip().rsplit(" ", 1)
     cantidad = 1
     nombre_buscado = entrada.strip()
-    if len(partes) == 2 and partes[1].isdigit():
-        nombre_buscado, cantidad = partes[0].strip(), int(partes[1])
+    if len(partes) == 2:
+        cant_parseada = parsear_cantidad(partes[1])
+        if cant_parseada is not None:
+            nombre_buscado = partes[0].strip()
+            cantidad = cant_parseada
 
-    if cantidad <= 0:
-        await ctx.reply(embed=crear_embed(descripcion="La cantidad tiene que ser mayor a 0."))
+    if not nombre_buscado:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!buy Peluche de Ado`, `!buy Peluche de Ado 3` o `!buy Dólar 10k`"))
         return
 
     categoria, item = buscar_item_shop(nombre_buscado)
@@ -4015,11 +4073,26 @@ async def buy(ctx, *, entrada: str = None):
         await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún ítem que se llame **{nombre_buscado}** en la tienda. Mirá `!shop`."))
         return
 
-    costo_total = item["precio"] * cantidad
     user_id = str(ctx.author.id)
     if user_id not in balances_cache:
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
+    balances_cache[user_id].setdefault("banco", 0)
 
+    # "all": comprar todo lo que el balance alcance
+    if cantidad == "all":
+        cantidad = balances_cache[user_id]["balance"] // item["precio"]
+        if cantidad <= 0:
+            await ctx.reply(embed=crear_embed(
+                descripcion=f"No te alcanza ni para uno. **{item['emoji']} {item['nombre']}** cuesta **{formatear_pesos(item['precio'])}** "
+                            f"y tenés **{formatear_pesos(balances_cache[user_id]['balance'])}**."
+            ))
+            return
+
+    if cantidad <= 0:
+        await ctx.reply(embed=crear_embed(descripcion="La cantidad tiene que ser mayor a 0."))
+        return
+
+    costo_total = item["precio"] * cantidad
     if balances_cache[user_id]["balance"] < costo_total:
         await ctx.reply(embed=crear_embed(
             descripcion=f"No te alcanza. **{item['emoji']} {item['nombre']}** x{cantidad} cuesta **{formatear_pesos(costo_total)}**, "
@@ -4609,74 +4682,86 @@ async def olvidarme(ctx):
 
     await ctx.reply(embed=crear_embed(descripcion="🗑️ Listo, Catherine se olvidó de todo lo que sabía de vos."))
 
+# ===================== HELP =====================
+
 CATEGORIAS_HELP = [
-    ("💰", "Economía", [
-        "`!balance [@alguien]` (o `!bal` / `!saldo`) — ver tu balance (o el de otro), lo bancado y el total",
-        "`!top` — top 10 de plata total (balance + banco)",
-        "`!perfil [@alguien]` — resumen completo: plata, matrimonio, colección e inventario",
-        "`!depositar cantidad` — guarda plata en el banco (a salvo de `!robar`, y suma 5% diario compuesto)",
-        "`!retirar cantidad` — saca plata del banco",
-        "`!depositarcaja cantidad` — guarda plata en tu Caja de ahorros: a salvo de `!robar` igual que el banco, pero SIN el interés del 5% diario, y no cuenta en `!top` ni en tu ranking",
-        "`!retirarcaja cantidad` — saca plata de tu Caja de ahorros",
-        "`!pay @usuario cantidad` — le pasás plata de tu balance a otro usuario",
-        "`!w` — trabajar, ganás entre 5.000 y 6.500 Pesos (cooldown: 3 min)",
-        "`!mendigar` — abrís una colecta de 10 min para que te donen plata (cooldown: 20 min)",
-        "`!dolar` — cotización actual del Dólar Catherine (sube/baja cada 4hs; se compra y vende como un ítem más)",
-        "`!topdolar` — top 10 de quién tiene más Dólares guardados",
-        "_En cualquier `cantidad` de este bot podés poner `all` (todo), o abreviar: `100k`, `2m`, `1b`, `1t`_",
+    ("💰", "Tu cuenta", [
+        "`!balance [@alguien]` · también `!bal` / `!saldo`\nMuestra tu plata, lo del banco y el total.\nEjemplo: `!balance` o `!balance @Usuario`",
+        "`!perfil [@alguien]`\nFicha completa: plata, matrimonio, colección e inventario.\nEjemplo: `!perfil` o `!perfil @Usuario`",
+        "`!top`\nTop 10 de usuarios con más plata total (balance + banco).\nEjemplo: `!top`",
+        "`!pay @usuario cantidad`\nLe pasás plata de tu balance a otro usuario.\nEjemplo: `!pay @Usuario 5000` o `!pay @Usuario 100k`",
+        "-# En cualquier `cantidad` del bot podés poner `all` (todo) o abreviar: `100k`, `2m`, `1b`, `1t`.",
     ]),
-    ("👥", "Social", [
-        "`!marry @usuario` — te casás con otro usuario",
-        "`!divorcio` — te divorciás (cuesta 5.000 a cada uno)",
-        "`!givechar personaje @usuario` — le regalás un personaje de tu colección a otro usuario",
-        "`!robar @usuario` — si está desconectado hace 6hs+: 10% de afanarle todo, 10% de perder vos el 5%, 80% nada",
+    ("🏦", "Banco y Caja", [
+        "`!depositar cantidad`\nGuardás plata en el banco. Está a salvo de `!robar` y suma 5% compuesto por día.\nEjemplo: `!depositar 50000` o `!depositar all`",
+        "`!retirar cantidad`\nSacás plata del banco de vuelta a tu balance.\nEjemplo: `!retirar 50000` o `!retirar all`",
+        "`!depositarcaja cantidad`\nGuardás plata en tu Caja de ahorros. También está a salvo de `!robar`, pero SIN el interés del 5% y no cuenta para `!top` ni el ranking.\nEjemplo: `!depositarcaja 100k`",
+        "`!retirarcaja cantidad`\nSacás plata de la Caja de ahorros.\nEjemplo: `!retirarcaja all`",
+    ]),
+    ("💼", "Trabajo", [
+        "`!w`\nTrabajás y ganás entre 5.000 y 6.500 Pesos (con un mensaje random cada vez).\nCooldown: 3 minutos.",
+        "`!mendigar`\nAbrís una colecta de 10 minutos para que el resto te done plata.\nCooldown: 20 minutos.",
+    ]),
+    ("💵", "Dólar", [
+        "`!dolar` · también `!dólar` / `!usd`\nCotización actual del Dólar Catherine. Cambia cada 4hs, nunca baja de 300 Pesos.",
+        "`!buy Dólar cantidad` · también `!comprar`\nComprás Dólares a la cotización actual.\nEjemplo: `!buy Dólar 10` o `!buy Dólar all`",
+        "`!vender Dólar cantidad`\nVendés Dólares. Hay 2% de comisión.\nEjemplo: `!vender Dólar 5`",
+        "`!topdolar` · también `!topdólar`\nTop 10 de quién tiene más Dólares guardados.",
     ]),
     ("🎰", "Casino", [
-        "`!cf cara/cruz cantidad` — apostar a cara o cruz",
-        "`!bj cantidad` o `!blackjack cantidad` — jugar al blackjack",
-        "`!rt rojo/negro cantidad` o `!roulette rojo/negro cantidad` — jugar a la ruleta",
+        "`!cf cara/cruz cantidad` · también `!coinflip`\nApuesta a cara o cruz (50/50).\nEjemplo: `!cf cara 5000` o `!cf cruz all`",
+        "`!bj cantidad` · también `!blackjack`\nUna mano de blackjack contra la casa.\nEjemplo: `!bj 10000` o `!bj all`",
+        "`!rt rojo/negro cantidad` · también `!roulette`\nApuesta a rojo o negro en la ruleta.\nEjemplo: `!rt rojo 5000` o `!rt negro all`",
     ]),
     ("🛍️", "Tienda", [
-        "`!shop` o `!tienda` — ver el catálogo de la tienda, por categorías",
-        "`!buy nombre del ítem [cantidad]` o `!comprar ...` — comprar algo de la tienda",
-        "`!usar nombre del ítem` — usar un item de tu inventario (buffs, cooldowns, efectos)",
-        "`!buffs [@alguien]` — ver tus buffs activos y efectos guardados",
-        "`!autouse nombre del ítem` — hace que ese item se use solo en su momento (de nuevo para desactivar)",
-        "`!inv` o `!inventario` [@alguien] — ver los objetos que compraste (paginado)",
-        "`!invfo nombre del ítem` — ver la ficha de un ítem puntual de la tienda",
+        "`!shop` · también `!tienda`\nCatálogo completo, por categorías (con Previous/Next).",
+        "`!buy nombre [cantidad]` · también `!comprar`\nComprás algo de la tienda. La cantidad acepta `100k`, `all`, etc.\nEjemplo: `!buy Peluche de Ado` o `!buy Dólar 5`",
+        "`!inv [@alguien]` · también `!inventario`\nVes los objetos que compraste (paginado).\nEjemplo: `!inv`",
+        "`!invfo nombre del ítem`\nFicha de un ítem puntual.\nEjemplo: `!invfo Café doble`",
     ]),
-    ("🎴", "Gacha", [
-        "`!rw` — tirar un personaje random (cooldown: 4hs; reclamar tiene su propio cooldown de 3hs)",
-        "`!winfo nombre` — ver la ficha de un personaje puntual (sin reclamo)",
-        "`!coleccion` o `!harem` [@alguien] — ver los personajes reclamados",
-        "`!vender personaje` — vendés un personaje de tu colección y te doy el 70% de su valor en Pesos",
-        "`!tasacion personaje` — te digo cuánto te darían por venderlo, sin venderlo",
+    ("✨", "Items y buffs", [
+        "`!usar nombre` · también `!use`\nUsás un item de tu inventario (activa su efecto).\nEjemplo: `!usar Dado de la suerte`",
+        "`!autouse nombre`\nConfigurás que ese item se use solo en su momento. Volvé a correr el mismo comando para desactivarlo.\nEjemplo: `!autouse Pase VIP`",
+        "`!buffs [@alguien]` · también `!efectos`\nVes tus buffs activos, mejoras permanentes y cooldowns.\nEjemplo: `!buffs`",
+    ]),
+    ("🎴", "Gacha (personajes)", [
+        "`!rw`\nTirás un personaje random. Los de más valor son más difíciles de sacar.\nCooldown: 4hs. Reclamar tiene su propio cooldown de 3hs.",
+        "`!winfo nombre`\nFicha de un personaje puntual, sin reclamarlo.\nEjemplo: `!winfo Gojo Satoru`",
+        "`!coleccion [@alguien]` · también `!harem`\nVes los personajes que reclamaste (paginado).\nEjemplo: `!coleccion`",
+        "`!vender personaje`\nVendés un personaje. Te llevás el 70% de su valor en Pesos.\nEjemplo: `!vender Gojo Satoru`",
+        "`!tasacion personaje`\nCuánto te darían por venderlo, sin venderlo.\nEjemplo: `!tasacion Gojo`",
+    ]),
+    ("💍", "Social", [
+        "`!marry @usuario`\nTe casás con otro usuario.\nEjemplo: `!marry @Usuario`",
+        "`!divorcio`\nTe divorciás. Cuesta 5.000 a cada uno.\nEjemplo: `!divorcio`",
+        "`!givechar nombre @usuario`\nLe regalás un personaje de tu colección a otro usuario.\nEjemplo: `!givechar Gojo Satoru @Usuario`",
+        "`!robar @usuario`\nSi está desconectado hace 6hs o más: 10% de afanarle todo el balance, 10% de perder vos el 5%, 80% no pasa nada.\nEjemplo: `!robar @Usuario`",
     ]),
     ("🎵", "Multimedia", [
-        "`!mp3 búsqueda` o `!mp3 link` — te paso el audio de un video",
+        "`!mp3 búsqueda` o `!mp3 link`\nTe paso el audio de un video de YouTube (busca en YouTube Music primero).\nEjemplo: `!mp3 Oasis Wonderwall` o `!mp3 https://youtu.be/...`",
     ]),
 ]
 
 CATEGORIAS_ADMINHELP = [
     ("💰", "Economía", [
-        "`!addmoney @usuario cantidad` — le agregás plata a alguien",
-        "`!wAdmin` — igual que `!w` pero sin cooldown",
-        "`!5porcentforce` — fuerza el 5% de interés diario a tu banco ahora mismo",
-        "`!setgeneralchannel` — configura ESTE canal para que Catherine anuncie las subas/bajadas del dólar",
+        "`!addmoney @usuario cantidad`\nLe agregás plata a alguien.\nEjemplo: `!addmoney @Usuario 100000`",
+        "`!wAdmin`\nIgual que `!w` pero sin cooldown.",
+        "`!5porcentforce`\nFuerza el 5% de interés diario a tu banco ahora mismo, sin esperar las 24hs.",
+        "`!setgeneralchannel`\nConfigura ESTE canal para que Catherine anuncie los cambios del dólar.",
     ]),
     ("🎴", "Gacha / rw", [
-        "`!rwAdmin` — igual que `!rw` pero sin cooldown (ni de tirada ni de reclamo)",
-        "`!rwreload` — recarga el `rw.json` desde GitHub sin reiniciar el bot",
-        "`!checkimg` — revisa qué links de imagen de los personajes están rotos",
-        "`!buscarimagenes [cantidad]` o `!imgsearch` — busca fotos para los personajes sin imagen (Guardar/Rechazar/Recargar)",
-        "`!imgcompare [cantidad]` o `!comparaimg` — como arriba, pero con las 3 candidatas juntas en un collage para elegir de un vistazo",
-        "`!galeria` — recorrer los personajes uno por uno para revisar imágenes",
+        "`!rwAdmin`\nIgual que `!rw` pero sin cooldown (ni de tirada ni de reclamo).",
+        "`!rwreload`\nRecarga `rw.json` desde GitHub sin reiniciar el bot.",
+        "`!checkimg`\nRevisa qué links de imagen de los personajes están rotos.",
+        "`!buscarimagenes [cantidad]` · también `!imgsearch`\nBuscás fotos para los personajes sin imagen (Guardar/Rechazar/Recargar).\nEjemplo: `!buscarimagenes 5`",
+        "`!imgcompare [cantidad]` · también `!comparaimg`\nComo el anterior, pero con las 3 candidatas juntas en un collage.",
+        "`!galeria`\nRecorrés todos los personajes uno por uno para revisar imágenes.",
     ]),
     ("🛍️", "Tienda / datos", [
-        "`!shopreload` — recarga el `shop.json` desde GitHub sin reiniciar el bot",
-        "`!memoria [@alguien]` — qué recuerda Catherine de vos (o de otro usuario)",
-        "`!olvidarme` — borra lo que Catherine recuerda de vos",
-        "`!datasave` — fuerza el guardado inmediato de TODOS los datos a GitHub",
+        "`!shopreload`\nRecarga `shop.json` desde GitHub sin reiniciar el bot.",
+        "`!memoria [@alguien]`\nVes qué recuerda Catherine de vos (o de alguien más).",
+        "`!olvidarme`\nBorra lo que Catherine recuerda de vos.",
+        "`!datasave`\nFuerza el guardado inmediato de TODOS los datos a GitHub.",
     ]),
 ]
 
@@ -4702,7 +4787,7 @@ class HelpView(discord.ui.View):
         emoji, nombre, lineas = self.categorias[self.pagina]
         return crear_embed(
             titulo=f"{self.titulo} — {emoji} {nombre}",
-            descripcion="\n".join(lineas),
+            descripcion="\n\n".join(lineas),
             footer=f"Categoría {self.pagina + 1}/{len(self.categorias)}",
         )
 
@@ -5006,8 +5091,53 @@ async def coleccion(ctx, miembro: discord.Member = None):
     mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
     view.mensaje = mensaje
 
+# ===================== YTMUSICAPI (reemplaza a YouTube Data API) =====================
+
+def _buscar_en_ytmusic_sync(query, limite=1):
+    """Búsqueda síncrona en YouTube Music vía ytmusicapi (sin API key).
+    Devuelve un dict {'videoId': ..., 'title': ..., 'artists': '...'} o None.
+    Primero busca filtrando por 'songs' (música oficial); si no hay nada,
+    prueba sin filtro (por si es un video musical, cover, etc.)."""
+    try:
+        from ytmusicapi import YTMusic
+        yt = YTMusic()
+        resultados = yt.search(query, filter="songs", limit=limite)
+        if not resultados:
+            resultados = yt.search(query, limit=limite)
+        if not resultados:
+            return None
+
+        item = resultados[0]
+        video_id = item.get("videoId")
+        if not video_id:
+            return None
+
+        titulo = item.get("title") or "audio"
+
+        # Los artistas vienen como lista de dicts con 'name'
+        artists_raw = item.get("artists") or []
+        if isinstance(artists_raw, list):
+            nombres = [a.get("name") for a in artists_raw if isinstance(a, dict) and a.get("name")]
+            artistas = ", ".join(nombres) if nombres else None
+        else:
+            artistas = str(artists_raw) if artists_raw else None
+
+        return {"videoId": video_id, "title": titulo, "artists": artistas}
+    except Exception as e:
+        print(f"[ytmusic] Error buscando '{query}': {e}", flush=True)
+        return None
+
+
+async def buscar_en_ytmusic(query, limite=1):
+    """Wrapper async: corre la búsqueda síncrona en un hilo aparte para no
+    bloquear el event loop del bot."""
+    return await asyncio.to_thread(_buscar_en_ytmusic_sync, query, limite)
+
+# ===================== FIN YTMUSICAPI =====================
+
 async def buscar_por_scraping(session, texto):
-    """Busca directo en youtube.com/results y parsea el primer video ID. Más preciso que la API, pero puede fallar."""
+    """Fallback: busca directo en youtube.com/results y parsea el primer video ID.
+    Más preciso que la API, pero puede fallar."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     }
@@ -5021,92 +5151,68 @@ async def buscar_por_scraping(session, texto):
     except Exception:
         return None
 
-async def buscar_por_api(session, titulo_busqueda, canal_busqueda):
-    """Busca con la YouTube Data API oficial (respaldo si el scraping falla)."""
-    if not YOUTUBE_API_KEY:
-        return None, "Falta configurar YOUTUBE_API_KEY."
-
-    channel_id = None
-    if canal_busqueda:
-        params_canal = {
-            "part": "snippet",
-            "q": canal_busqueda,
-            "type": "channel",
-            "maxResults": 1,
-            "key": YOUTUBE_API_KEY,
-        }
-        async with session.get("https://www.googleapis.com/youtube/v3/search", params=params_canal) as resp_canal:
-            data_canal = await resp_canal.json()
-        items_canal = data_canal.get("items", [])
-        if items_canal:
-            channel_id = items_canal[0]["id"]["channelId"]
-
-    params_busqueda = {
-        "part": "snippet",
-        "q": titulo_busqueda,
-        "type": "video",
-        "maxResults": 1,
-        "key": YOUTUBE_API_KEY,
-    }
-    if channel_id:
-        params_busqueda["channelId"] = channel_id
-
-    async with session.get("https://www.googleapis.com/youtube/v3/search", params=params_busqueda) as resp_busqueda:
-        data_busqueda = await resp_busqueda.json()
-
-    items = data_busqueda.get("items", [])
-    if not items:
-        error_msg = data_busqueda.get("error", {}).get("message")
-        return None, error_msg
-    return items[0]["id"]["videoId"], None
-
 @bot.command(name="mp3")
 async def mp3(ctx, *, entrada: str = None):
-    """Busca (o recibe un link de) un video de YouTube y manda el audio como mp3"""
+    """Busca (o recibe un link de) un video de YouTube y manda el audio como mp3.
+    Busca primero en YouTube Music (ytmusicapi) y cae al scraping de YouTube
+    normal si ytmusicapi no encuentra nada."""
     if not entrada:
-        await ctx.reply(embed=crear_embed(descripcion="Decime qué buscar, o pasame un link. Ejemplo: `!mp3 bruh` o `!mp3 bruh - juanitoFachero142`"))
+        await ctx.reply(embed=crear_embed(descripcion="Decime qué buscar, o pasame un link. Ejemplo: `!mp3 bruh` o `!mp3 Oasis Wonderwall`"))
         return
 
     if not RAPIDAPI_KEY:
         await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar RAPIDAPI_KEY en las variables de entorno de Render."))
         return
 
-    embed = crear_embed(titulo=entrada, descripcion="(1/3) Buscando video")
+    embed = crear_embed(titulo=entrada, descripcion="⏳ Buscando video...")
     aviso = await ctx.reply(embed=embed)
 
-    async def actualizar(nueva_descripcion, nuevo_titulo=None):
-        if nuevo_titulo is not None:
-            embed.title = nuevo_titulo
-        embed.description = nueva_descripcion
+    # Los pasos se van ACUMULANDO en el embed (no se reemplazan), así el usuario
+    # ve todo el progreso junto: ✅ Buscando video / ✅ Convirtiendo / ⏳ Descargando.
+    pasos = ["⏳ Buscando video..."]
+
+    async def mostrar_pasos():
+        embed.description = "\n\n".join(pasos)
+        await aviso.edit(embed=embed)
+
+    async def siguiente_paso(texto):
+        if pasos:
+            pasos[-1] = pasos[-1].replace("⏳", "✅")
+        pasos.append(f"⏳ {texto}")
+        await mostrar_pasos()
+
+    async def mostrar_error(mensaje):
+        if pasos:
+            pasos[-1] = pasos[-1].replace("⏳", "❌")
+        pasos.append(f"❌ {mensaje}")
+        embed.description = "\n\n".join(pasos)
         await aviso.edit(embed=embed)
 
     match = re.search(r"(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})", entrada)
 
     try:
         async with aiohttp.ClientSession() as session:
+            titulo = "audio"
+            canal = None
+
             if match:
                 video_id = match.group(1)
             else:
-                if " - " in entrada:
-                    titulo_busqueda, canal_busqueda = entrada.split(" - ", 1)
-                    titulo_busqueda = titulo_busqueda.strip()
-                    canal_busqueda = canal_busqueda.strip()
+                # 1) Buscamos en YouTube Music primero (mejores resultados para música)
+                resultado_ytmusic = await buscar_en_ytmusic(entrada, limite=1)
+
+                if resultado_ytmusic:
+                    video_id = resultado_ytmusic["videoId"]
+                    titulo = resultado_ytmusic.get("title") or "audio"
+                    canal = resultado_ytmusic.get("artists")
                 else:
-                    titulo_busqueda, canal_busqueda = entrada.strip(), None
+                    # 2) Fallback: scraping de YouTube normal
+                    video_id = await buscar_por_scraping(session, entrada)
+                    if not video_id:
+                        await mostrar_error("No encontré nada para eso. Probá con otro nombre o pasame el link directo.")
+                        return
 
-                video_id = None
-                texto_scraping = f"{titulo_busqueda} {canal_busqueda}" if canal_busqueda else titulo_busqueda
-                video_id = await buscar_por_scraping(session, texto_scraping)
-
-                if not video_id:
-                    video_id, error_api = await buscar_por_api(session, titulo_busqueda, canal_busqueda)
-
-                if not video_id:
-                    await actualizar(f"No encontré nada para eso.{f' ({error_api})' if error_api else ''}")
-                    return
-
-            await actualizar("(2/3) Video encontrado")
-            await actualizar("(3/3) Convirtiendo a MP3")
+            await siguiente_paso("Convirtiendo a MP3...")
 
             headers = {
                 "X-RapidAPI-Key": RAPIDAPI_KEY,
@@ -5114,7 +5220,7 @@ async def mp3(ctx, *, entrada: str = None):
             }
 
             mp3_url = None
-            titulo = "audio"
+            duracion = None
 
             for _ in range(10):
                 async with session.get(f"https://{RAPIDAPI_HOST}/dl", params={"id": video_id}, headers=headers) as resp:
@@ -5123,17 +5229,22 @@ async def mp3(ctx, *, entrada: str = None):
                 estado = data.get("status")
                 if estado == "ok":
                     mp3_url = data.get("link")
-                    titulo = data.get("title", "audio")
+                    # Si RapidAPI devuelve un título distinto, lo preferimos (suele estar más limpio)
+                    if data.get("title"):
+                        titulo = data["title"]
+                    duracion = data.get("duration")
                     break
                 elif estado == "processing":
                     await asyncio.sleep(3)
                 else:
-                    await actualizar(f"No se pudo convertir: {data.get('msg', 'error desconocido')}")
+                    await mostrar_error(f"No se pudo convertir: {data.get('msg', 'error desconocido')}")
                     return
 
             if not mp3_url:
-                await actualizar("Tardó demasiado en procesar el video, probá de nuevo en un rato.")
+                await mostrar_error("Tardó demasiado en procesar el video, probá de nuevo en un rato.")
                 return
+
+            await siguiente_paso("Descargando audio...")
 
             headers_descarga = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -5141,32 +5252,89 @@ async def mp3(ctx, *, entrada: str = None):
                 "Referer": "https://ytjar.info/",
             }
 
+            LIMITE_MB = 9.5
             contenido = None
+            demasiado_grande = False
+
             for intento in range(3):
                 async with session.get(mp3_url, headers=headers_descarga) as resp_mp3:
-                    if resp_mp3.status == 200:
-                        contenido = await resp_mp3.read()
-                        break
-                    status_actual = resp_mp3.status
-                await asyncio.sleep(2)
+                    if resp_mp3.status != 200:
+                        await asyncio.sleep(2)
+                        continue
 
+                    # Antes de bajar nada: si el header Content-Length dice que pesa
+                    # más de lo que Discord permite, ni lo descargamos. Nos ahorramos
+                    # bajarnos 100MB a RAM para después tirarlos.
+                    content_length = resp_mp3.headers.get("Content-Length")
+                    if content_length:
+                        try:
+                            if int(content_length) / (1024 * 1024) > LIMITE_MB:
+                                demasiado_grande = True
+                                break
+                        except (ValueError, TypeError):
+                            pass
+
+                    contenido = await resp_mp3.read()
+                    break
+
+            # Caso 1: demasiado grande, ni lo bajamos → solo link
+            if demasiado_grande:
+                embed.title = "Descarga completada"
+                embed.description = (
+                    f"🎵 **{titulo}**\n"
+                    + (f"👤 {canal}\n" if canal else "")
+                    + f"\n🔗 Pesa más de 10MB, no entra en Discord. Link directo:\n{mp3_url}\n\n"
+                    f"-# Video original: https://youtu.be/{video_id}"
+                )
+                await aviso.edit(embed=embed)
+                return
+
+            # Caso 2: no pudimos bajarlo, pero el link sirve igual
             if contenido is None:
-                # No pudimos bajarlo desde el servidor, pero el link funciona para un usuario normal
-                await actualizar(f"No pude bajarlo yo misma, pero acá tenés el link directo:\n{mp3_url}", nuevo_titulo=titulo)
+                embed.title = "Descarga completada"
+                embed.description = (
+                    f"🎵 **{titulo}**\n"
+                    + (f"👤 {canal}\n" if canal else "")
+                    + f"\n🔗 No pude bajarlo yo misma, pero acá tenés el link directo:\n{mp3_url}\n\n"
+                    f"-# Video original: https://youtu.be/{video_id}"
+                )
+                await aviso.edit(embed=embed)
                 return
 
             tamaño_mb = len(contenido) / (1024 * 1024)
-            if tamaño_mb > 9.5:
-                await actualizar(f"Pesa {tamaño_mb:.1f}MB, es demasiado grande para Discord (límite ~10MB). Te dejo el link:\n{mp3_url}", nuevo_titulo=titulo)
+
+            # Caso 3: lo bajamos pero igual pesa más de lo permitido (Content-Length
+            # mentía o no venía) → link en vez de adjunto
+            if tamaño_mb > LIMITE_MB:
+                embed.title = "Descarga completada"
+                embed.description = (
+                    f"🎵 **{titulo}**\n"
+                    + (f"👤 {canal}\n" if canal else "")
+                    + f"\n🔗 Pesa {tamaño_mb:.1f}MB, no entra en Discord. Link directo:\n{mp3_url}\n\n"
+                    f"-# Video original: https://youtu.be/{video_id}"
+                )
+                await aviso.edit(embed=embed)
                 return
 
-            embed.title = titulo
-            embed.description = "Aquí tienes:"
+            # Resultado final: título + canal + tamaño/kbps + link al video de YT
+            bits_info = [f"💾 {tamaño_mb:.1f} MB"]
+            if duracion and duracion > 0:
+                bitrate_kbps = round((len(contenido) * 8) / duracion / 1000)
+                bits_info.append(f"{bitrate_kbps} kbps")
+
+            embed.title = "Descarga completada"
+            embed.description = (
+                f"🎵 **{titulo}**\n"
+                + (f"👤 {canal}\n" if canal else "")
+                + " · ".join(bits_info) + "\n"
+                + f"🔗 https://youtu.be/{video_id}"
+            )
+
             nombre_archivo = re.sub(r'[\\/*?:"<>|]', "", titulo)[:80] or "audio"
             await aviso.edit(embed=embed, attachments=[discord.File(io.BytesIO(contenido), filename=f"{nombre_archivo}.mp3")])
 
     except Exception as e:
-        await actualizar(f"Hubo un error: {str(e)}")
+        await mostrar_error(f"Hubo un error: {str(e)}")
 
 # Iniciar el bot
 bot.run(os.environ.get("DISCORD_TOKEN"))
