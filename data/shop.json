@@ -24,7 +24,7 @@
     {"nombre": "Amuleto del ludópata", "emoji": "🎰", "precio": 400000, "descripcion": "+5% de ganar en !cf y !roulette durante 1 hora.", "imagen": null, "efecto": "buff_suerte_apuesta", "valor": 0.05, "duracion": 3600},
     {"nombre": "Dado de la suerte", "emoji": "🎲", "precio": 500000, "descripcion": "+5% de peso a las rarezas altas en !rw durante 10 min.", "imagen": null, "efecto": "buff_suerte_rw", "valor": 0.05, "duracion": 600},
     {"nombre": "Pase VIP", "emoji": "🎟️", "precio": 600000, "descripcion": "La próxima vez que reclames un personaje en !rw, ignorás el cooldown de reclamo de 4hs.", "imagen": null, "efecto": "pase_vip"},
-    {"nombre": "Reloj de arena", "emoji": "⏳", "precio": 800000, "descripcion": "Reduce 3 horas de tu cooldown actual de !rw.", "imagen": null, "efecto": "reducir_cooldown_rw", "valor": 10800},
+    {"nombre": "Reloj de arena", "emoji": "⏳", "precio": 800000, "descripcion": "Reduce 2 horas de tu cooldown actual de !rw.", "imagen": null, "efecto": "reducir_cooldown_rw", "valor": 10800},
     {"nombre": "Cristal de reroll", "emoji": "💠", "precio": 1000000, "descripcion": "Te deja tirar !rw una vez más aunque estés en cooldown (sin resetearlo).", "imagen": null, "efecto": "cristal_reroll"},
     {"nombre": "Poción de reset", "emoji": "🧪", "precio": 850000, "descripcion": "Resetea completamente tu cooldown de !rw.", "imagen": null, "efecto": "resetear_cooldown_rw"},
     {"nombre": "Máquina del tiempo", "emoji": "⏰", "precio": 1500000, "descripcion": "Resetea completamente tu cooldown de !rw.", "imagen": null, "efecto": "resetear_cooldown_rw"},
