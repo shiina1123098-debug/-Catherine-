@@ -5350,27 +5350,29 @@ async def mp3(ctx, *, entrada: str = None):
             # Caso 1: demasiado grande, ni lo bajamos → solo link
             if demasiado_grande:
                 embed.title = "Descarga completada"
-                embed.description = (
+                embed.description = None
+                embed.set_image(url=_miniatura_youtube(video_id))
+                embed_datos = crear_embed(descripcion=(
                     f"🎵 **{titulo}**\n"
                     + (f"👤 {canal}\n" if canal else "")
                     + f"\n🔗 Pesa más de 10MB, no entra en Discord. Link directo:\n{mp3_url}\n\n"
                     f"-# Video original: https://youtu.be/{video_id}"
-                )
-                embed.set_image(url=_miniatura_youtube(video_id))
-                await aviso.edit(embed=embed)
+                ))
+                await aviso.edit(embeds=[embed, embed_datos])
                 return
 
             # Caso 2: no pudimos bajarlo, pero el link sirve igual
             if contenido is None:
                 embed.title = "Descarga completada"
-                embed.description = (
+                embed.description = None
+                embed.set_image(url=_miniatura_youtube(video_id))
+                embed_datos = crear_embed(descripcion=(
                     f"🎵 **{titulo}**\n"
                     + (f"👤 {canal}\n" if canal else "")
                     + f"\n🔗 No pude bajarlo yo misma, pero acá tenés el link directo:\n{mp3_url}\n\n"
                     f"-# Video original: https://youtu.be/{video_id}"
-                )
-                embed.set_image(url=_miniatura_youtube(video_id))
-                await aviso.edit(embed=embed)
+                ))
+                await aviso.edit(embeds=[embed, embed_datos])
                 return
 
             tamaño_mb = len(contenido) / (1024 * 1024)
@@ -5379,14 +5381,15 @@ async def mp3(ctx, *, entrada: str = None):
             # mentía o no venía) → link en vez de adjunto
             if tamaño_mb > LIMITE_MB:
                 embed.title = "Descarga completada"
-                embed.description = (
+                embed.description = None
+                embed.set_image(url=_miniatura_youtube(video_id))
+                embed_datos = crear_embed(descripcion=(
                     f"🎵 **{titulo}**\n"
                     + (f"👤 {canal}\n" if canal else "")
                     + f"\n🔗 Pesa {tamaño_mb:.1f}MB, no entra en Discord. Link directo:\n{mp3_url}\n\n"
                     f"-# Video original: https://youtu.be/{video_id}"
-                )
-                embed.set_image(url=_miniatura_youtube(video_id))
-                await aviso.edit(embed=embed)
+                ))
+                await aviso.edit(embeds=[embed, embed_datos])
                 return
 
             # Resultado final: título + canal + tamaño/kbps + link al video de YT
@@ -5396,16 +5399,17 @@ async def mp3(ctx, *, entrada: str = None):
                 bits_info.append(f"{bitrate_kbps} kbps")
 
             embed.title = "Descarga completada"
-            embed.description = (
+            embed.description = None
+            embed.set_image(url=_miniatura_youtube(video_id))
+            embed_datos = crear_embed(descripcion=(
                 f"🎵 **{titulo}**\n"
                 + (f"👤 {canal}\n" if canal else "")
                 + " · ".join(bits_info) + "\n"
                 + f"🔗 https://youtu.be/{video_id}"
-            )
-            embed.set_image(url=_miniatura_youtube(video_id))
+            ))
 
             nombre_archivo = re.sub(r'[\\/*?:"<>|]', "", titulo)[:80] or "audio"
-            await aviso.edit(embed=embed, attachments=[discord.File(io.BytesIO(contenido), filename=f"{nombre_archivo}.mp3")])
+            await aviso.edit(embeds=[embed, embed_datos], attachments=[discord.File(io.BytesIO(contenido), filename=f"{nombre_archivo}.mp3")])
 
     except Exception as e:
         await mostrar_error(f"Hubo un error: {str(e)}")
