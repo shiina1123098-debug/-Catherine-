@@ -743,7 +743,7 @@ def inyectar_dolar_en_shop():
         "nombre": "Dólar",
         "precio": dolar_valor,
         "emoji": "💵",
-        "descripcion": "Cotización que sube o baja cada 4hs. Comprás con `!buy Dólar cantidad`, vendés con `!vender Dólar cantidad` (2% de comisión).",
+        "descripcion": "Sube o baja cada 4hs. Comprás y vendés con `!buy` / `!vender`.",
         "vendible": True,
     }
     shop_cache.setdefault("Inversiones", [])
@@ -3148,7 +3148,7 @@ async def rw(ctx):
             await ctx.reply(embed=crear_embed(
                 descripcion=(
                     f"⏳ Todavía no. Podés volver a tirar en **{formatear_tiempo_restante(restante)}**.\n"
-                    f"-# Tips: un `Reloj de arena` te baja 3hs, una `Máquina del tiempo` te lo resetea, y un `Cristal de reroll` te deja tirar igual."
+                    f"-# Tips: un `Reloj de arena` te baja 2hs, una `Máquina del tiempo` te lo resetea, y un `Cristal de reroll` te deja tirar igual."
                 )
             ))
             return
@@ -4293,7 +4293,7 @@ async def aplicar_efecto_item(ctx, item, efecto):
         return f"🏛️ Ganás **+{int(item['valor']*100)}%** en `!w` durante **{formatear_tiempo_restante(item.get('duracion', 259200))}**."
 
     if efecto == "reducir_cooldown_rw":
-        segundos = item.get("valor", 10800)
+        segundos = item.get("valor", 7200)  # default 2hs si el shop.json no lo trae
         restante_antes = cooldown_restante(cooldown_rw_usuario, user_id)
         if restante_antes <= 0:
             await ctx.reply(embed=crear_embed(descripcion="No tenés ningún cooldown activo de `!rw` para reducir. No gastaste el item."))
@@ -4335,11 +4335,47 @@ async def aplicar_efecto_item(ctx, item, efecto):
         )
 
     if efecto == "resetear_cooldown_rw":
+        # Poción de reset: solo borra el cooldown de !rw.
         restante = resetear_cooldown(cooldown_rw_usuario, user_id)
         if restante <= 0:
             await ctx.reply(embed=crear_embed(descripcion="No tenés ningún cooldown activo de `!rw` para resetear. No gastaste el item."))
             return None
         return f"⏰ Tu cooldown de `!rw` se borró. Ya podés tirar de nuevo (tenías **{formatear_tiempo_restante(restante)}** restantes)."
+
+    if efecto == "resetear_todos_cooldowns":
+        # Máquina del tiempo: resetea TODOS los cooldowns de comandos con
+        # cooldown manual: !rw (tirada), !w (trabajo), el reclamo de !rw, y !mendigar.
+        rw_restante = resetear_cooldown(cooldown_rw_usuario, user_id)
+        w_restante = resetear_cooldown(cooldown_w_usuario, user_id)
+        mendigar_restante = resetear_cooldown(cooldown_mendigar_usuario, user_id)
+
+        # El cooldown de reclamo de !rw no vive en un dict de cooldowns (es
+        # ultimo_reclamo_por_usuario, guarda el timestamp del último reclamo
+        # exitoso). Lo medimos y lo borramos a mano.
+        reclamo_restante = 0
+        ultimo = ultimo_reclamo_por_usuario.get(user_id)
+        if ultimo is not None:
+            transcurrido = time.time() - ultimo
+            if transcurrido < COOLDOWN_RECLAMO_SEGUNDOS:
+                reclamo_restante = COOLDOWN_RECLAMO_SEGUNDOS - transcurrido
+            ultimo_reclamo_por_usuario.pop(user_id, None)
+
+        # Si no había NADA para resetear, no gastamos el item.
+        if rw_restante <= 0 and w_restante <= 0 and reclamo_restante <= 0 and mendigar_restante <= 0:
+            await ctx.reply(embed=crear_embed(descripcion="No tenías ningún cooldown activo para resetear. No gastaste el item."))
+            return None
+
+        lineas = []
+        if rw_restante > 0:
+            lineas.append(f"> 🎴 `!rw` — tenías **{formatear_tiempo_restante(rw_restante)}**")
+        if w_restante > 0:
+            lineas.append(f"> 💼 `!w` — tenías **{formatear_tiempo_restante(w_restante)}**")
+        if reclamo_restante > 0:
+            lineas.append(f"> 🔒 Reclamo de `!rw` — tenías **{formatear_tiempo_restante(reclamo_restante)}**")
+        if mendigar_restante > 0:
+            lineas.append(f"> 🪙 `!mendigar` — tenías **{formatear_tiempo_restante(mendigar_restante)}**")
+
+        return "⏰ **Máquina del tiempo** activada. Se resetearon todos estos cooldowns:\n\n" + "\n".join(lineas)
 
     if efecto == "pase_vip":
         agregar_efecto_unico(ctx.author, "pase_vip", 1)
@@ -4683,112 +4719,139 @@ async def olvidarme(ctx):
     await ctx.reply(embed=crear_embed(descripcion="🗑️ Listo, Catherine se olvidó de todo lo que sabía de vos."))
 
 # ===================== HELP =====================
+# Cada categoría es (emoji, nombre, [subpagina1, subpagina2, ...]). Si la
+# categoría entra en una sola página, se usa [ [linea1, linea2, ...] ] y listo.
+# Si es muy larga, se parte en varias subpáginas y el título muestra
+# "(1/2)", "(2/2)", etc.
 
 CATEGORIAS_HELP = [
-    ("💰", "Tu cuenta", [
-        "`!balance [@alguien]` · también `!bal` / `!saldo`\nMuestra tu plata, lo del banco y el total.\nEjemplo: `!balance` o `!balance @Usuario`",
-        "`!perfil [@alguien]`\nFicha completa: plata, matrimonio, colección e inventario.\nEjemplo: `!perfil` o `!perfil @Usuario`",
-        "`!top`\nTop 10 de usuarios con más plata total (balance + banco).\nEjemplo: `!top`",
-        "`!pay @usuario cantidad`\nLe pasás plata de tu balance a otro usuario.\nEjemplo: `!pay @Usuario 5000` o `!pay @Usuario 100k`",
-        "-# En cualquier `cantidad` del bot podés poner `all` (todo) o abreviar: `100k`, `2m`, `1b`, `1t`.",
-    ]),
-    ("🏦", "Banco y Caja", [
-        "`!depositar cantidad`\nGuardás plata en el banco. Está a salvo de `!robar` y suma 5% compuesto por día.\nEjemplo: `!depositar 50000` o `!depositar all`",
-        "`!retirar cantidad`\nSacás plata del banco de vuelta a tu balance.\nEjemplo: `!retirar 50000` o `!retirar all`",
-        "`!depositarcaja cantidad`\nGuardás plata en tu Caja de ahorros. También está a salvo de `!robar`, pero SIN el interés del 5% y no cuenta para `!top` ni el ranking.\nEjemplo: `!depositarcaja 100k`",
-        "`!retirarcaja cantidad`\nSacás plata de la Caja de ahorros.\nEjemplo: `!retirarcaja all`",
-    ]),
-    ("💼", "Trabajo", [
-        "`!w`\nTrabajás y ganás entre 5.000 y 6.500 Pesos (con un mensaje random cada vez).\nCooldown: 3 minutos.",
-        "`!mendigar`\nAbrís una colecta de 10 minutos para que el resto te done plata.\nCooldown: 20 minutos.",
-    ]),
-    ("💵", "Dólar", [
-        "`!dolar` · también `!dólar` / `!usd`\nCotización actual del Dólar Catherine. Cambia cada 4hs, nunca baja de 300 Pesos.",
-        "`!buy Dólar cantidad` · también `!comprar`\nComprás Dólares a la cotización actual.\nEjemplo: `!buy Dólar 10` o `!buy Dólar all`",
-        "`!vender Dólar cantidad`\nVendés Dólares. Hay 2% de comisión.\nEjemplo: `!vender Dólar 5`",
-        "`!topdolar` · también `!topdólar`\nTop 10 de quién tiene más Dólares guardados.",
-    ]),
-    ("🎰", "Casino", [
-        "`!cf cara/cruz cantidad` · también `!coinflip`\nApuesta a cara o cruz (50/50).\nEjemplo: `!cf cara 5000` o `!cf cruz all`",
-        "`!bj cantidad` · también `!blackjack`\nUna mano de blackjack contra la casa.\nEjemplo: `!bj 10000` o `!bj all`",
-        "`!rt rojo/negro cantidad` · también `!roulette`\nApuesta a rojo o negro en la ruleta.\nEjemplo: `!rt rojo 5000` o `!rt negro all`",
-    ]),
-    ("🛍️", "Tienda", [
-        "`!shop` · también `!tienda`\nCatálogo completo, por categorías (con Previous/Next).",
-        "`!buy nombre [cantidad]` · también `!comprar`\nComprás algo de la tienda. La cantidad acepta `100k`, `all`, etc.\nEjemplo: `!buy Peluche de Ado` o `!buy Dólar 5`",
-        "`!inv [@alguien]` · también `!inventario`\nVes los objetos que compraste (paginado).\nEjemplo: `!inv`",
-        "`!invfo nombre del ítem`\nFicha de un ítem puntual.\nEjemplo: `!invfo Café doble`",
-    ]),
-    ("✨", "Items y buffs", [
-        "`!usar nombre` · también `!use`\nUsás un item de tu inventario (activa su efecto).\nEjemplo: `!usar Dado de la suerte`",
-        "`!autouse nombre`\nConfigurás que ese item se use solo en su momento. Volvé a correr el mismo comando para desactivarlo.\nEjemplo: `!autouse Pase VIP`",
-        "`!buffs [@alguien]` · también `!efectos`\nVes tus buffs activos, mejoras permanentes y cooldowns.\nEjemplo: `!buffs`",
-    ]),
-    ("🎴", "Gacha (personajes)", [
-        "`!rw`\nTirás un personaje random. Los de más valor son más difíciles de sacar.\nCooldown: 4hs. Reclamar tiene su propio cooldown de 3hs.",
-        "`!winfo nombre`\nFicha de un personaje puntual, sin reclamarlo.\nEjemplo: `!winfo Gojo Satoru`",
-        "`!coleccion [@alguien]` · también `!harem`\nVes los personajes que reclamaste (paginado).\nEjemplo: `!coleccion`",
-        "`!vender personaje`\nVendés un personaje. Te llevás el 70% de su valor en Pesos.\nEjemplo: `!vender Gojo Satoru`",
-        "`!tasacion personaje`\nCuánto te darían por venderlo, sin venderlo.\nEjemplo: `!tasacion Gojo`",
+    ("💰", "Economía", [
+        # Subpágina 1: cuenta y banco
+        [
+            "`!balance [@alguien]` · también `!bal` / `!saldo`\nMuestra tu plata, lo del banco y el total.\nEjemplo: `!balance` o `!balance @Usuario`",
+            "`!perfil [@alguien]`\nFicha completa: plata, matrimonio, colección e inventario.\nEjemplo: `!perfil` o `!perfil @Usuario`",
+            "`!top`\nTop 10 de usuarios con más plata total (balance + banco).\nEjemplo: `!top`",
+            "`!depositar cantidad`\nGuardás plata en el banco. A salvo de `!robar` y suma 5% compuesto por día.\nEjemplo: `!depositar 50000` o `!depositar all`",
+            "`!retirar cantidad`\nSacás plata del banco de vuelta a tu balance.\nEjemplo: `!retirar 50000` o `!retirar all`",
+            "`!depositarcaja cantidad`\nGuardás plata en tu Caja de ahorros. A salvo de `!robar`, pero SIN el interés del 5% ni cuenta para `!top`.\nEjemplo: `!depositarcaja 100k`",
+            "`!retirarcaja cantidad`\nSacás plata de la Caja de ahorros.\nEjemplo: `!retirarcaja all`",
+            "`!pay @usuario cantidad`\nLe pasás plata de tu balance a otro usuario.\nEjemplo: `!pay @Usuario 5000` o `!pay @Usuario 100k`",
+            "-# En cualquier `cantidad` del bot podés poner `all` (todo) o abreviar: `100k`, `2m`, `1b`, `1t`.",
+        ],
+        # Subpágina 2: trabajo y dólar
+        [
+            "`!w`\nTrabajás y ganás entre 5.000 y 6.500 Pesos (con un mensaje random cada vez).\nCooldown: 3 minutos.",
+            "`!mendigar`\nAbrís una colecta de 10 minutos para que el resto te done plata.\nCooldown: 20 minutos.",
+            "`!dolar` · también `!dólar` / `!usd`\nCotización actual del Dólar Catherine. Cambia cada 4hs, nunca baja de 300 Pesos.",
+            "`!topdolar` · también `!topdólar`\nTop 10 de quién tiene más Dólares guardados.",
+            "`!buy Dólar cantidad` · también `!comprar`\nComprás Dólares a la cotización actual.\nEjemplo: `!buy Dólar 10` o `!buy Dólar all`",
+            "`!vender Dólar cantidad`\nVendés Dólares. Hay 2% de comisión.\nEjemplo: `!vender Dólar 5`",
+        ],
+        # Subpágina 3: tienda e items
+        [
+            "`!shop` · también `!tienda`\nCatálogo completo, por categorías (con Previous/Next).",
+            "`!buy nombre [cantidad]` · también `!comprar`\nComprás algo de la tienda. La cantidad acepta `100k`, `all`, etc.\nEjemplo: `!buy Peluche de Ado` o `!buy Dólar 5`",
+            "`!inv [@alguien]` · también `!inventario`\nVes los objetos que compraste (paginado).\nEjemplo: `!inv`",
+            "`!invfo nombre del ítem`\nFicha de un ítem puntual.\nEjemplo: `!invfo Café doble`",
+            "`!usar nombre` · también `!use`\nUsás un item de tu inventario (activa su efecto).\nEjemplo: `!usar Dado de la suerte`",
+            "`!autouse nombre`\nConfigurás que ese item se use solo en su momento. Volvé a correr el mismo comando para desactivarlo.\nEjemplo: `!autouse Pase VIP`",
+            "`!buffs [@alguien]` · también `!efectos`\nVes tus buffs activos, mejoras permanentes y cooldowns.\nEjemplo: `!buffs`",
+        ],
     ]),
     ("💍", "Social", [
-        "`!marry @usuario`\nTe casás con otro usuario.\nEjemplo: `!marry @Usuario`",
-        "`!divorcio`\nTe divorciás. Cuesta 5.000 a cada uno.\nEjemplo: `!divorcio`",
-        "`!givechar nombre @usuario`\nLe regalás un personaje de tu colección a otro usuario.\nEjemplo: `!givechar Gojo Satoru @Usuario`",
-        "`!robar @usuario`\nSi está desconectado hace 6hs o más: 10% de afanarle todo el balance, 10% de perder vos el 5%, 80% no pasa nada.\nEjemplo: `!robar @Usuario`",
+        [
+            "`!marry @usuario`\nTe casás con otro usuario.\nEjemplo: `!marry @Usuario`",
+            "`!divorcio`\nTe divorciás. Cuesta 5.000 a cada uno.\nEjemplo: `!divorcio`",
+            "`!givechar nombre @usuario`\nLe regalás un personaje de tu colección a otro usuario.\nEjemplo: `!givechar Gojo Satoru @Usuario`",
+            "`!robar @usuario`\nSi está desconectado hace 6hs o más: 10% de afanarle todo el balance, 10% de perder vos el 5%, 80% no pasa nada.\nEjemplo: `!robar @Usuario`",
+        ],
+    ]),
+    ("🎰", "Casino", [
+        [
+            "`!cf cara/cruz cantidad` · también `!coinflip`\nApuesta a cara o cruz (50/50).\nEjemplo: `!cf cara 5000` o `!cf cruz all`",
+            "`!bj cantidad` · también `!blackjack`\nUna mano de blackjack contra la casa.\nEjemplo: `!bj 10000` o `!bj all`",
+            "`!rt rojo/negro cantidad` · también `!roulette`\nApuesta a rojo o negro en la ruleta.\nEjemplo: `!rt rojo 5000` o `!rt negro all`",
+        ],
+    ]),
+    ("🎴", "Gacha (personajes)", [
+        [
+            "`!rw`\nTirás un personaje random. Los de más valor son más difíciles de sacar.\nCooldown: 4hs. Reclamar tiene su propio cooldown de 3hs.",
+            "`!winfo nombre`\nFicha de un personaje puntual, sin reclamarlo.\nEjemplo: `!winfo Gojo Satoru`",
+            "`!coleccion [@alguien]` · también `!harem`\nVes los personajes que reclamaste (paginado).\nEjemplo: `!coleccion`",
+            "`!vender personaje`\nVendés un personaje. Te llevás el 70% de su valor en Pesos. También sirve para Dólares: `!vender Dólar 5`.\nEjemplo: `!vender Gojo Satoru`",
+            "`!tasacion personaje`\nCuánto te darían por venderlo, sin venderlo.\nEjemplo: `!tasacion Gojo`",
+        ],
     ]),
     ("🎵", "Multimedia", [
-        "`!mp3 búsqueda` o `!mp3 link`\nTe paso el audio de un video de YouTube (busca en YouTube Music primero).\nEjemplo: `!mp3 Oasis Wonderwall` o `!mp3 https://youtu.be/...`",
+        [
+            "`!mp3 búsqueda` o `!mp3 link`\nTe paso el audio de un video de YouTube (busca en YouTube Music primero).\nEjemplo: `!mp3 Oasis Wonderwall` o `!mp3 https://youtu.be/...`",
+        ],
     ]),
 ]
 
 CATEGORIAS_ADMINHELP = [
-    ("💰", "Economía", [
-        "`!addmoney @usuario cantidad`\nLe agregás plata a alguien.\nEjemplo: `!addmoney @Usuario 100000`",
-        "`!wAdmin`\nIgual que `!w` pero sin cooldown.",
-        "`!5porcentforce`\nFuerza el 5% de interés diario a tu banco ahora mismo, sin esperar las 24hs.",
-        "`!setgeneralchannel`\nConfigura ESTE canal para que Catherine anuncie los cambios del dólar.",
+    ("💰", "Economía / Tienda", [
+        [
+            "`!addmoney @usuario cantidad`\nLe agregás plata a alguien.\nEjemplo: `!addmoney @Usuario 100000`",
+            "`!wAdmin`\nIgual que `!w` pero sin cooldown.",
+            "`!5porcentforce`\nFuerza el 5% de interés diario a tu banco ahora mismo, sin esperar las 24hs.",
+            "`!setgeneralchannel`\nConfigura ESTE canal para que Catherine anuncie los cambios del dólar.",
+            "`!shopreload`\nRecarga `shop.json` desde GitHub sin reiniciar el bot.",
+            "`!datasave`\nFuerza el guardado inmediato de TODOS los datos a GitHub.",
+        ],
     ]),
     ("🎴", "Gacha / rw", [
-        "`!rwAdmin`\nIgual que `!rw` pero sin cooldown (ni de tirada ni de reclamo).",
-        "`!rwreload`\nRecarga `rw.json` desde GitHub sin reiniciar el bot.",
-        "`!checkimg`\nRevisa qué links de imagen de los personajes están rotos.",
-        "`!buscarimagenes [cantidad]` · también `!imgsearch`\nBuscás fotos para los personajes sin imagen (Guardar/Rechazar/Recargar).\nEjemplo: `!buscarimagenes 5`",
-        "`!imgcompare [cantidad]` · también `!comparaimg`\nComo el anterior, pero con las 3 candidatas juntas en un collage.",
-        "`!galeria`\nRecorrés todos los personajes uno por uno para revisar imágenes.",
+        [
+            "`!rwAdmin`\nIgual que `!rw` pero sin cooldown (ni de tirada ni de reclamo).",
+            "`!rwreload`\nRecarga `rw.json` desde GitHub sin reiniciar el bot.",
+            "`!checkimg`\nRevisa qué links de imagen de los personajes están rotos.",
+            "`!buscarimagenes [cantidad]` · también `!imgsearch`\nBuscás fotos para los personajes sin imagen (Guardar/Rechazar/Recargar).\nEjemplo: `!buscarimagenes 5`",
+            "`!imgcompare [cantidad]` · también `!comparaimg`\nComo el anterior, pero con las 3 candidatas juntas en un collage.",
+            "`!galeria`\nRecorrés todos los personajes uno por uno para revisar imágenes.",
+        ],
     ]),
-    ("🛍️", "Tienda / datos", [
-        "`!shopreload`\nRecarga `shop.json` desde GitHub sin reiniciar el bot.",
-        "`!memoria [@alguien]`\nVes qué recuerda Catherine de vos (o de alguien más).",
-        "`!olvidarme`\nBorra lo que Catherine recuerda de vos.",
-        "`!datasave`\nFuerza el guardado inmediato de TODOS los datos a GitHub.",
+    ("🧠", "Memoria", [
+        [
+            "`!memoria [@alguien]`\nVes qué recuerda Catherine de vos (o de alguien más).",
+            "`!olvidarme`\nBorra lo que Catherine recuerda de vos.",
+        ],
     ]),
 ]
 
 class HelpView(discord.ui.View):
-    """Help paginado por categorías con Previous/Next, igual que
-    ColeccionView/ShopView/InventarioView/GaleriaView. Solo quien pidió el
-    help puede cambiar de página (interaction_check)."""
+    """Help paginado. Cada categoría puede tener varias subpáginas (por si es
+    muy larga), y el footer/título muestran el índice correspondiente. Solo
+    quien pidió el help puede cambiar de página."""
 
     def __init__(self, autor, titulo, categorias):
         super().__init__(timeout=180)
-        self.autor = autor  # solo quien pidió el help puede cambiar de página
+        self.autor = autor
         self.titulo = titulo
-        self.categorias = categorias
+
+        # Aplanamos la estructura: cada categoría es (emoji, nombre, [subpagina, ...])
+        # y lo convertimos a una lista plana de (emoji, nombre_mostrado, lineas),
+        # donde nombre_mostrado incluye "(1/3)" si hay más de una subpágina.
+        self.paginas = []
+        for emoji, nombre, subpaginas in categorias:
+            total = len(subpaginas)
+            for i, lineas in enumerate(subpaginas, start=1):
+                nombre_mostrado = f"{nombre} ({i}/{total})" if total > 1 else nombre
+                self.paginas.append((emoji, nombre_mostrado, lineas))
+
         self.pagina = 0
         self.mensaje = None
         self._actualizar_botones()
 
     def _actualizar_botones(self):
         self.anterior.disabled = self.pagina == 0
-        self.siguiente.disabled = self.pagina >= len(self.categorias) - 1
+        self.siguiente.disabled = self.pagina >= len(self.paginas) - 1
 
     def construir_embed(self):
-        emoji, nombre, lineas = self.categorias[self.pagina]
+        emoji, nombre, lineas = self.paginas[self.pagina]
         return crear_embed(
             titulo=f"{self.titulo} — {emoji} {nombre}",
             descripcion="\n\n".join(lineas),
-            footer=f"Categoría {self.pagina + 1}/{len(self.categorias)}",
+            footer=f"Página {self.pagina + 1}/{len(self.paginas)}",
         )
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -5151,6 +5214,13 @@ async def buscar_por_scraping(session, texto):
     except Exception:
         return None
 
+
+def _miniatura_youtube(video_id):
+    """Devuelve la URL de la miniatura de YouTube para ese video.
+    Usamos hqdefault porque maxresdefault no siempre existe."""
+    return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+
+
 @bot.command(name="mp3")
 async def mp3(ctx, *, entrada: str = None):
     """Busca (o recibe un link de) un video de YouTube y manda el audio como mp3.
@@ -5286,6 +5356,7 @@ async def mp3(ctx, *, entrada: str = None):
                     + f"\n🔗 Pesa más de 10MB, no entra en Discord. Link directo:\n{mp3_url}\n\n"
                     f"-# Video original: https://youtu.be/{video_id}"
                 )
+                embed.set_image(url=_miniatura_youtube(video_id))
                 await aviso.edit(embed=embed)
                 return
 
@@ -5298,6 +5369,7 @@ async def mp3(ctx, *, entrada: str = None):
                     + f"\n🔗 No pude bajarlo yo misma, pero acá tenés el link directo:\n{mp3_url}\n\n"
                     f"-# Video original: https://youtu.be/{video_id}"
                 )
+                embed.set_image(url=_miniatura_youtube(video_id))
                 await aviso.edit(embed=embed)
                 return
 
@@ -5313,6 +5385,7 @@ async def mp3(ctx, *, entrada: str = None):
                     + f"\n🔗 Pesa {tamaño_mb:.1f}MB, no entra en Discord. Link directo:\n{mp3_url}\n\n"
                     f"-# Video original: https://youtu.be/{video_id}"
                 )
+                embed.set_image(url=_miniatura_youtube(video_id))
                 await aviso.edit(embed=embed)
                 return
 
@@ -5329,6 +5402,7 @@ async def mp3(ctx, *, entrada: str = None):
                 + " · ".join(bits_info) + "\n"
                 + f"🔗 https://youtu.be/{video_id}"
             )
+            embed.set_image(url=_miniatura_youtube(video_id))
 
             nombre_archivo = re.sub(r'[\\/*?:"<>|]', "", titulo)[:80] or "audio"
             await aviso.edit(embed=embed, attachments=[discord.File(io.BytesIO(contenido), filename=f"{nombre_archivo}.mp3")])
