@@ -21,12 +21,7 @@
       "Amuleto del ludópata": 200,
       "Dólar": 1635735
     },
-    "buffs": {
-      "bono_w": {
-        "valor": 0.2,
-        "expira": 1791486896.2525637
-      }
-    },
+    "buffs": {},
     "efectos_unicos": {
       "pase_vip": 12
     },
