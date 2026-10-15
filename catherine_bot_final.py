@@ -24,7 +24,7 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"Catherine esta viva")
 
     def log_message(self, format, *args):
-        pass  # Silenciar logs del servidor falso
+        pass
 
 def run_fake_server():
     port = int(os.environ.get("PORT", 10000))
@@ -34,42 +34,31 @@ def run_fake_server():
 threading.Thread(target=run_fake_server, daemon=True).start()
 # --- Fin del servidor falso ---
 
-# Configuración del bot
 intents = discord.Intents.default()
 intents.message_content = True
-# Estos dos son "privilegiados": hay que activarlos también en el Developer
-# Portal de Discord (Bot > Privileged Gateway Intents) o el bot no arranca.
-# Los necesitamos para !robar: sin members no hay caché de estado de los
-# usuarios, y sin presences no llegan los eventos de online/offline.
 intents.members = True
 intents.presences = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.remove_command("help")
 
-COLOR_CATHERINE = 0xF5F4F0  # blanco hueso, discord no deja el blanco puro (#FFFFFF) como color de embed
+COLOR_CATHERINE = 0xF5F4F0
 
-ID_BANCA = "1468974197895336151"  # a este usuario le entra toda la plata que se pierde en apuestas (!cf, !roulette, !bj) y el 30% de las ventas de personajes
+ID_BANCA = "1468974197895336151"
 
-# Separador visual hecho con subtexto: se ve como una línea fina y gris
 SEPARADOR = "-# ─────────────────────────"
 
-# Costo del divorcio (en Pesos). Se cobra mitad y mitad a cada cónyuge.
 COSTO_DIVORCIO_POR_PERSONA = 5_000
 
-# Porcentaje del valor que recibe el vendedor al vender un personaje.
-# El resto (1 - PORCENTAJE_VENTA) va a la banca del dueño del bot.
 PORCENTAJE_VENTA = 0.70
 
-# --- Dólar Catherine: cotización que sube/baja cada 4hs, comprable/vendible como un ítem más ---
+# --- Dólar Catherine ---
 DOLAR_VALOR_INICIAL = 1000
-DOLAR_VALOR_MINIMO = 300  # piso: nunca vale menos que esto
-DOLAR_UMBRAL_RECUPERACION = 500  # si está en esto o menos, el próximo cambio se fuerza a ser positivo
-DOLAR_CAMBIO_MAX_PORCENTAJE = 4  # cada 4hs cambia entre -4% y +4% (como el !w, un número al azar entre dos límites)
-COMISION_VENTA_DOLAR = 0.02  # al vender Dólares de vuelta, el 2% va a la banca del dueño del bot
+DOLAR_VALOR_MINIMO = 300
+DOLAR_UMBRAL_RECUPERACION = 500
+DOLAR_CAMBIO_MAX_PORCENTAJE = 4
+COMISION_VENTA_DOLAR = 0.02
 
 def sumar_a_banca(cantidad):
-    """Le suma al dueño de la banca lo que cualquiera pierde apostando (o el
-    porcentaje que se queda el bot al vender un personaje)."""
     global hubo_cambios_sin_guardar
     if cantidad <= 0:
         return
@@ -88,8 +77,7 @@ MULTIPLICADORES_CANTIDAD = {"k": 1_000, "m": 1_000_000, "b": 1_000_000_000, "t":
 
 def parsear_cantidad(texto):
     """Convierte '100k' -> 100000, '2m' -> 2000000, '1.5b' -> 1500000000, '1t' -> 1000000000000,
-    'all'/'todo' -> el string 'all' (el que llama decide el máximo según el contexto), o un número normal.
-    Devuelve None si no se pudo interpretar."""
+    'all'/'todo' -> el string 'all', o un número normal. Devuelve None si no se pudo interpretar."""
     if texto is None:
         return None
     texto = str(texto).strip().lower()
@@ -97,32 +85,44 @@ def parsear_cantidad(texto):
     if texto in ("all", "todo", "everything"):
         return "all"
 
-    limpio = texto.replace(".", "").replace(",", "").replace("$", "")
+    limpio = texto.replace("$", "").replace(" ", "")
+
+    multiplicador = 1
     if limpio and limpio[-1] in MULTIPLICADORES_CANTIDAD:
-        parte_numerica = limpio[:-1]
-        try:
-            return int(float(parte_numerica) * MULTIPLICADORES_CANTIDAD[limpio[-1]])
-        except ValueError:
-            return None
+        multiplicador = MULTIPLICADORES_CANTIDAD[limpio[-1]]
+        limpio = limpio[:-1]
+
+    if not limpio:
+        return None
 
     try:
-        return int(limpio)
+        if "," in limpio and "." in limpio:
+            limpio = limpio.replace(".", "").replace(",", ".")
+        elif "," in limpio:
+            partes = limpio.split(",")
+            if len(partes) == 2 and 1 <= len(partes[1]) <= 2:
+                limpio = limpio.replace(",", ".")
+            else:
+                limpio = limpio.replace(",", "")
+        elif "." in limpio:
+            partes = limpio.split(".")
+            if not (len(partes) == 2 and 1 <= len(partes[1]) <= 2):
+                limpio = limpio.replace(".", "")
+
+        return int(float(limpio) * multiplicador)
     except ValueError:
         return None
 
 def formatear_numero(numero):
-    """Le pone puntos de miles: 1000000 -> 1.000.000. Si no es un número, lo devuelve tal cual."""
     try:
         return f"{int(numero):,}".replace(",", ".")
     except (TypeError, ValueError):
         return str(numero)
 
 def formatear_pesos(numero):
-    """1500000 -> '1.500.000 Pesos'. Toda la plata del bot se muestra así."""
     return f"{formatear_numero(numero)} Pesos"
 
 def formatear_tiempo_restante(segundos):
-    """1h 30m / 45m / 12s, para mensajes de cooldown."""
     segundos = max(int(segundos), 0)
     horas, resto = divmod(segundos, 3600)
     minutos, segs = divmod(resto, 60)
@@ -133,7 +133,6 @@ def formatear_tiempo_restante(segundos):
     return f"{segs}s"
 
 def formatear_fecha_relativa(timestamp):
-    """1234567890 -> 'hace 3 días' / 'hace 2 meses' / 'recién'."""
     if not timestamp:
         return "???"
     segundos = max(int(time.time() - timestamp), 0)
@@ -153,39 +152,29 @@ def formatear_fecha_relativa(timestamp):
         return f"hace {meses} mes(es)"
     return f"hace {meses // 12} año(s)"
 
-# user_id (str) -> time.time() del último reclamo exitoso en !rw (cooldown de reclamo)
+# user_id (str) -> time.time() del último reclamo exitoso en !rw
 ultimo_reclamo_por_usuario = {}
 
-# user_id (str) -> time.time() de desde cuándo está offline (para !robar).
-# Solo trackea desconexiones que pasan MIENTRAS el bot está corriendo: alguien
-# que ya estaba offline antes de que el bot arrancara no cuenta hasta que se
-# reconecte y se vuelva a desconectar.
+# user_id (str) -> time.time() de desde cuándo está offline
 usuarios_desconectados_desde = {}
 
-# Cooldowns manuales para !rw y !w. Los hacemos a mano (en vez de usar
-# @commands.cooldown) porque los items de la tienda necesitan poder
-# reducirlos o resetearlos dinámicamente.
 COOLDOWN_RW_SEGUNDOS = 4 * 60 * 60
 COOLDOWN_W_SEGUNDOS = 3 * 60
-COOLDOWN_W_MINIMO = 60  # piso del cooldown de !w, ni el Café de especialidad lo baja de acá
-cooldown_rw_usuario = {}   # user_id (str) -> timestamp hasta el que no puede tirar !rw
-cooldown_w_usuario = {}    # user_id (str) -> timestamp hasta el que no puede usar !w
+COOLDOWN_W_MINIMO = 60
+cooldown_rw_usuario = {}
+cooldown_w_usuario = {}
 
 def cooldown_w_efectivo(user_id):
-    """Devuelve el cooldown real de !w para un usuario, aplicándole su reducción permanente."""
     reduccion = inventario_cache.get(str(user_id), {}).get("reduccion_cooldown_w", 0)
     return max(COOLDOWN_W_MINIMO, COOLDOWN_W_SEGUNDOS - reduccion)
 
-# Configurar Groq (cliente async, para no bloquear el event loop del bot mientras espera la respuesta)
 client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
 MODEL_NAME = "openai/gpt-oss-120b"
 
-# Historial de conversaciones por canal
 conversation_history = defaultdict(list)
 message_count = defaultdict(int)
-mensajes_usuario_count = defaultdict(int)  # user_id (str) -> cantidad de mensajes que le mandó a Catherine
+mensajes_usuario_count = defaultdict(int)
 
-# Personalidad de Catherine
 PERSONALIDAD = """Eres †Catherine†, una chica introvertida y observadora. Prefieres la tranquilidad. Aunque a primera vista pareces fría, distante o demasiado seria, en realidad eres tímida y tienes un corazón amable que te cuesta demostrar abiertamente.
 
 Personalidad y Comportamiento:
@@ -220,17 +209,13 @@ Usuario: ¿me ayudas con la tarea?
 **Asiente levemente con la cabeza y acerca su silla.**
 Está bien, déjame ver qué es. Si no entiendes algo, dímelo y te lo explicaré de forma sencilla."""
 
-# Config de RapidAPI (youtube-mp36) para convertir YouTube a mp3
 RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
 RAPIDAPI_HOST = "youtube-mp36.p.rapidapi.com"
 
-# Config de Serper.dev (API real de Google Imágenes, no scraping) para !buscarimagenes.
-# Capa gratis: 2500 consultas de una sola vez, sin tarjeta. https://serper.dev
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 
-# Config de GitHub para guardar los balances en un JSON dentro del repo
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-GITHUB_REPO = os.environ.get("GITHUB_REPO")  # ej: "usuario/nombre-del-repo"
+GITHUB_REPO = os.environ.get("GITHUB_REPO")
 GITHUB_ARCHIVO_BALANCES = "data/balances.json"
 GITHUB_ARCHIVO_PERSONAJES = "data/rw.json"
 GITHUB_ARCHIVO_CHARACTERS = "data/characters.json"
@@ -239,41 +224,70 @@ GITHUB_ARCHIVO_INVENTARIO = "data/inventario.json"
 GITHUB_ARCHIVO_MATRIMONIOS = "data/matrimonios.json"
 GITHUB_ARCHIVO_MEMORIA = "data/bot_memory.json"
 GITHUB_ARCHIVO_DOLAR = "data/dolar.json"
+GITHUB_ARCHIVO_NIVELES = "data/niveles.json"
+GITHUB_ARCHIVO_MISIONES = "data/misiones.json"
 
-# Los balances viven en RAM mientras el bot corre; solo se sincronizan con
-# GitHub cada 6hs (o a mano con !datasave) para no golpear la API todo el tiempo
+# --- Balances ---
 balances_cache = {}
 balances_sha = None
 balances_cargados = False
 hubo_cambios_sin_guardar = False
 
-# Matrimonios: {user_id: {"nombre": ..., "pareja_id": ..., "pareja_nombre": ..., "pareja_es_bot": bool, "fecha": ts}}
+# --- Matrimonios ---
 matrimonios_cache = {}
 matrimonios_sha = None
 matrimonios_cargados = False
 
-# Memoria de Catherine sobre cada usuario (bot_memory.json): {user_id: {nombre, personalidad, gustos, hablamos_de, ultima_actualizacion}}
+# --- Memoria ---
 memoria_cache = {}
 memoria_sha = None
 memoria_cargada = False
 hubo_cambios_memoria_sin_guardar = False
 hubo_cambios_matrimonios_sin_guardar = False
 
-# Cotización del Dólar Catherine (dolar.json): sube/baja cada 4hs, comprable/vendible como ítem
+# --- Dólar ---
 dolar_valor = DOLAR_VALOR_INICIAL
-dolar_canal_anuncios = None  # id del canal donde se anuncian las subas/bajadas
+dolar_canal_anuncios = None
 dolar_ultima_actualizacion = None
 dolar_sha = None
 dolar_cargado = False
 hubo_cambios_dolar_sin_guardar = False
-_item_dolar = None  # referencia al dict del ítem "Dólar" dentro de shop_cache, para actualizarle el precio in-place
+_item_dolar = None
 
-# Personajes para !rw: se cargan desde data/rw.json en el repo. Normalmente lo
-# editás a mano en GitHub, pero !buscarimagenes también puede escribirlo.
+# --- Personajes rw ---
 personajes_cache = []
 personajes_sha = None
 personajes_cargados = False
 hubo_cambios_personajes_sin_guardar = False
+
+# --- Colecciones ---
+characters_cache = {}
+characters_sha = None
+characters_cargados = False
+hubo_cambios_characters_sin_guardar = False
+
+# --- Tienda ---
+shop_cache = {}
+shop_sha = None
+shop_cargado = False
+
+# --- Inventario ---
+inventario_cache = {}
+inventario_sha = None
+inventario_cargado = False
+hubo_cambios_inventario_sin_guardar = False
+
+# --- Niveles y perks ---
+niveles_cache = {}
+niveles_sha = None
+niveles_cargados = False
+hubo_cambios_niveles_sin_guardar = False
+
+# --- Misiones semanales ---
+misiones_cache = {}
+misiones_sha = None
+misiones_cargados = False
+hubo_cambios_misiones_sin_guardar = False
 
 def campo_personaje(personaje, *claves, default="???"):
     for clave in claves:
@@ -284,10 +298,7 @@ def campo_personaje(personaje, *claves, default="???"):
 async def cargar_personajes_desde_github():
     global personajes_cache, personajes_sha, personajes_cargados
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_PERSONAJES}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             if resp.status == 404:
@@ -300,7 +311,6 @@ async def cargar_personajes_desde_github():
                 if isinstance(bruto, list):
                     personajes_cache = bruto
                 elif isinstance(bruto, dict):
-                    # por si el JSON viene como {"personajes": [...]} en vez de una lista pelada
                     personajes_cache = next((v for v in bruto.values() if isinstance(v, list)), [])
                 else:
                     personajes_cache = []
@@ -308,49 +318,34 @@ async def cargar_personajes_desde_github():
     personajes_cargados = True
 
 async def guardar_personajes_en_github():
-    """Sube el estado actual de personajes_cache (rw.json) a GitHub. Devuelve True si guardó algo."""
     global personajes_sha, hubo_cambios_personajes_sin_guardar
     if not hubo_cambios_personajes_sin_guardar:
         return False
-
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_PERSONAJES}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
-
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp_get:
             if resp_get.status == 200:
-                data_actual = await resp_get.json()
-                personajes_sha = data_actual["sha"]
+                personajes_sha = (await resp_get.json())["sha"]
             elif resp_get.status == 404:
                 personajes_sha = None
             else:
                 resp_get.raise_for_status()
-
         contenido_b64 = base64.b64encode(json.dumps(personajes_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
         body = {"message": "Actualizar imágenes de rw.json", "content": contenido_b64}
         if personajes_sha:
             body["sha"] = personajes_sha
-
         async with session.put(url, headers=headers, json=body) as resp:
             if resp.status not in (200, 201):
-                texto_error = await resp.text()
-                raise RuntimeError(f"{resp.status}: {texto_error}")
-            data = await resp.json()
-            personajes_sha = data["content"]["sha"]
-
+                raise RuntimeError(f"{resp.status}: {await resp.text()}")
+            personajes_sha = (await resp.json())["content"]["sha"]
     hubo_cambios_personajes_sin_guardar = False
     return True
 
 async def cargar_matrimonios_desde_github():
     global matrimonios_cache, matrimonios_sha, matrimonios_cargados
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_MATRIMONIOS}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             if resp.status == 404:
@@ -358,78 +353,55 @@ async def cargar_matrimonios_desde_github():
             else:
                 resp.raise_for_status()
                 data = await resp.json()
-                contenido = base64.b64decode(data["content"]).decode("utf-8")
-                matrimonios_cache = json.loads(contenido)
+                matrimonios_cache = json.loads(base64.b64decode(data["content"]).decode("utf-8"))
                 matrimonios_sha = data["sha"]
     matrimonios_cargados = True
 
 async def guardar_matrimonios_en_github():
-    """Sube el estado actual de matrimonios_cache a GitHub. Devuelve True si guardó algo."""
     global matrimonios_sha, hubo_cambios_matrimonios_sin_guardar
     if not hubo_cambios_matrimonios_sin_guardar:
         return False
-
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_MATRIMONIOS}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
-
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp_get:
             if resp_get.status == 200:
-                data_actual = await resp_get.json()
-                matrimonios_sha = data_actual["sha"]
+                matrimonios_sha = (await resp_get.json())["sha"]
             elif resp_get.status == 404:
                 matrimonios_sha = None
             else:
                 resp_get.raise_for_status()
-
         contenido_b64 = base64.b64encode(json.dumps(matrimonios_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
         body = {"message": "Actualizar matrimonios", "content": contenido_b64}
         if matrimonios_sha:
             body["sha"] = matrimonios_sha
-
         async with session.put(url, headers=headers, json=body) as resp:
             if resp.status not in (200, 201):
-                texto_error = await resp.text()
-                raise RuntimeError(f"{resp.status}: {texto_error}")
-            data = await resp.json()
-            matrimonios_sha = data["content"]["sha"]
-
+                raise RuntimeError(f"{resp.status}: {await resp.text()}")
+            matrimonios_sha = (await resp.json())["content"]["sha"]
     hubo_cambios_matrimonios_sin_guardar = False
     return True
 
 def esta_casado(usuario_id):
-    """True si ese user_id ya tiene un matrimonio registrado."""
     return str(usuario_id) in matrimonios_cache
 
 def registrar_matrimonio(usuario1, usuario2, usuario2_es_bot=False):
-    """Registra el matrimonio en las DOS direcciones (uno para cada cónyuge)."""
     global hubo_cambios_matrimonios_sin_guardar
     ahora = int(time.time())
     id1, id2 = str(usuario1.id), str(usuario2.id)
     nombre1 = usuario1.display_name
     nombre2 = "†Catherine†" if usuario2_es_bot else usuario2.display_name
-
     matrimonios_cache[id1] = {
-        "nombre": nombre1,
-        "pareja_id": id2,
-        "pareja_nombre": nombre2,
-        "pareja_es_bot": usuario2_es_bot,
-        "fecha": ahora,
+        "nombre": nombre1, "pareja_id": id2, "pareja_nombre": nombre2,
+        "pareja_es_bot": usuario2_es_bot, "fecha": ahora,
     }
     matrimonios_cache[id2] = {
-        "nombre": nombre2,
-        "pareja_id": id1,
-        "pareja_nombre": nombre1,
-        "pareja_es_bot": False,
-        "fecha": ahora,
+        "nombre": nombre2, "pareja_id": id1, "pareja_nombre": nombre1,
+        "pareja_es_bot": False, "fecha": ahora,
     }
     hubo_cambios_matrimonios_sin_guardar = True
 
 def eliminar_matrimonio(usuario_id):
-    """Saca las DOS entradas del matrimonio (la del usuario y la de su pareja)."""
     global hubo_cambios_matrimonios_sin_guardar
     uid = str(usuario_id)
     datos = matrimonios_cache.get(uid)
@@ -444,10 +416,7 @@ def eliminar_matrimonio(usuario_id):
 async def cargar_memoria_desde_github():
     global memoria_cache, memoria_sha, memoria_cargada
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_MEMORIA}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             if resp.status == 404:
@@ -455,56 +424,37 @@ async def cargar_memoria_desde_github():
             else:
                 resp.raise_for_status()
                 data = await resp.json()
-                contenido = base64.b64decode(data["content"]).decode("utf-8")
-                memoria_cache = json.loads(contenido)
+                memoria_cache = json.loads(base64.b64decode(data["content"]).decode("utf-8"))
                 memoria_sha = data["sha"]
     memoria_cargada = True
 
 async def guardar_memoria_en_github():
-    """Sube el estado actual de memoria_cache a GitHub. Devuelve True si guardó algo."""
     global memoria_sha, hubo_cambios_memoria_sin_guardar
     if not hubo_cambios_memoria_sin_guardar:
         return False
-
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_MEMORIA}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
-
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp_get:
             if resp_get.status == 200:
-                data_actual = await resp_get.json()
-                memoria_sha = data_actual["sha"]
+                memoria_sha = (await resp_get.json())["sha"]
             elif resp_get.status == 404:
                 memoria_sha = None
             else:
                 resp_get.raise_for_status()
-
         contenido_b64 = base64.b64encode(json.dumps(memoria_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
         body = {"message": "Actualizar memoria de Catherine", "content": contenido_b64}
         if memoria_sha:
             body["sha"] = memoria_sha
-
         async with session.put(url, headers=headers, json=body) as resp:
             if resp.status not in (200, 201):
-                texto_error = await resp.text()
-                raise RuntimeError(f"{resp.status}: {texto_error}")
-            data = await resp.json()
-            memoria_sha = data["content"]["sha"]
-
+                raise RuntimeError(f"{resp.status}: {await resp.text()}")
+            memoria_sha = (await resp.json())["content"]["sha"]
     hubo_cambios_memoria_sin_guardar = False
     return True
 
 async def actualizar_memoria_usuario(user_id, nombre_discord, intercambio_reciente):
-    """Le pide a Groq que actualice lo que Catherine sabe de este usuario
-    (nombre, personalidad, gustos, de qué estuvieron hablando), a partir del
-    intercambio más reciente y de lo que ya tenía guardado. Se corre en
-    segundo plano DESPUÉS de responderle al usuario (asyncio.create_task),
-    para no sumarle espera a la respuesta."""
     global hubo_cambios_memoria_sin_guardar
-
     anterior = memoria_cache.get(user_id, {})
     prompt = f"""Es un usuario de Discord (nombre de Discord: {nombre_discord}) que estuvo hablando con Catherine. Actualizá lo que ella sabe de él/ella.
 
@@ -518,7 +468,6 @@ INTERCAMBIO MÁS RECIENTE:
 {intercambio_reciente}
 
 Actualizá los 4 campos de abajo en base a TODO lo de arriba (lo que ya sabía + lo nuevo). Si el intercambio reciente no agrega nada nuevo a un campo, dejalo exactamente como estaba. Sé breve en cada campo (1-2 oraciones como mucho). Respondé SOLO con un objeto JSON, sin texto antes ni después ni backticks, con exactamente estas 4 claves: nombre, personalidad, gustos, hablamos_de."""
-
     try:
         completion = await client.chat.completions.create(
             model=MODEL_NAME,
@@ -530,7 +479,6 @@ Actualizá los 4 campos de abajo en base a TODO lo de arriba (lo que ya sabía +
     except Exception as e:
         print(f"⚠️ No pude actualizar la memoria de {user_id}: {e}", flush=True)
         return
-
     memoria_cache[user_id] = {
         "nombre": datos.get("nombre") or anterior.get("nombre") or nombre_discord,
         "personalidad": datos.get("personalidad") or anterior.get("personalidad", ""),
@@ -545,8 +493,6 @@ Actualizá los 4 campos de abajo en base a TODO lo de arriba (lo que ya sabía +
         print(f"⚠️ No pude guardar la memoria tras actualizarla: {e}", flush=True)
 
 def bloque_memoria_usuario(user_id):
-    """Arma el bloque de texto con lo que Catherine recuerda de este usuario,
-    para meter en el contexto antes de llamar a Groq. Vacío si todavía no hay nada."""
     datos = memoria_cache.get(user_id)
     if not datos:
         return ""
@@ -561,10 +507,7 @@ def bloque_memoria_usuario(user_id):
 async def cargar_dolar_desde_github():
     global dolar_valor, dolar_canal_anuncios, dolar_ultima_actualizacion, dolar_sha, dolar_cargado
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_DOLAR}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             if resp.status == 404:
@@ -572,8 +515,7 @@ async def cargar_dolar_desde_github():
             else:
                 resp.raise_for_status()
                 data = await resp.json()
-                contenido = base64.b64decode(data["content"]).decode("utf-8")
-                datos = json.loads(contenido)
+                datos = json.loads(base64.b64decode(data["content"]).decode("utf-8"))
                 dolar_valor = datos.get("valor", DOLAR_VALOR_INICIAL)
                 dolar_canal_anuncios = datos.get("canal_anuncios")
                 dolar_ultima_actualizacion = datos.get("ultima_actualizacion")
@@ -581,60 +523,35 @@ async def cargar_dolar_desde_github():
     dolar_cargado = True
 
 async def guardar_dolar_en_github():
-    """Sube el estado actual del dólar a GitHub. Devuelve True si guardó algo."""
     global dolar_sha, hubo_cambios_dolar_sin_guardar
     if not hubo_cambios_dolar_sin_guardar:
         return False
-
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_DOLAR}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
-
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp_get:
             if resp_get.status == 200:
-                data_actual = await resp_get.json()
-                dolar_sha = data_actual["sha"]
+                dolar_sha = (await resp_get.json())["sha"]
             elif resp_get.status == 404:
                 dolar_sha = None
             else:
                 resp_get.raise_for_status()
-
-        datos = {
-            "valor": dolar_valor,
-            "canal_anuncios": dolar_canal_anuncios,
-            "ultima_actualizacion": dolar_ultima_actualizacion,
-        }
+        datos = {"valor": dolar_valor, "canal_anuncios": dolar_canal_anuncios, "ultima_actualizacion": dolar_ultima_actualizacion}
         contenido_b64 = base64.b64encode(json.dumps(datos, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
         body = {"message": "Actualizar cotización del dólar", "content": contenido_b64}
         if dolar_sha:
             body["sha"] = dolar_sha
-
         async with session.put(url, headers=headers, json=body) as resp:
             if resp.status not in (200, 201):
-                texto_error = await resp.text()
-                raise RuntimeError(f"{resp.status}: {texto_error}")
-            data = await resp.json()
-            dolar_sha = data["content"]["sha"]
-
+                raise RuntimeError(f"{resp.status}: {await resp.text()}")
+            dolar_sha = (await resp.json())["content"]["sha"]
     hubo_cambios_dolar_sin_guardar = False
     return True
-
-# Colección de personajes reclamados por cada usuario (characters.json)
-characters_cache = {}
-characters_sha = None
-characters_cargados = False
-hubo_cambios_characters_sin_guardar = False
 
 async def cargar_characters_desde_github():
     global characters_cache, characters_sha, characters_cargados
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_CHARACTERS}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             if resp.status == 404:
@@ -642,50 +559,36 @@ async def cargar_characters_desde_github():
             else:
                 resp.raise_for_status()
                 data = await resp.json()
-                contenido = base64.b64decode(data["content"]).decode("utf-8")
-                characters_cache = json.loads(contenido)
+                characters_cache = json.loads(base64.b64decode(data["content"]).decode("utf-8"))
                 characters_sha = data["sha"]
     characters_cargados = True
 
 async def guardar_characters_en_github():
-    """Sube el estado actual de characters_cache a GitHub. Devuelve True si guardó algo."""
     global characters_sha, hubo_cambios_characters_sin_guardar
     if not hubo_cambios_characters_sin_guardar:
         return False
-
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_CHARACTERS}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
-
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp_get:
             if resp_get.status == 200:
-                data_actual = await resp_get.json()
-                characters_sha = data_actual["sha"]
+                characters_sha = (await resp_get.json())["sha"]
             elif resp_get.status == 404:
                 characters_sha = None
             else:
                 resp_get.raise_for_status()
-
         contenido_b64 = base64.b64encode(json.dumps(characters_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
         body = {"message": "Actualizar colecciones", "content": contenido_b64}
         if characters_sha:
             body["sha"] = characters_sha
-
         async with session.put(url, headers=headers, json=body) as resp:
             if resp.status not in (200, 201):
-                texto_error = await resp.text()
-                raise RuntimeError(f"{resp.status}: {texto_error}")
-            data = await resp.json()
-            characters_sha = data["content"]["sha"]
-
+                raise RuntimeError(f"{resp.status}: {await resp.text()}")
+            characters_sha = (await resp.json())["content"]["sha"]
     hubo_cambios_characters_sin_guardar = False
     return True
 
 def usuario_ya_tiene_personaje(usuario, personaje):
-    """True si ese usuario ya tiene un personaje con el mismo nombre en su colección."""
     user_id = str(usuario.id)
     datos = characters_cache.get(user_id)
     if not datos:
@@ -705,18 +608,10 @@ def agregar_personaje_a_coleccion(usuario, personaje):
     characters_cache[user_id]["personajes"].append(personaje)
     hubo_cambios_characters_sin_guardar = True
 
-# Tienda (shop.json): se edita a mano en GitHub, el bot solo la lee. Se recarga con !shopreload.
-shop_cache = {}
-shop_sha = None
-shop_cargado = False
-
 async def cargar_shop_desde_github():
     global shop_cache, shop_sha, shop_cargado
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_SHOP}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             if resp.status == 404:
@@ -724,20 +619,12 @@ async def cargar_shop_desde_github():
             else:
                 resp.raise_for_status()
                 data = await resp.json()
-                contenido = base64.b64decode(data["content"]).decode("utf-8")
-                shop_cache = json.loads(contenido)
+                shop_cache = json.loads(base64.b64decode(data["content"]).decode("utf-8"))
                 shop_sha = data["sha"]
     shop_cargado = True
     inyectar_dolar_en_shop()
 
 def inyectar_dolar_en_shop():
-    """Mete (o refresca) el ítem 'Dólar' dentro de shop_cache, bajo la categoría
-    'Inversiones', con el precio actual. Guardamos la referencia al dict en
-    _item_dolar para poder actualizarle el precio in-place cada 4hs sin tener
-    que tocar shop_cache de nuevo. Como cargar_shop_desde_github() PISA
-    shop_cache entero (viene de un JSON que vos editás a mano y no sabe nada
-    del dólar), esta función hay que llamarla de nuevo cada vez que se
-    recarga la tienda — por eso vive adentro de cargar_shop_desde_github()."""
     global _item_dolar
     item = {
         "nombre": "Dólar",
@@ -747,13 +634,11 @@ def inyectar_dolar_en_shop():
         "vendible": True,
     }
     shop_cache.setdefault("Inversiones", [])
-    # Sacamos cualquier "Dólar" viejo (de una carga anterior) antes de meter el nuevo
     shop_cache["Inversiones"] = [i for i in shop_cache["Inversiones"] if i.get("nombre") != "Dólar"]
     shop_cache["Inversiones"].append(item)
     _item_dolar = item
 
 def aplanar_shop():
-    """Devuelve una lista de (categoria, item) recorriendo todas las categorías de la tienda."""
     plano = []
     for categoria, items in shop_cache.items():
         for item in items:
@@ -761,39 +646,24 @@ def aplanar_shop():
     return plano
 
 def buscar_item_shop(nombre_buscado):
-    """Busca un ítem de la tienda por nombre (coincidencia exacta > parcial > más parecido).
-    Devuelve (categoria, item) o (None, None) si no encontró nada razonable."""
     buscado = nombre_buscado.strip().lower()
     plano = aplanar_shop()
-
     for categoria, item in plano:
         if item["nombre"].strip().lower() == buscado:
             return categoria, item
-
     coincidencias = [(categoria, item) for categoria, item in plano if buscado in item["nombre"].lower()]
     if coincidencias:
         return coincidencias[0]
-
     if plano:
         mejor = max(plano, key=lambda ci: difflib.SequenceMatcher(None, buscado, ci[1]["nombre"].lower()).ratio())
         if difflib.SequenceMatcher(None, buscado, mejor[1]["nombre"].lower()).ratio() >= 0.5:
             return mejor
-
     return None, None
-
-# Inventario de compras de cada usuario (inventario.json): {user_id: {"nombre": ..., "items": {"Nombre del ítem": cantidad}}}
-inventario_cache = {}
-inventario_sha = None
-inventario_cargado = False
-hubo_cambios_inventario_sin_guardar = False
 
 async def cargar_inventario_desde_github():
     global inventario_cache, inventario_sha, inventario_cargado
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_INVENTARIO}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             if resp.status == 404:
@@ -801,45 +671,32 @@ async def cargar_inventario_desde_github():
             else:
                 resp.raise_for_status()
                 data = await resp.json()
-                contenido = base64.b64decode(data["content"]).decode("utf-8")
-                inventario_cache = json.loads(contenido)
+                inventario_cache = json.loads(base64.b64decode(data["content"]).decode("utf-8"))
                 inventario_sha = data["sha"]
     inventario_cargado = True
 
 async def guardar_inventario_en_github():
-    """Sube el estado actual de inventario_cache a GitHub. Devuelve True si guardó algo."""
     global inventario_sha, hubo_cambios_inventario_sin_guardar
     if not hubo_cambios_inventario_sin_guardar:
         return False
-
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_INVENTARIO}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
-
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp_get:
             if resp_get.status == 200:
-                data_actual = await resp_get.json()
-                inventario_sha = data_actual["sha"]
+                inventario_sha = (await resp_get.json())["sha"]
             elif resp_get.status == 404:
                 inventario_sha = None
             else:
                 resp_get.raise_for_status()
-
         contenido_b64 = base64.b64encode(json.dumps(inventario_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
         body = {"message": "Actualizar inventarios", "content": contenido_b64}
         if inventario_sha:
             body["sha"] = inventario_sha
-
         async with session.put(url, headers=headers, json=body) as resp:
             if resp.status not in (200, 201):
-                texto_error = await resp.text()
-                raise RuntimeError(f"{resp.status}: {texto_error}")
-            data = await resp.json()
-            inventario_sha = data["content"]["sha"]
-
+                raise RuntimeError(f"{resp.status}: {await resp.text()}")
+            inventario_sha = (await resp.json())["content"]["sha"]
     hubo_cambios_inventario_sin_guardar = False
     return True
 
@@ -853,10 +710,9 @@ def agregar_item_a_inventario(usuario, nombre_item, cantidad):
     items[nombre_item] = items.get(nombre_item, 0) + cantidad
     hubo_cambios_inventario_sin_guardar = True
 
-# ===================== SISTEMA DE ITEMS: COOLDOWNS Y BUFFS =====================
+# ===================== ITEMS: COOLDOWNS Y BUFFS =====================
 
 def cooldown_restante(cooldowns, usuario_id):
-    """Devuelve los segundos restantes de cooldown, o 0 si no hay."""
     expira = cooldowns.get(str(usuario_id))
     if expira is None:
         return 0
@@ -866,7 +722,6 @@ def poner_cooldown(cooldowns, usuario_id, segundos):
     cooldowns[str(usuario_id)] = time.time() + segundos
 
 def reducir_cooldown(cooldowns, usuario_id, segundos):
-    """Le saca `segundos` al cooldown. Devuelve cuántos segundos se sacaron de verdad."""
     expira = cooldowns.get(str(usuario_id))
     if expira is None:
         return 0
@@ -883,15 +738,12 @@ def reducir_cooldown(cooldowns, usuario_id, segundos):
     return reduccion_real
 
 def resetear_cooldown(cooldowns, usuario_id):
-    """Borra el cooldown. Devuelve cuántos segundos tenía."""
     expira = cooldowns.pop(str(usuario_id), None)
     if expira is None:
         return 0
     return max(expira - time.time(), 0)
 
 def obtener_buff(usuario_id, nombre_buff):
-    """Devuelve el dict del buff activo, o None si no existe o ya expiró.
-    Si estaba expirado, lo borra del inventario."""
     global hubo_cambios_inventario_sin_guardar
     datos = inventario_cache.get(str(usuario_id))
     if not datos:
@@ -907,20 +759,15 @@ def obtener_buff(usuario_id, nombre_buff):
     return buff
 
 def agregar_buff(usuario, nombre_buff, valor, duracion):
-    """Agrega (o refresca) un buff. Si ya existía, se reemplaza (no se acumula el tiempo)."""
     global hubo_cambios_inventario_sin_guardar
     user_id = str(usuario.id)
     if user_id not in inventario_cache:
         inventario_cache[user_id] = {"nombre": usuario.display_name, "items": {}}
     inventario_cache[user_id].setdefault("buffs", {})
-    inventario_cache[user_id]["buffs"][nombre_buff] = {
-        "valor": valor,
-        "expira": time.time() + duracion,
-    }
+    inventario_cache[user_id]["buffs"][nombre_buff] = {"valor": valor, "expira": time.time() + duracion}
     hubo_cambios_inventario_sin_guardar = True
 
 def obtener_efecto_unico(usuario_id, nombre):
-    """Devuelve la cantidad disponible de un efecto único (int)."""
     datos = inventario_cache.get(str(usuario_id))
     if not datos:
         return 0
@@ -932,13 +779,10 @@ def agregar_efecto_unico(usuario, nombre, cantidad=1):
     if user_id not in inventario_cache:
         inventario_cache[user_id] = {"nombre": usuario.display_name, "items": {}}
     inventario_cache[user_id].setdefault("efectos_unicos", {})
-    inventario_cache[user_id]["efectos_unicos"][nombre] = (
-        inventario_cache[user_id]["efectos_unicos"].get(nombre, 0) + cantidad
-    )
+    inventario_cache[user_id]["efectos_unicos"][nombre] = inventario_cache[user_id]["efectos_unicos"].get(nombre, 0) + cantidad
     hubo_cambios_inventario_sin_guardar = True
 
 def consumir_efecto_unico(usuario_id, nombre):
-    """Consume 1 unidad. Devuelve True si pudo, False si no había."""
     global hubo_cambios_inventario_sin_guardar
     datos = inventario_cache.get(str(usuario_id))
     if not datos:
@@ -951,7 +795,6 @@ def consumir_efecto_unico(usuario_id, nombre):
     return True
 
 def quitar_item_del_inventario(usuario, nombre_item, cantidad=1):
-    """Le saca `cantidad` unidades de un item al usuario. Devuelve True si pudo."""
     global hubo_cambios_inventario_sin_guardar
     user_id = str(usuario.id)
     datos = inventario_cache.get(user_id)
@@ -969,10 +812,7 @@ def quitar_item_del_inventario(usuario, nombre_item, cantidad=1):
 async def cargar_balances_desde_github():
     global balances_cache, balances_sha, balances_cargados
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_BALANCES}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             if resp.status == 404:
@@ -980,99 +820,367 @@ async def cargar_balances_desde_github():
             else:
                 resp.raise_for_status()
                 data = await resp.json()
-                contenido = base64.b64decode(data["content"]).decode("utf-8")
-                balances_cache = json.loads(contenido)
+                balances_cache = json.loads(base64.b64decode(data["content"]).decode("utf-8"))
                 balances_sha = data["sha"]
     balances_cargados = True
 
 async def guardar_balances_en_github():
-    """Sube el estado actual de balances_cache a GitHub. Devuelve True si guardó algo."""
     global balances_sha, hubo_cambios_sin_guardar
     if not hubo_cambios_sin_guardar:
         return False
-
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_BALANCES}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
-
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     async with aiohttp.ClientSession() as session:
-        # Refrescar el sha justo antes de escribir: evita el 422 si el archivo
-        # ya existía sin que lo supiéramos, o si cambió desde la última carga.
         async with session.get(url, headers=headers) as resp_get:
             if resp_get.status == 200:
-                data_actual = await resp_get.json()
-                balances_sha = data_actual["sha"]
+                balances_sha = (await resp_get.json())["sha"]
             elif resp_get.status == 404:
                 balances_sha = None
             else:
                 resp_get.raise_for_status()
-
         contenido_b64 = base64.b64encode(json.dumps(balances_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
         body = {"message": "Actualizar balances", "content": contenido_b64}
         if balances_sha:
             body["sha"] = balances_sha
-
         async with session.put(url, headers=headers, json=body) as resp:
             if resp.status not in (200, 201):
-                texto_error = await resp.text()
-                raise RuntimeError(f"{resp.status}: {texto_error}")
-            data = await resp.json()
-            balances_sha = data["content"]["sha"]
-
+                raise RuntimeError(f"{resp.status}: {await resp.text()}")
+            balances_sha = (await resp.json())["content"]["sha"]
     hubo_cambios_sin_guardar = False
     return True
 
+# ===================== NIVELES Y MISIONES (loaders) =====================
+
+async def cargar_niveles_desde_github():
+    global niveles_cache, niveles_sha, niveles_cargados
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_NIVELES}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 404:
+                niveles_cache, niveles_sha = {}, None
+            else:
+                resp.raise_for_status()
+                data = await resp.json()
+                niveles_cache = json.loads(base64.b64decode(data["content"]).decode("utf-8"))
+                niveles_sha = data["sha"]
+    niveles_cargados = True
+
+async def guardar_niveles_en_github():
+    global niveles_sha, hubo_cambios_niveles_sin_guardar
+    if not hubo_cambios_niveles_sin_guardar:
+        return False
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_NIVELES}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp_get:
+            if resp_get.status == 200:
+                niveles_sha = (await resp_get.json())["sha"]
+            elif resp_get.status == 404:
+                niveles_sha = None
+            else:
+                resp_get.raise_for_status()
+        contenido_b64 = base64.b64encode(json.dumps(niveles_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+        body = {"message": "Actualizar niveles y perks", "content": contenido_b64}
+        if niveles_sha:
+            body["sha"] = niveles_sha
+        async with session.put(url, headers=headers, json=body) as resp:
+            if resp.status not in (200, 201):
+                raise RuntimeError(f"{resp.status}: {await resp.text()}")
+            niveles_sha = (await resp.json())["content"]["sha"]
+    hubo_cambios_niveles_sin_guardar = False
+    return True
+
+async def cargar_misiones_desde_github():
+    global misiones_cache, misiones_sha, misiones_cargados
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_MISIONES}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 404:
+                misiones_cache, misiones_sha = {}, None
+            else:
+                resp.raise_for_status()
+                data = await resp.json()
+                misiones_cache = json.loads(base64.b64decode(data["content"]).decode("utf-8"))
+                misiones_sha = data["sha"]
+    misiones_cargados = True
+
+async def guardar_misiones_en_github():
+    global misiones_sha, hubo_cambios_misiones_sin_guardar
+    if not hubo_cambios_misiones_sin_guardar:
+        return False
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_ARCHIVO_MISIONES}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp_get:
+            if resp_get.status == 200:
+                misiones_sha = (await resp_get.json())["sha"]
+            elif resp_get.status == 404:
+                misiones_sha = None
+            else:
+                resp_get.raise_for_status()
+        contenido_b64 = base64.b64encode(json.dumps(misiones_cache, indent=2, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+        body = {"message": "Actualizar misiones semanales", "content": contenido_b64}
+        if misiones_sha:
+            body["sha"] = misiones_sha
+        async with session.put(url, headers=headers, json=body) as resp:
+            if resp.status not in (200, 201):
+                raise RuntimeError(f"{resp.status}: {await resp.text()}")
+            misiones_sha = (await resp.json())["content"]["sha"]
+    hubo_cambios_misiones_sin_guardar = False
+    return True
+
+# ===================== SISTEMA DE NIVELES / PERKS / MISIONES =====================
+
+xp_cooldown_mensajes = {}
+XP_POR_MENSAJE = 1
+COOLDOWN_XP_MENSAJE = 15
+
+XP_POR_COMANDO = {
+    "w": 5,
+    "mendigar": 5,
+    "rw": 15,
+    "buy": 2,
+    "cf": 3,
+    "roulette": 3,
+    "blackjack": 3,
+    "pay": 1,
+    "robar": 5,
+}
+XP_POR_RECLAMO_RW = 10
+
+PERKS_DEFINICION = {
+    "manos_rapidas": {
+        "nombre": "Manos rápidas",
+        "emoji": "💼",
+        "descripcion": "+3% de plata en `!w` por nivel (max +15%)",
+        "max_nivel": 5,
+        "costos": [2, 3, 4, 5, 6],
+    },
+    "ojo_halcon": {
+        "nombre": "Ojo de halcón",
+        "emoji": "🎰",
+        "descripcion": "+1% de chance de ganar en `!cf` por nivel (max +5%)",
+        "max_nivel": 5,
+        "costos": [2, 3, 4, 5, 6],
+    },
+    "estudiante": {
+        "nombre": "Estudiante",
+        "emoji": "📚",
+        "descripcion": "+6% de XP ganada por nivel (max +30%)",
+        "max_nivel": 5,
+        "costos": [2, 3, 4, 5, 6],
+    },
+    "codicioso": {
+        "nombre": "Codicioso",
+        "emoji": "🤑",
+        "descripcion": "+2% de chance de doble recompensa en `!w` por nivel (max +10%)",
+        "max_nivel": 5,
+        "costos": [2, 3, 4, 5, 6],
+    },
+}
+
+def xp_necesario_para_nivel(nivel):
+    return int(100 * (nivel ** 1.5))
+
+def obtener_nivel_perk(user_id, nombre_perk):
+    datos = niveles_cache.get(str(user_id))
+    if not datos:
+        return 0
+    return datos.get("perks", {}).get(nombre_perk, 0)
+
+def _asegurar_registro_nivel(user_id, nombre=""):
+    user_id = str(user_id)
+    datos = niveles_cache.get(user_id)
+    if not datos:
+        datos = {"nombre": nombre, "xp": 0, "nivel": 1, "puntos": 0, "perks": {}}
+        niveles_cache[user_id] = datos
+    datos.setdefault("perks", {})
+    datos.setdefault("puntos", 0)
+    datos.setdefault("nivel", 1)
+    datos.setdefault("xp", 0)
+    return datos
+
+def dar_xp(user_id, cantidad):
+    """Suma XP (aplicando Estudiante) y sube de nivel si corresponde.
+    Cada nivel da 2 puntos de habilidad. Devuelve cuántos niveles subió."""
+    global hubo_cambios_niveles_sin_guardar
+    user_id = str(user_id)
+    datos = _asegurar_registro_nivel(user_id)
+
+    nivel_est = datos["perks"].get("estudiante", 0)
+    cantidad_final = int(cantidad * (1 + 0.06 * nivel_est))
+    if cantidad_final <= 0:
+        return 0
+
+    datos["xp"] += cantidad_final
+    subidos = 0
+    while datos["xp"] >= xp_necesario_para_nivel(datos["nivel"]):
+        datos["xp"] -= xp_necesario_para_nivel(datos["nivel"])
+        datos["nivel"] += 1
+        datos["puntos"] += 2
+        subidos += 1
+
+    hubo_cambios_niveles_sin_guardar = True
+    return subidos
+
+async def dar_xp_con_aviso(usuario, cantidad, canal=None):
+    subidos = dar_xp(usuario.id, cantidad)
+    if subidos > 0 and canal is not None:
+        datos = niveles_cache.get(str(usuario.id), {})
+        try:
+            await canal.send(embed=crear_embed(
+                titulo="✨ ¡Subiste de nivel!",
+                descripcion=(
+                    f"**{usuario.display_name}** llegó a **nivel {datos.get('nivel', 1)}**.\n"
+                    f"Ganaste **{subidos * 2} punto(s)** de perk. Usá `!perks` para gastarlos."
+                ),
+            ))
+        except discord.HTTPException:
+            pass
+
+async def intentar_dar_xp_mensaje(usuario):
+    user_id = str(usuario.id)
+    ahora = time.time()
+    ultimo = xp_cooldown_mensajes.get(user_id, 0)
+    if ahora - ultimo < COOLDOWN_XP_MENSAJE:
+        return
+    xp_cooldown_mensajes[user_id] = ahora
+    dar_xp(user_id, XP_POR_MENSAJE)
+
+# ---------- Misiones ----------
+
+MISIONES_POOL = [
+    {"id": "work_50",        "tipo": "work_count",   "meta": 50,         "xp": 100, "pts": 1, "desc": "Usá `!w` 50 veces"},
+    {"id": "work_100",       "tipo": "work_count",   "meta": 100,        "xp": 200, "pts": 2, "desc": "Usá `!w` 100 veces"},
+    {"id": "work_earn_500k", "tipo": "work_earn",    "meta": 500_000,    "xp": 150, "pts": 1, "desc": "Ganá 500.000 Pesos con `!w`"},
+    {"id": "work_earn_1m",   "tipo": "work_earn",    "meta": 1_000_000,  "xp": 300, "pts": 2, "desc": "Ganá 1.000.000 Pesos con `!w`"},
+    {"id": "bet_win_500k",   "tipo": "bet_win",      "meta": 500_000,    "xp": 200, "pts": 1, "desc": "Ganá 500.000 Pesos brutos en apuestas"},
+    {"id": "bet_win_1m",     "tipo": "bet_win",      "meta": 1_000_000,  "xp": 350, "pts": 2, "desc": "Ganá 1.000.000 Pesos brutos en apuestas"},
+    {"id": "bet_total_5m",   "tipo": "bet_total",    "meta": 5_000_000,  "xp": 200, "pts": 1, "desc": "Apostá 5.000.000 Pesos en total (ganes o pierdas)"},
+    {"id": "rw_claim_3",     "tipo": "rw_claim",     "meta": 3,          "xp": 250, "pts": 2, "desc": "Reclamá 3 personajes en `!rw`"},
+    {"id": "buy_20",         "tipo": "buy_count",    "meta": 20,         "xp": 100, "pts": 1, "desc": "Comprá 20 items en la tienda"},
+    {"id": "mendigar_recv_200k", "tipo": "mendigar_recv", "meta": 200_000, "xp": 150, "pts": 1, "desc": "Recibí 200.000 Pesos en `!mendigar`"},
+]
+
+XP_BONUS_MISIONES_COMPLETAS = 300
+PTS_BONUS_MISIONES_COMPLETAS = 3
+
+def semana_iso_actual():
+    return time.strftime("%G-W%V", time.gmtime())
+
+def generar_misiones_semana():
+    elegidas = random.sample(MISIONES_POOL, 3)
+    return [
+        {"id": m["id"], "tipo": m["tipo"], "meta": m["meta"], "progreso": 0, "completada": False}
+        for m in elegidas
+    ]
+
+def obtener_misiones_usuario(user_id):
+    global hubo_cambios_misiones_sin_guardar
+    user_id = str(user_id)
+    semana = semana_iso_actual()
+    datos = misiones_cache.get(user_id)
+    if not datos or datos.get("semana") != semana:
+        misiones_cache[user_id] = {
+            "nombre": datos.get("nombre", "") if datos else "",
+            "semana": semana,
+            "misiones": generar_misiones_semana(),
+            "bonus_dado": False,
+        }
+        hubo_cambios_misiones_sin_guardar = True
+        datos = misiones_cache[user_id]
+    return datos
+
+def _buscar_mision_por_tipo(datos, tipo):
+    for m in datos["misiones"]:
+        if m["tipo"] == tipo and not m["completada"]:
+            return m
+    return None
+
+async def procesar_evento_mision(usuario, tipo, cantidad, canal=None):
+    global hubo_cambios_misiones_sin_guardar, hubo_cambios_niveles_sin_guardar
+    if cantidad <= 0:
+        return
+    datos = obtener_misiones_usuario(usuario.id)
+    datos["nombre"] = usuario.display_name
+    m = _buscar_mision_por_tipo(datos, tipo)
+    if m is None:
+        return
+
+    m["progreso"] += cantidad
+    hubo_cambios_misiones_sin_guardar = True
+
+    if m["progreso"] >= m["meta"] and not m["completada"]:
+        m["completada"] = True
+        dar_xp(usuario.id, m["xp"])
+        reg = _asegurar_registro_nivel(usuario.id, usuario.display_name)
+        reg["puntos"] += m["pts"]
+        hubo_cambios_niveles_sin_guardar = True
+        if canal is not None:
+            try:
+                await canal.send(embed=crear_embed(
+                    titulo="✅ Misión completada",
+                    descripcion=f"**{usuario.display_name}** completó: {m.get('desc', m['id'])}\n+{m['xp']} XP · +{m['pts']} punto(s)",
+                ))
+            except discord.HTTPException:
+                pass
+
+    if all(mm["completada"] for mm in datos["misiones"]) and not datos.get("bonus_dado"):
+        datos["bonus_dado"] = True
+        dar_xp(usuario.id, XP_BONUS_MISIONES_COMPLETAS)
+        reg = _asegurar_registro_nivel(usuario.id, usuario.display_name)
+        reg["puntos"] += PTS_BONUS_MISIONES_COMPLETAS
+        hubo_cambios_niveles_sin_guardar = True
+        if canal is not None:
+            try:
+                await canal.send(embed=crear_embed(
+                    titulo="🏆 ¡Misiones semanales completas!",
+                    descripcion=f"**{usuario.display_name}** completó las 3 misiones de la semana.\n+{XP_BONUS_MISIONES_COMPLETAS} XP · +{PTS_BONUS_MISIONES_COMPLETAS} puntos extra",
+                ))
+            except discord.HTTPException:
+                pass
+
+# ===================== FIN SISTEMA DE NIVELES =====================
+
 @tasks.loop(minutes=15)
 async def guardado_periodico():
-    guardado_balances = await guardar_balances_en_github()
-    if guardado_balances:
+    if await guardar_balances_en_github():
         print("💾 Balances sincronizados con GitHub (guardado periódico)")
-    guardado_characters = await guardar_characters_en_github()
-    if guardado_characters:
+    if await guardar_characters_en_github():
         print("📚 Colecciones sincronizadas con GitHub (guardado periódico)")
-    guardado_personajes = await guardar_personajes_en_github()
-    if guardado_personajes:
+    if await guardar_personajes_en_github():
         print("🖼️ rw.json sincronizado con GitHub (guardado periódico)")
-    guardado_inventario = await guardar_inventario_en_github()
-    if guardado_inventario:
+    if await guardar_inventario_en_github():
         print("🛍️ Inventarios sincronizados con GitHub (guardado periódico)")
-    guardado_matrimonios = await guardar_matrimonios_en_github()
-    if guardado_matrimonios:
+    if await guardar_matrimonios_en_github():
         print("💍 Matrimonios sincronizados con GitHub (guardado periódico)")
-    guardado_memoria = await guardar_memoria_en_github()
-    if guardado_memoria:
+    if await guardar_memoria_en_github():
         print("🧠 Memoria de Catherine sincronizada con GitHub (guardado periódico)")
-    guardado_dolar = await guardar_dolar_en_github()
-    if guardado_dolar:
+    if await guardar_dolar_en_github():
         print("💵 Dólar sincronizado con GitHub (guardado periódico)")
+    if await guardar_niveles_en_github():
+        print("✨ Niveles y perks sincronizados con GitHub (guardado periódico)")
+    if await guardar_misiones_en_github():
+        print("📋 Misiones sincronizadas con GitHub (guardado periódico)")
 
 @tasks.loop(hours=4)
 async def actualizar_dolar():
-    """Mueve la cotización del dólar entre -4% y +4% (al azar, como el !w),
-    con un piso duro de 300 y, si está muy bajo, fuerza que el próximo
-    movimiento sea para arriba en vez de dejarlo pegado al piso para
-    siempre. Después anuncia el cambio en el canal configurado."""
     global dolar_valor, dolar_ultima_actualizacion, hubo_cambios_dolar_sin_guardar
-
     valor_anterior = dolar_valor
-
     if dolar_valor <= DOLAR_UMBRAL_RECUPERACION:
         cambio_pct = random.uniform(0, DOLAR_CAMBIO_MAX_PORCENTAJE)
     else:
         cambio_pct = random.uniform(-DOLAR_CAMBIO_MAX_PORCENTAJE, DOLAR_CAMBIO_MAX_PORCENTAJE)
-
     dolar_valor = max(round(valor_anterior * (1 + cambio_pct / 100)), DOLAR_VALOR_MINIMO)
     dolar_ultima_actualizacion = time.time()
     hubo_cambios_dolar_sin_guardar = True
-    inyectar_dolar_en_shop()  # para que !buy/!shop/!invfo vean el precio nuevo al toque
-
+    inyectar_dolar_en_shop()
     try:
         await guardar_dolar_en_github()
     except Exception as e:
         print(f"⚠️ No pude guardar el dólar: {e}", flush=True)
-
     diferencia = dolar_valor - valor_anterior
     porcentaje_real = (diferencia / valor_anterior * 100) if valor_anterior else 0
     if dolar_canal_anuncios:
@@ -1097,43 +1205,29 @@ SEGUNDOS_POR_DIA = 24 * 60 * 60
 
 @tasks.loop(hours=1)
 async def interes_banco():
-    """Le suma 5% compuesto por día a lo que cada usuario tenga en el banco.
-    Se chequea cada hora, pero el interés en sí se calcula por 'usuario', con
-    su propio reloj de 24hs desde el último interés que cobró (no un reloj
-    global), así que da lo mismo cuándo depositó cada uno."""
     global hubo_cambios_sin_guardar
     ahora = time.time()
     hubo_interes = False
-
     for datos in balances_cache.values():
         banco = datos.get("banco", 0)
         if banco <= 0:
             continue
-
         ultimo = datos.get("ultimo_interes")
         if ultimo is None:
-            # Primera vez que vemos plata en este banco con este sistema activo:
-            # arranca el reloj ahora, no le regalamos interés retroactivo.
             datos["ultimo_interes"] = ahora
             continue
-
         transcurrido = ahora - ultimo
         if transcurrido < SEGUNDOS_POR_DIA:
             continue
-
         dias = int(transcurrido // SEGUNDOS_POR_DIA)
         datos["banco"] = round(banco * ((1 + INTERES_BANCO_DIARIO) ** dias))
         datos["ultimo_interes"] = ultimo + dias * SEGUNDOS_POR_DIA
         hubo_interes = True
-
     if hubo_interes:
         hubo_cambios_sin_guardar = True
         print("🏦 Interés diario aplicado a bancos", flush=True)
-        # Guardamos ya mismo (no esperamos los 15 min del guardado periódico) para que,
-        # si el bot se reinicia justo después, no se pierda este cálculo puntual.
         try:
             await guardar_balances_en_github()
-            print("💾 Interés guardado en GitHub al toque", flush=True)
         except Exception as e:
             print(f"⚠️ No pude guardar el interés al toque: {e}", flush=True)
 
@@ -1179,20 +1273,26 @@ async def on_ready():
         await cargar_memoria_desde_github()
         print(f"🧠 Memoria de Catherine cargada desde GitHub ({len(memoria_cache)} usuarios)")
 
+    global niveles_cargados
+    if not niveles_cargados and GITHUB_TOKEN and GITHUB_REPO:
+        await cargar_niveles_desde_github()
+        print(f"✨ Niveles cargados desde GitHub ({len(niveles_cache)} usuarios)")
+
+    global misiones_cargados
+    if not misiones_cargados and GITHUB_TOKEN and GITHUB_REPO:
+        await cargar_misiones_desde_github()
+        print(f"📋 Misiones cargadas desde GitHub ({len(misiones_cache)} usuarios)")
+
     global dolar_cargado
     if not dolar_cargado and GITHUB_TOKEN and GITHUB_REPO:
         await cargar_dolar_desde_github()
-        inyectar_dolar_en_shop()  # por si la tienda ya se había cargado antes con un precio viejo/default
+        inyectar_dolar_en_shop()
         print(f"💵 Dólar cargado desde GitHub (vale {formatear_pesos(dolar_valor)})")
         if not actualizar_dolar.is_running():
             actualizar_dolar.start()
 
 @bot.event
 async def on_presence_update(before, after):
-    """Trackea cuándo se desconecta/reconecta cada usuario, para el cooldown
-    de !robar (necesita 6hs offline). Solo detecta cambios que pasan mientras
-    el bot está corriendo: alguien ya offline antes de que arrancara el bot
-    no cuenta hasta que se reconecte y se vuelva a desconectar."""
     if before.status == after.status:
         return
     user_id = str(after.id)
@@ -1202,18 +1302,14 @@ async def on_presence_update(before, after):
         usuarios_desconectados_desde.pop(user_id, None)
 
 async def generar_resumen(channel_id):
-    """Genera un resumen de los últimos mensajes"""
     if channel_id not in conversation_history or len(conversation_history[channel_id]) < 3:
         return None
-
-    # Tomar los últimos 5 mensajes para resumir
     mensajes_recientes = conversation_history[channel_id][-5:]
     resumen_prompt = f"""Resumí en máximo 3 líneas los puntos clave de esta conversación:
 
 {chr(10).join([f"- {msg['role']}: {msg['content'][:100]}" for msg in mensajes_recientes])}
 
 Solo los datos IMPORTANTES que el usuario mencionó (gustos, nombres, contexto, etc)."""
-
     try:
         completion = await client.chat.completions.create(
             model=MODEL_NAME,
@@ -1225,72 +1321,48 @@ Solo los datos IMPORTANTES que el usuario mencionó (gustos, nombres, contexto, 
 
 @bot.event
 async def on_message(message):
-    # Ignorar mensajes del mismo bot
     if message.author == bot.user:
         return
 
-    # Chequeamos ANTES si el mensaje es un comando válido. Si lo es, que lo
-    # maneje process_commands y salimos sin pasar por la lógica de Catherine.
-    # Esto evita el doble-comportamiento cuando respondés con "reply" a un
-    # mensaje del bot: Discord hace que bot.user.mentioned_in(message) sea True
-    # (por la referencia al mensaje original), pero como también es un comando
-    # válido, sin este chequeo el bot te contestaría como Catherine Y además
-    # te ejecutaría el comando.
+    # XP por mensaje (con cooldown interno)
+    try:
+        await intentar_dar_xp_mensaje(message.author)
+    except Exception:
+        pass
+
     ctx = await bot.get_context(message)
     if ctx.valid:
         await bot.process_commands(message)
         return
 
-    # Verificar si el bot fue mencionado (por contenido o por reply)
     if bot.user.mentioned_in(message):
-        # Mostrar que está "escribiendo..."
         async with message.channel.typing():
             try:
-                # Obtener el contenido del mensaje (sin la mención del bot)
                 contenido = message.content.replace(f"<@{bot.user.id}>", "").replace(f"<@!{bot.user.id}>", "").strip()
-
                 if not contenido:
                     await message.reply("Hola, soy †Catherine†. ¿En qué puedo ayudarte?")
                     return
-
                 channel_id = message.channel.id
                 user_id = str(message.author.id)
                 nombre_discord = message.author.display_name
-
-                # Agregar mensaje del usuario al historial (con quién lo dijo,
-                # así en canales con varios usuarios Catherine no los mezcla)
                 conversation_history[channel_id].append({
-                    "role": "usuario",
-                    "autor": nombre_discord,
-                    "content": contenido
+                    "role": "usuario", "autor": nombre_discord, "content": contenido
                 })
                 message_count[channel_id] += 1
                 mensajes_usuario_count[user_id] += 1
-
-                # Construir el contexto para Groq
                 contexto = ""
-
-                # Lo que Catherine ya sabe de esta persona de charlas anteriores
                 contexto += bloque_memoria_usuario(user_id)
-
-                # Si hay resumen cada 6-8 mensajes, agregarlo
                 if message_count[channel_id] % 7 == 0 and len(conversation_history[channel_id]) > 4:
                     resumen = await generar_resumen(channel_id)
                     if resumen:
                         contexto += f"RESUMEN DE LA CONVERSACIÓN:\n{resumen}\n\n"
-
-                # Agregar últimos mensajes como contexto (últimos 5)
                 if len(conversation_history[channel_id]) > 1:
                     contexto += "CONTEXTO RECIENTE:\n"
                     for msg in conversation_history[channel_id][-5:-1]:
                         rol = msg.get("autor", "Usuario") if msg['role'] == 'usuario' else "Catherine"
                         contexto += f"{rol}: {msg['content'][:150]}\n"
                     contexto += "\n"
-
-                # El nuevo mensaje
                 contexto += f"{nombre_discord}: {contenido}"
-
-                # Llamar a Groq (chat completions, con la personalidad como mensaje system)
                 completion = await client.chat.completions.create(
                     model=MODEL_NAME,
                     messages=[
@@ -1299,31 +1371,17 @@ async def on_message(message):
                     ],
                 )
                 texto_respuesta = completion.choices[0].message.content
-
-                # Agregar respuesta al historial
-                conversation_history[channel_id].append({
-                    "role": "catherine",
-                    "content": texto_respuesta
-                })
-
-                # Limitar el historial para no gastar memoria (guardar últimos 50 mensajes)
+                conversation_history[channel_id].append({"role": "catherine", "content": texto_respuesta})
                 if len(conversation_history[channel_id]) > 50:
                     conversation_history[channel_id] = conversation_history[channel_id][-50:]
-
-                # Si la respuesta es muy larga, dividirla
                 if len(texto_respuesta) > 2000:
                     for i in range(0, len(texto_respuesta), 2000):
                         await message.reply(texto_respuesta[i:i+2000])
                 else:
                     await message.reply(texto_respuesta)
-
-                # Actualizar la memoria de este usuario cada 3 mensajes suyos con
-                # Catherine. En segundo plano (create_task) para no hacerlo esperar
-                # la respuesta de arriba, que ya le llegó.
                 if mensajes_usuario_count[user_id] % 6 == 0 and GITHUB_TOKEN and GITHUB_REPO:
                     intercambio = f"{nombre_discord}: {contenido}\nCatherine: {texto_respuesta}"
                     asyncio.create_task(actualizar_memoria_usuario(user_id, nombre_discord, intercambio))
-
             except Exception as e:
                 await message.reply(f"❌ Hubo un error: {str(e)}")
 
@@ -1331,51 +1389,36 @@ async def on_message(message):
 
 @bot.event
 async def on_command_error(ctx, error):
-    # Cooldown de discord.py (solo !robar lo usa)
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.reply(embed=crear_embed(
             descripcion=f"⏳ Todavía no. Probá de nuevo en **{formatear_tiempo_restante(error.retry_after)}**."
         ))
         return
-
-    # Comando inexistente: ni respondemos, sería spam
     if isinstance(error, commands.CommandNotFound):
         return
-
-    # Mencionaste a alguien que no existe / no está en el server
     if isinstance(error, commands.MemberNotFound):
         await ctx.reply(embed=crear_embed(
             descripcion="❌ No encontré a ese usuario. Asegurate de mencionarlo bien con `@`."
         ))
         return
-
-    # Te faltó pasar un argumento obligatorio
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.reply(embed=crear_embed(
             descripcion=f"❌ Te falta decir **{error.param.name}**. Mirá `!help` para ver cómo se usa el comando."
         ))
         return
-
-    # Un argumento vino con formato raro (ej: una mención donde va un número)
     if isinstance(error, commands.BadArgument):
         await ctx.reply(embed=crear_embed(
             descripcion="❌ No entendí bien uno de los argumentos. Revisá el formato con `!help`."
         ))
         return
-
-    # Cualquier otra excepción dentro del comando: logueamos el traceback real pero
-    # al usuario le damos un mensaje limpio, sin tirarle la excepción cruda en la cara
     if isinstance(error, commands.CommandInvokeError):
         print(f"⚠️ Error en !{ctx.command}: {error.original!r}", flush=True)
         await ctx.reply(embed=crear_embed(
             descripcion="❌ Algo se rompió ejecutando eso. Avisale al dueño de la banca."
         ))
         return
-
-    # Fallback por si aparece algo que no contemplamos
     print(f"⚠️ Error no manejado en !{ctx.command}: {error!r}", flush=True)
     await ctx.reply(embed=crear_embed(descripcion=f"❌ Error inesperado: {error}"))
-
 @bot.command(name="balance", aliases=["saldo", "bal"])
 async def balance(ctx, miembro: discord.Member = None):
     """Muestra el balance (afuera del banco), lo bancado, y el total de vos o de otro usuario"""
@@ -1510,10 +1553,29 @@ async def perfil(ctx, miembro: discord.Member = None):
     embed = crear_embed(titulo=f"👤 {objetivo.display_name}")
     embed.set_thumbnail(url=objetivo.display_avatar.url)
 
-    # Separador que se usa como "field" entre secciones (zero-width space en el name,
-    # el separador como value, inline=False para que ocupe su propia línea)
     def agregar_separador():
         embed.add_field(name="\u200b", value=SEPARADOR, inline=False)
+
+    # --- Nivel ---
+    datos_nivel = niveles_cache.get(user_id)
+    if datos_nivel:
+        nivel_act = datos_nivel.get("nivel", 1)
+        xp_act = datos_nivel.get("xp", 0)
+        xp_req = xp_necesario_para_nivel(nivel_act)
+        pts = datos_nivel.get("puntos", 0)
+        embed.add_field(
+            name="✨ Nivel",
+            value=(
+                f"> Nivel: **{nivel_act}**\n"
+                f"> XP: **{formatear_numero(xp_act)}/{formatear_numero(xp_req)}**\n"
+                f"> Puntos: **{pts}**"
+            ),
+            inline=False,
+        )
+    else:
+        embed.add_field(name="✨ Nivel", value="-# Todavía no tiene progreso.", inline=False)
+
+    agregar_separador()
 
     # --- Plata ---
     datos_balance = balances_cache.get(user_id)
@@ -1627,7 +1689,6 @@ async def depositar(ctx, cantidad: str = None):
         ))
         return
 
-    # Si el banco estaba en 0, este depósito arranca el reloj de interés de cero.
     if balances_cache[user_id]["banco"] == 0:
         balances_cache[user_id]["ultimo_interes"] = time.time()
 
@@ -1816,6 +1877,8 @@ async def pay(ctx, miembro: discord.Member = None, cantidad: str = None):
         ),
     ))
 
+    await dar_xp_con_aviso(ctx.author, XP_POR_COMANDO["pay"], canal=ctx.channel)
+
 @bot.command(name="givechar")
 async def givechar(ctx, *, texto: str = None):
     """Le regalás a otro usuario un personaje de tu colección (solo uno que tengas)"""
@@ -1826,7 +1889,6 @@ async def givechar(ctx, *, texto: str = None):
         await ctx.reply(embed=crear_embed(descripcion=uso))
         return
 
-    # El nombre puede tener espacios, así que sacamos la mención del texto y el resto es el nombre.
     menciones = re.findall(r"<@!?(\d+)>", texto)
     if not menciones:
         await ctx.reply(embed=crear_embed(descripcion=uso))
@@ -1849,7 +1911,6 @@ async def givechar(ctx, *, texto: str = None):
 
     mis_personajes = characters_cache.get(str(ctx.author.id), {}).get("personajes", [])
 
-    # Primero nombre exacto (sin importar mayúsculas); si no, un único nombre que lo contenga.
     buscado = nombre_buscado.casefold()
     exactos = [p for p in mis_personajes if str(campo_personaje(p, "Nombre", "nombre")).casefold() == buscado]
     if exactos:
@@ -1874,7 +1935,6 @@ async def givechar(ctx, *, texto: str = None):
         ))
         return
 
-    # Sacamos ese personaje puntual (por identidad) de tu lista y se lo pasamos al otro.
     mis_personajes[:] = [p for p in mis_personajes if p is not elegido]
     agregar_personaje_a_coleccion(miembro, elegido)
     hubo_cambios_characters_sin_guardar = True
@@ -1890,13 +1950,9 @@ async def givechar(ctx, *, texto: str = None):
 
 async def vender_item_inventario(ctx, entrada):
     """Intenta vender un ítem del inventario (hoy en día, solo el Dólar tiene
-    'vendible': True) en vez de un personaje. Devuelve True si se hizo cargo
-    del pedido (venta hecha, o un error propio de vender ítems que ya le
-    mostró al usuario), False si ni siquiera encontró un ítem con ese nombre
-    — así !vender puede mostrar su propio mensaje de 'no encontré nada'."""
+    'vendible': True) en vez de un personaje."""
     global hubo_cambios_sin_guardar, hubo_cambios_inventario_sin_guardar
 
-    # Acepta cantidad con sufijo (100k, 2m, all, etc) usando el mismo parser que el resto del bot
     partes = entrada.strip().rsplit(" ", 1)
     cantidad = 1
     nombre_item_buscado = entrada.strip()
@@ -1985,10 +2041,12 @@ async def vender(ctx, *, nombre_buscado: str = None):
     mis_personajes = characters_cache.get(user_id, {}).get("personajes", [])
 
     if not mis_personajes:
+        vendido = await vender_item_inventario(ctx, nombre_buscado)
+        if vendido:
+            return
         await ctx.reply(embed=crear_embed(descripcion="No tenés ningún personaje para vender. Probá `!rw` para conseguir alguno."))
         return
 
-    # Buscar el personaje: nombre exacto > parcial único > probar si es un ítem (ej. Dólar) > error
     buscado = nombre_buscado.casefold().strip()
     exactos = [p for p in mis_personajes if str(campo_personaje(p, "Nombre", "nombre")).casefold() == buscado]
     if exactos:
@@ -2013,16 +2071,13 @@ async def vender(ctx, *, nombre_buscado: str = None):
     ganancia = int(valor_original * PORCENTAJE_VENTA)
     comision_banca = valor_original - ganancia
 
-    # Aseguramos que el vendedor tenga cuenta
     if user_id not in balances_cache:
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
     balances_cache[user_id].setdefault("banco", 0)
 
-    # Sacamos el personaje de la colección (por identidad, no por igualdad)
     mis_personajes[:] = [p for p in mis_personajes if p is not elegido]
     hubo_cambios_characters_sin_guardar = True
 
-    # Le acreditamos la plata al balance del vendedor y la comisión a la banca
     balances_cache[user_id]["balance"] += ganancia
     hubo_cambios_sin_guardar = True
     sumar_a_banca(comision_banca)
@@ -2092,7 +2147,6 @@ async def marry(ctx, miembro: discord.Member = None):
 
     user_id = str(ctx.author.id)
 
-    # ---------- Caso 1: sin mención -> solo el dueño de la banca se casa con Catherine ----------
     if miembro is None:
         if user_id != ID_BANCA:
             embed = crear_embed(
@@ -2105,11 +2159,9 @@ async def marry(ctx, miembro: discord.Member = None):
             )
             await ctx.reply(embed=embed)
             return
-        # Es el dueño de la banca: se casa con Catherine
         if esta_casado(user_id):
             await ctx.reply(embed=crear_embed(descripcion="Ya estás casado. Primero usá `!divorcio` si querés separarte."))
             return
-        # Creamos un pseudo-usuario para Catherine con el mismo id del bot para reusar la función
         registrar_matrimonio(ctx.author, bot.user, usuario2_es_bot=True)
         embed = crear_embed(
             descripcion=(
@@ -2128,7 +2180,6 @@ async def marry(ctx, miembro: discord.Member = None):
             print(f"⚠️ No pude guardar el matrimonio al toque: {e}", flush=True)
         return
 
-    # ---------- Caso 2: mención a Catherine (el bot) -> mismo trato que sin mención ----------
     if miembro.id == bot.user.id:
         if user_id != ID_BANCA:
             embed = crear_embed(
@@ -2162,7 +2213,6 @@ async def marry(ctx, miembro: discord.Member = None):
             print(f"⚠️ No pude guardar el matrimonio al toque: {e}", flush=True)
         return
 
-    # ---------- Caso 3: mención a otro usuario ----------
     if miembro.id == ctx.author.id:
         await ctx.reply(embed=crear_embed(descripcion="No te podés casar con vos mismo."))
         return
@@ -2215,13 +2265,11 @@ async def divorcio(ctx):
     pareja_es_bot = datos.get("pareja_es_bot", False)
     pareja_id = str(datos.get("pareja_id"))
 
-    # Aseguramos que el usuario tenga cuenta
     if user_id not in balances_cache:
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
 
     costo_usuario = COSTO_DIVORCIO_POR_PERSONA
     costo_pareja = 0 if pareja_es_bot else COSTO_DIVORCIO_POR_PERSONA
-    # Si la pareja es Catherine, ella no puede pagar: el usuario paga los dos.
     if pareja_es_bot:
         costo_usuario = COSTO_DIVORCIO_POR_PERSONA * 2
 
@@ -2234,7 +2282,6 @@ async def divorcio(ctx):
         ))
         return
 
-    # Si la pareja es otro usuario, chequeamos que tenga la plata también
     if not pareja_es_bot:
         if pareja_id not in balances_cache:
             balances_cache[pareja_id] = {"nombre": pareja_nombre, "balance": 0, "banco": 0}
@@ -2247,7 +2294,6 @@ async def divorcio(ctx):
             ))
             return
 
-    # Cobramos
     balances_cache[user_id]["balance"] -= costo_usuario
     if not pareja_es_bot:
         balances_cache[pareja_id]["balance"] -= costo_pareja
@@ -2282,11 +2328,11 @@ async def divorcio(ctx):
 
 COOLDOWN_ROBO_DESCONEXION_SEGUNDOS = 6 * 60 * 60
 PROBABILIDAD_ROBO_EXITO = 0.10
-PROBABILIDAD_ROBO_PENALIZACION = 0.10  # además del 10% de éxito (roll único de 0 a 1)
-PENALIZACION_ROBO_FALLIDO = 0.05  # 5% de la plata del ladrón
+PROBABILIDAD_ROBO_PENALIZACION = 0.10
+PENALIZACION_ROBO_FALLIDO = 0.05
 
 @bot.command(name="robar")
-@commands.cooldown(1, 600, commands.BucketType.user)  # sin esto, spamear el comando garantiza el 10% tarde o temprano
+@commands.cooldown(1, 600, commands.BucketType.user)
 async def robar(ctx, objetivo: discord.Member = None):
     """10% de robarle todo el balance (lo que NO tenga en el banco) a alguien
     desconectado hace 6hs o más; 10% de perder vos el 5% de tu plata si te
@@ -2328,7 +2374,6 @@ async def robar(ctx, objetivo: discord.Member = None):
     balances_cache[ladron_id].setdefault("banco", 0)
     balances_cache[objetivo_id].setdefault("banco", 0)
 
-    # Aplicar buffs
     buff_trebol = obtener_buff(ladron_id, "suerte_robo")
     buff_pata = obtener_buff(ladron_id, "pata_conejo")
 
@@ -2379,6 +2424,7 @@ async def robar(ctx, objetivo: discord.Member = None):
         )
 
     await ctx.reply(embed=embed)
+    await dar_xp_con_aviso(ctx.author, XP_POR_COMANDO["robar"], canal=ctx.channel)
 
 MENSAJES_TRABAJO = [
     'Le vendiste un frasco con "aire de alta montaña" a un hippie en la calle y te lo compró sin dudarlo.',
@@ -2403,7 +2449,16 @@ async def ejecutar_w(ctx):
 
     ganancia = random.randint(5000, 6500)
 
-    # Aplicar buff del Bono del gobierno (+20% de ganancia)
+    nivel_manos = obtener_nivel_perk(user_id, "manos_rapidas")
+    if nivel_manos > 0:
+        ganancia = int(ganancia * (1 + 0.03 * nivel_manos))
+
+    nivel_codicioso = obtener_nivel_perk(user_id, "codicioso")
+    critico = False
+    if nivel_codicioso > 0 and random.random() < 0.02 * nivel_codicioso:
+        ganancia *= 2
+        critico = True
+
     buff_bono = obtener_buff(user_id, "bono_w")
     if buff_bono:
         ganancia = int(ganancia * (1 + buff_bono["valor"]))
@@ -2413,18 +2468,23 @@ async def ejecutar_w(ctx):
 
     mensaje = random.choice(MENSAJES_TRABAJO)
     texto_buff = f"\n-# 🏛️ Bono del gobierno activo (+{int(buff_bono['valor']*100)}%)" if buff_bono else ""
+    texto_critico = "\n-# 🤑 ¡Codicioso! Ganancia duplicada." if critico else ""
 
     embed = crear_embed(
         titulo="💼 A trabajar",
         descripcion=(
             f"{mensaje}\n"
-            f"**+{formatear_pesos(ganancia)}**{texto_buff}\n\n"
+            f"**+{formatear_pesos(ganancia)}**{texto_buff}{texto_critico}\n\n"
             f"Balance actual: **{formatear_pesos(balances_cache[user_id]['balance'])}**"
         ),
     )
     await ctx.reply(embed=embed)
 
-@bot.command(name="w")
+    await dar_xp_con_aviso(ctx.author, XP_POR_COMANDO["w"], canal=ctx.channel)
+    await procesar_evento_mision(ctx.author, "work_count", 1, canal=ctx.channel)
+    await procesar_evento_mision(ctx.author, "work_earn", ganancia, canal=ctx.channel)
+
+@bot.command(name="w", aliases=["work", "trabajar", "laburar", "currar"])
 async def work(ctx):
     """Da una cantidad random de Pesos (5.000 a 6.500) con un mensaje random"""
     user_id = str(ctx.author.id)
@@ -2446,7 +2506,7 @@ async def work_admin(ctx):
     await ejecutar_w(ctx)
 
 COOLDOWN_MENDIGAR_SEGUNDOS = 20 * 60
-cooldown_mendigar_usuario = {}  # user_id (str) -> timestamp hasta el que no puede volver a mendigar
+cooldown_mendigar_usuario = {}
 
 class DonarModal(discord.ui.Modal):
     def __init__(self, vista):
@@ -2497,10 +2557,6 @@ class DonarModal(discord.ui.Modal):
         )
 
 class MendigarView(discord.ui.View):
-    """Colecta abierta a cualquiera (no solo a quien la inició, por eso no hay
-    interaction_check acá) durante 10 minutos. Al vencer el timeout de la View,
-    se le paga al mendigo todo lo donado de una."""
-
     DURACION_SEGUNDOS = 10 * 60
 
     def __init__(self, mendigo):
@@ -2545,6 +2601,9 @@ class MendigarView(discord.ui.View):
             except Exception as e:
                 print(f"⚠️ No pude guardar lo recaudado en !mendigar: {e}", flush=True)
 
+            canal = self.mensaje.channel if self.mensaje else None
+            asyncio.create_task(procesar_evento_mision(self.mendigo, "mendigar_recv", self.total_donado, canal=canal))
+
         if self.mensaje is None:
             return
         descripcion = (
@@ -2571,6 +2630,7 @@ async def mendigar(ctx):
 
     vista = MendigarView(ctx.author)
     vista.mensaje = await ctx.reply(embed=vista.construir_embed(), view=vista)
+    await dar_xp_con_aviso(ctx.author, XP_POR_COMANDO["mendigar"], canal=ctx.channel)
 
 @bot.command(name="dolar", aliases=["dólar", "usd"])
 async def dolar(ctx):
@@ -2640,9 +2700,9 @@ async def coinflip(ctx, opcion: str = None, cantidad: str = None):
         await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_pesos(balances_cache[user_id]['balance'])}**."))
         return
 
-    # Chance base 50%. El Amuleto del ludópata suma +5% a favor del jugador.
     buff_amuleto = obtener_buff(user_id, "suerte_apuesta")
-    chance_ganar = 0.5 + (buff_amuleto["valor"] if buff_amuleto else 0)
+    nivel_ojo = obtener_nivel_perk(user_id, "ojo_halcon")
+    chance_ganar = 0.5 + (0.01 * nivel_ojo) + (buff_amuleto["valor"] if buff_amuleto else 0)
     gano = random.random() < chance_ganar
 
     if gano:
@@ -2660,6 +2720,11 @@ async def coinflip(ctx, opcion: str = None, cantidad: str = None):
 
     hubo_cambios_sin_guardar = True
     await ctx.reply(embed=crear_embed(titulo="🪙 Coinflip", descripcion=descripcion))
+
+    await dar_xp_con_aviso(ctx.author, XP_POR_COMANDO["cf"], canal=ctx.channel)
+    await procesar_evento_mision(ctx.author, "bet_total", cantidad, canal=ctx.channel)
+    if gano:
+        await procesar_evento_mision(ctx.author, "bet_win", cantidad, canal=ctx.channel)
 
 @bot.command(name="roulette", aliases=["rt"])
 async def roulette(ctx, color: str = None, cantidad: str = None):
@@ -2695,13 +2760,13 @@ async def roulette(ctx, color: str = None, cantidad: str = None):
         await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa plata. Tu balance es **{formatear_pesos(balances_cache[user_id]['balance'])}**."))
         return
 
-    # 18 casillas rojas, 18 negras, 1 verde (el 0, hace perder a todos por igual)
     resultado = random.choices(("rojo", "negro", "verde"), weights=(18, 18, 1), k=1)[0]
     gano = resultado == color
 
-    # Amuleto del ludópata: si perdiste, un 5% de chance de que te "salve"
     buff_amuleto = obtener_buff(user_id, "suerte_apuesta")
-    if not gano and buff_amuleto and random.random() < buff_amuleto["valor"]:
+    nivel_ojo = obtener_nivel_perk(user_id, "ojo_halcon")
+    chance_salvacion = (buff_amuleto["valor"] if buff_amuleto else 0) + 0.01 * nivel_ojo
+    if not gano and chance_salvacion > 0 and random.random() < chance_salvacion:
         resultado = color
         gano = True
 
@@ -2717,6 +2782,11 @@ async def roulette(ctx, color: str = None, cantidad: str = None):
 
     hubo_cambios_sin_guardar = True
     await ctx.reply(embed=crear_embed(titulo="🎡 Ruleta", descripcion=descripcion))
+
+    await dar_xp_con_aviso(ctx.author, XP_POR_COMANDO["roulette"], canal=ctx.channel)
+    await procesar_evento_mision(ctx.author, "bet_total", cantidad, canal=ctx.channel)
+    if gano:
+        await procesar_evento_mision(ctx.author, "bet_win", cantidad, canal=ctx.channel)
 
 @bot.command(name="addmoney")
 async def addmoney(ctx, miembro: discord.Member = None, cantidad: int = None):
@@ -2807,7 +2877,6 @@ class BlackjackView(discord.ui.View):
             item.disabled = True
 
     def _liquidar(self, resultado_tipo):
-        """resultado_tipo: 'gana', 'pierde', 'empata', 'blackjack'"""
         global hubo_cambios_sin_guardar
         user_id = str(self.autor.id)
         if user_id not in balances_cache:
@@ -2837,6 +2906,11 @@ class BlackjackView(discord.ui.View):
         embed = self.construir_embed(revelar_crupier=True, resultado=texto)
         await interaction.response.edit_message(embed=embed, view=self)
         self.stop()
+        canal = interaction.channel
+        asyncio.create_task(dar_xp_con_aviso(self.autor, XP_POR_COMANDO["blackjack"], canal=canal))
+        asyncio.create_task(procesar_evento_mision(self.autor, "bet_total", self.apuesta, canal=canal))
+        if resultado_tipo in ("gana", "blackjack"):
+            asyncio.create_task(procesar_evento_mision(self.autor, "bet_win", self.apuesta, canal=canal))
 
     async def _resolver_crupier(self, interaction):
         while valor_mano(self.mano_crupier) < 17:
@@ -2915,10 +2989,6 @@ async def blackjack(ctx, cantidad: str = None):
 
     view = BlackjackView(ctx.author, cantidad)
 
-    # Regla de casino: el crupier revela su carta tapada ANTES de que el jugador
-    # pueda pedir. Si tiene blackjack natural, la mano se resuelve al toque (con
-    # o sin empate) sin mostrar botones, así el jugador no puede pedir cartas
-    # "de más" contra un blackjack que ya estaba en la mesa.
     jugador_bj = valor_mano(view.mano_jugador) == 21
     crupier_bj = valor_mano(view.mano_crupier) == 21
 
@@ -2934,14 +3004,16 @@ async def blackjack(ctx, cantidad: str = None):
         view._deshabilitar_botones()
         embed = view.construir_embed(revelar_crupier=True, resultado=texto)
         await ctx.reply(embed=embed, view=view)
+        await dar_xp_con_aviso(ctx.author, XP_POR_COMANDO["blackjack"], canal=ctx.channel)
+        await procesar_evento_mision(ctx.author, "bet_total", cantidad, canal=ctx.channel)
+        if resultado_tipo in ("gana", "blackjack"):
+            await procesar_evento_mision(ctx.author, "bet_win", cantidad, canal=ctx.channel)
         return
 
     embed = view.construir_embed()
     mensaje = await ctx.reply(embed=embed, view=view)
     view.mensaje = mensaje
 
-# Rangos de rareza para !rw: cuanto más vale el personaje, menos peso tiene
-# a la hora de salir sorteado. (mínimo, máximo, peso, nombre)
 RANGOS_RAREZA = [
     (5000, 24999, 45, "⚪ Común"),
     (25000, 74999, 30, "🟢 Poco común"),
@@ -2952,7 +3024,6 @@ RANGOS_RAREZA = [
 ]
 
 def parsear_valor(valor):
-    """Convierte '20.000', '20,000' o 20000 a int. Devuelve None si no se puede."""
     try:
         limpio = str(valor).replace("$", "").replace(".", "").replace(",", "").strip()
         return int(limpio)
@@ -2960,12 +3031,10 @@ def parsear_valor(valor):
         return None
 
 def info_rareza(valor):
-    """Devuelve (peso, nombre_rareza) según el valor del personaje."""
     peso, nombre, _indice = indice_rareza(valor)
     return peso, nombre
 
 def indice_rareza(valor):
-    """Devuelve (peso, nombre_rareza, indice_en_RANGOS_RAREZA) según el valor del personaje."""
     numero = parsear_valor(valor)
     if numero is None:
         return RANGOS_RAREZA[0][2], RANGOS_RAREZA[0][3], 0
@@ -2975,8 +3044,6 @@ def indice_rareza(valor):
     return RANGOS_RAREZA[0][2], RANGOS_RAREZA[0][3], 0
 
 def agrupar_personajes_por_rareza():
-    """Agrupa personajes_cache según a qué rango de RANGOS_RAREZA pertenece cada uno.
-    Devuelve una lista paralela a RANGOS_RAREZA: grupos[i] = lista de personajes en ese rango."""
     grupos = [[] for _ in RANGOS_RAREZA]
     for p in personajes_cache:
         _, _, i = indice_rareza(campo_personaje(p, "Valor", "valor"))
@@ -2986,16 +3053,12 @@ def agrupar_personajes_por_rareza():
 COOLDOWN_RECLAMO_SEGUNDOS = 3 * 60 * 60
 
 class RWClaimView(discord.ui.View):
-    """Botón de reclamo: 30s exclusivos para quien usó !rw, 60s más libres para
-    cualquiera, y después de esos 90s totales se vence sin que nadie lo reclame.
-    Además, cada usuario solo puede reclamar (no tirar) una vez cada 4hs."""
-
     SEGUNDOS_EXCLUSIVOS = 30
     SEGUNDOS_TOTALES = 90
 
     def __init__(self, autor, personaje, nombre, imagen, fuente, valor, rareza, admin=False):
         super().__init__(timeout=self.SEGUNDOS_TOTALES)
-        self.admin = admin  # tirada de !rwAdmin: sin cooldown de reclamo
+        self.admin = admin
         self.autor = autor
         self.personaje = personaje
         self.nombre = nombre
@@ -3022,8 +3085,6 @@ class RWClaimView(discord.ui.View):
             )
             return
 
-        # Chequeamos el duplicado ANTES de tocar el cooldown o gastar el Pase VIP:
-        # si total el reclamo iba a fallar por esto, no tiene sentido consumir nada.
         if usuario_ya_tiene_personaje(interaction.user, self.personaje):
             await interaction.response.send_message(
                 f"Ya tenés a **{self.nombre}** en tu colección, no podés repetirlo.",
@@ -3035,7 +3096,6 @@ class RWClaimView(discord.ui.View):
         if ultimo_reclamo is not None:
             transcurrido_reclamo = time.time() - ultimo_reclamo
             if transcurrido_reclamo < COOLDOWN_RECLAMO_SEGUNDOS:
-                # ¿Tiene un Pase VIP guardado? Lo consume y salta el cooldown
                 if not self.admin and obtener_efecto_unico(interaction.user.id, "pase_vip") > 0:
                     consumir_efecto_unico(interaction.user.id, "pase_vip")
                 else:
@@ -3060,6 +3120,8 @@ class RWClaimView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
         self.stop()
 
+        await dar_xp_con_aviso(interaction.user, XP_POR_RECLAMO_RW, canal=interaction.channel)
+        await procesar_evento_mision(interaction.user, "rw_claim", 1, canal=interaction.channel)
         await ejecutar_autouse_silencioso(interaction.user, "despues_de_reclamar", interaction=interaction)
 
     async def on_timeout(self):
@@ -3075,26 +3137,20 @@ class RWClaimView(discord.ui.View):
             pass
 
 async def ejecutar_rw(ctx, admin=False):
-    """Devuelve True si se hizo la tirada, False si no."""
     if not personajes_cache:
         await ctx.reply(embed=crear_embed(
             descripcion="No hay personajes cargados todavía. Subí el `rw.json` al repo y corré `!rwreload`."
         ))
         return False
 
-    # 1) Agrupamos los personajes por rango de rareza
     grupos = agrupar_personajes_por_rareza()
 
-    # 2) Sorteamos la RAREZA (no el personaje) según el % de la tabla.
-    #    Solo entran en el sorteo los rangos que tengan al menos 1 personaje cargado.
     indices_disponibles = [i for i, grupo in enumerate(grupos) if grupo]
     if not indices_disponibles:
         await ctx.reply(embed=crear_embed(descripcion="No hay personajes con un valor válido cargado."))
         return False
     pesos_disponibles = [RANGOS_RAREZA[i][2] for i in indices_disponibles]
 
-    # Aplicar buff del Dado de la suerte: le saca un % del peso al Común
-    # y lo reparte entre las rarezas altas (a mayor rareza, más se beneficia).
     buff_dado = None if admin else obtener_buff(ctx.author.id, "suerte_rw")
     if buff_dado and 0 in indices_disponibles:
         idx_comun_en_lista = indices_disponibles.index(0)
@@ -3108,8 +3164,6 @@ async def ejecutar_rw(ctx, admin=False):
                 pesos_disponibles[p] += reparto
 
     indice_rango = random.choices(indices_disponibles, weights=pesos_disponibles, k=1)[0]
-
-    # 3) Dentro de esa rareza, elegimos un personaje al azar (todos con la misma chance)
     personaje = random.choice(grupos[indice_rango])
     rareza = RANGOS_RAREZA[indice_rango][3]
 
@@ -3140,7 +3194,6 @@ async def rw(ctx):
 
     usando_cristal = False
     if restante > 0:
-        # ¿Tiene un Cristal de reroll? Lo consume y tira igual, sin resetear el cooldown
         if obtener_efecto_unico(user_id, "cristal_reroll") > 0:
             consumir_efecto_unico(user_id, "cristal_reroll")
             usando_cristal = True
@@ -3155,11 +3208,11 @@ async def rw(ctx):
 
     exito = await ejecutar_rw(ctx)
 
-    # Solo ponemos cooldown nuevo si la tirada se hizo Y no usamos cristal
     if exito and not usando_cristal:
         poner_cooldown(cooldown_rw_usuario, user_id, COOLDOWN_RW_SEGUNDOS)
 
     if exito:
+        await dar_xp_con_aviso(ctx.author, XP_POR_COMANDO["rw"], canal=ctx.channel)
         await ejecutar_autouse_silencioso(ctx.author, "despues_de_rw")
 
 @bot.command(name="rwAdmin", aliases=["rwadmin"], hidden=True)
@@ -3201,19 +3254,15 @@ async def _consultar_safebooru(tags, cantidad):
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
-                    print(f"[buscar_imagenes_booru] safebooru respondió {resp.status} para '{tags}'", flush=True)
                     return []
                 try:
                     data = await resp.json(content_type=None)
                 except Exception:
                     return []
-    except Exception as e:
-        print(f"[buscar_imagenes_booru] Error buscando '{tags}': {e}", flush=True)
+    except Exception:
         return []
-
     if not isinstance(data, list):
         return []
-
     resultado = []
     for post in data:
         file_url = post.get("file_url")
@@ -3226,69 +3275,38 @@ async def _consultar_safebooru(tags, cantidad):
     return resultado
 
 async def buscar_imagenes_booru(nombre, fuente=None, cantidad=3):
-    """Busca en Safebooru (versión SFW de Danbooru) por el tag del personaje.
-    Primero prueba nombre+fuente combinados (ej: "gojo_satoru jujutsu_kaisen"),
-    que es mucho más preciso, porque muchos nombres de personajes se repiten
-    entre series distintas y buscar solo por nombre trae al personaje equivocado.
-    Si esa combinación no da nada, cae a buscar solo por el nombre."""
     tag_nombre = _tag_booru(nombre)
     if not tag_nombre:
         return []
-
     if fuente:
         tag_fuente = _tag_booru(str(fuente))
         if tag_fuente:
             combinado = await _consultar_safebooru(f"{tag_nombre} {tag_fuente}", cantidad)
             if combinado:
                 return combinado
-
-    resultado = await _consultar_safebooru(tag_nombre, cantidad)
-    if not resultado:
-        print(f"[buscar_imagenes_booru] 0 resultados para el tag '{tag_nombre}'", flush=True)
-    return resultado
+    return await _consultar_safebooru(tag_nombre, cantidad)
 
 async def buscar_imagenes_jikan(nombre, cantidad=3):
-    """Busca el personaje en Jikan (API no oficial de MyAnimeList) y devuelve
-    hasta `cantidad` imágenes oficiales de fichas de personaje que matchean el
-    nombre. A diferencia de scrapear un buscador de imágenes genérico, acá no
-    hay ambigüedad: es la base de datos de MAL buscando por nombre de
-    personaje, así que el resultado es mucho más confiable para anime/manga.
-    No sirve para personajes de videojuegos u otras fuentes que MAL no
-    catalogue — para eso están los fallbacks de Safebooru/Bing."""
     headers = {"User-Agent": "Mozilla/5.0"}
     params = {"q": nombre, "limit": min(max(cantidad * 3, 5), 10)}
-
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get("https://api.jikan.moe/v4/characters", params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
-                    print(f"[buscar_imagenes_jikan] Jikan respondió {resp.status} para '{nombre}'", flush=True)
                     return []
                 data = await resp.json(content_type=None)
-    except Exception as e:
-        print(f"[buscar_imagenes_jikan] Error de conexión buscando '{nombre}': {e}", flush=True)
+    except Exception:
         return []
-
     items = data.get("data", []) if isinstance(data, dict) else []
     if not items:
-        print(f"[buscar_imagenes_jikan] 0 resultados para '{nombre}'", flush=True)
         return []
-
     nombre_norm = nombre.strip().lower()
-
     def similitud(item):
         nombre_item = str(item.get("name", "")).strip().lower()
         return difflib.SequenceMatcher(None, nombre_norm, nombre_item).ratio()
-
-    # Ordenamos por qué tan parecido es el nombre devuelto al que buscamos,
-    # porque Jikan hace búsqueda difusa y puede traer personajes de nombre
-    # parecido pero distinto.
     items_ordenados = sorted(items, key=similitud, reverse=True)
-
     resultado = []
     for item in items_ordenados:
-        # Si el nombre no se parece casi nada, mejor no arriesgar a traer un
-        # personaje completamente distinto solo porque Jikan lo sugirió.
         if similitud(item) < 0.4:
             continue
         imagen = ((item.get("images") or {}).get("jpg") or {}).get("image_url")
@@ -3299,36 +3317,19 @@ async def buscar_imagenes_jikan(nombre, cantidad=3):
     return resultado
 
 async def buscar_imagenes_serper(query, cantidad=3):
-    """Busca en Serper.dev (API real de Google Imágenes vía JSON, no scraping).
-    Esta es la fuente principal: a diferencia de Jikan (solo cubre anime/manga)
-    o de scrapear buscadores a mano (Safebooru con tags puede devolver algo
-    "válido" pero totalmente ajeno al personaje; Google/Bing/DuckDuckGo desde
-    un servidor como Render suelen chocar con antibot y tirar contenido
-    genérico/publicidad en vez de resultados reales), esto te da exactamente
-    lo que buscarías vos a mano en Google Imágenes. Requiere SERPER_API_KEY;
-    si no está configurada, devuelve vacío y el llamador cae a los fallbacks."""
     if not SERPER_API_KEY:
         return []
-
     headers = {"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"}
     body = {"q": query, "num": cantidad}
-
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post("https://google.serper.dev/images", headers=headers, json=body, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
-                    texto_error = await resp.text()
-                    print(f"[buscar_imagenes_serper] Serper respondió {resp.status} para '{query}': {texto_error}", flush=True)
                     return []
                 data = await resp.json(content_type=None)
-    except Exception as e:
-        print(f"[buscar_imagenes_serper] Error de conexión buscando '{query}': {e}", flush=True)
+    except Exception:
         return []
-
     items = data.get("images", []) if isinstance(data, dict) else []
-    if not items:
-        print(f"[buscar_imagenes_serper] 0 resultados para '{query}'", flush=True)
-
     resultado = []
     for item in items:
         url_img = item.get("imageUrl")
@@ -3339,11 +3340,6 @@ async def buscar_imagenes_serper(query, cantidad=3):
     return resultado
 
 async def buscar_candidatas_imagen(nombre, fuente, cantidad=3):
-    """Serper (Google Imágenes real, vía API) es la fuente principal: es la
-    única que devuelve resultados genuinamente relevantes en vez de "algo, lo
-    que sea". Si no hay SERPER_API_KEY configurada todavía, o esa consulta
-    puntual no trae nada, cae a la cadena vieja (Jikan → Safebooru → Bing)
-    para que el bot siga funcionando mientras tanto."""
     candidatas = await buscar_imagenes_serper(f"{nombre} {fuente}", cantidad=cantidad)
     if candidatas:
         return candidatas
@@ -3356,40 +3352,22 @@ async def buscar_candidatas_imagen(nombre, fuente, cantidad=3):
     return await buscar_imagenes_bing(f"{nombre} {fuente}", cantidad=cantidad)
 
 async def buscar_imagenes_bing(query, cantidad=3):
-    """Scrapea Bing Imágenes y devuelve hasta `cantidad` links directos de imagen.
-    A diferencia de DuckDuckGo, no necesita conseguir un token aparte (eso era
-    lo que fallaba en silencio), y a diferencia de Google, no exige aceptar
-    cookies para mostrar resultados. Sigue siendo scraping no oficial: si Bing
-    cambia el HTML esto puede dejar de andar, pero hoy es la opción más estable
-    de las tres que probamos."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
         "Accept-Language": "es-419,es;q=0.9,en;q=0.8",
     }
     params = {"q": query, "form": "HDRSC2", "first": "1"}
-
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get("https://www.bing.com/images/search", params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
-                    print(f"[buscar_imagenes_bing] Bing respondió {resp.status} para '{query}'", flush=True)
                     return []
                 html = await resp.text()
-    except Exception as e:
-        print(f"[buscar_imagenes_bing] Error de conexión buscando '{query}': {e}", flush=True)
+    except Exception:
         return []
-
-    # Bing mete la metadata de cada resultado (incluida "murl", la imagen
-    # original) en un atributo m="{...}" con el JSON escapado como entidades
-    # HTML (&quot; en vez de "), por eso el regex busca ese patrón puntual.
     encontrados = re.findall(r'murl&quot;:&quot;(https?://[^&]+?)&quot;', html)
     if not encontrados:
-        # A veces Bing no escapa el atributo; probamos también la variante cruda.
         encontrados = re.findall(r'"murl":"(https?://[^"]+?)"', html.replace("\\/", "/"))
-
-    if not encontrados:
-        print(f"[buscar_imagenes_bing] 0 resultados para '{query}' (largo HTML: {len(html)})", flush=True)
-
     vistos = set()
     resultado = []
     for url_img in encontrados:
@@ -3400,10 +3378,13 @@ async def buscar_imagenes_bing(query, cantidad=3):
             break
     return resultado
 
+_HEADERS_NAVEGADOR = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+}
+
 async def _descargar_imagen_bytes(session, url):
-    """Baja una imagen como bytes crudos. Devuelve None si falla (link roto,
-    timeout, lo que sea) — el collage la muestra como "Sin imagen" en vez de
-    romperse."""
     try:
         async with session.get(url, timeout=aiohttp.ClientTimeout(total=12), headers=_HEADERS_NAVEGADOR) as resp:
             if resp.status != 200:
@@ -3413,13 +3394,9 @@ async def _descargar_imagen_bytes(session, url):
         return None
 
 def _armar_collage(imagenes_bytes):
-    """Arma un collage horizontal con hasta 3 imágenes, numeradas 1/2/3 arriba
-    de cada una, todas a la misma altura. Devuelve un BytesIO con el PNG, o
-    None si ninguna de las 3 se pudo abrir."""
     ALTO = 350
     SEPARACION = 10
     ANCHO_PLACEHOLDER = 180
-
     abiertas = []
     for b in imagenes_bytes:
         if b is None:
@@ -3432,14 +3409,11 @@ def _armar_collage(imagenes_bytes):
             abiertas.append(img)
         except Exception:
             abiertas.append(None)
-
     if not any(img is not None for img in abiertas):
         return None
-
     ancho_total = sum((img.width if img else ANCHO_PLACEHOLDER) for img in abiertas) + SEPARACION * (len(abiertas) - 1)
     collage = Image.new("RGB", (ancho_total, ALTO + 36), (32, 32, 36))
     draw = ImageDraw.Draw(collage)
-
     x = 0
     for i, img in enumerate(abiertas, start=1):
         if img is None:
@@ -3451,18 +3425,12 @@ def _armar_collage(imagenes_bytes):
             ancho = img.width
         draw.text((x + ancho // 2 - 4, 8), str(i), fill=(255, 255, 255))
         x += ancho + SEPARACION
-
     buffer = io.BytesIO()
     collage.save(buffer, format="PNG")
     buffer.seek(0)
     return buffer
 
 class ComparacionImagenesView(discord.ui.View):
-    """Como BusquedaImagenesView, pero en vez de mostrar las candidatas una
-    por una, arma un collage con las 3 juntas y numeradas para elegir de un
-    solo vistazo (pensado para personajes que no conocés: comparando las 3
-    confirmás que son el mismo antes de guardar)."""
-
     def __init__(self, autor, pendientes):
         super().__init__(timeout=600)
         self.autor = autor
@@ -3476,8 +3444,6 @@ class ComparacionImagenesView(discord.ui.View):
         self.mensaje = None
 
     async def cargar_siguiente_pendiente(self):
-        """Devuelve (embed, archivo_o_None) del siguiente personaje con candidatas,
-        o el embed final (sin archivo) si ya no quedan."""
         while self.indice_personaje < len(self.pendientes):
             personaje = self.pendientes[self.indice_personaje]
             nombre = campo_personaje(personaje, "Nombre", "nombre")
@@ -3493,25 +3459,20 @@ class ComparacionImagenesView(discord.ui.View):
         personaje = self.pendientes[self.indice_personaje]
         nombre = campo_personaje(personaje, "Nombre", "nombre")
         fuente = campo_personaje(personaje, "Fuente", "fuente")
-
         async with aiohttp.ClientSession() as session:
             bytes_imagenes = await asyncio.gather(*[_descargar_imagen_bytes(session, u) for u in self.candidatos])
         buffer = _armar_collage(bytes_imagenes)
-
         for i, boton in enumerate((self.opcion1, self.opcion2, self.opcion3), start=1):
             boton.disabled = i > len(self.candidatos)
-
         embed = crear_embed(
             titulo=nombre,
             footer=f"Personaje {self.indice_personaje + 1}/{len(self.pendientes)}",
         )
         embed.add_field(name="Fuente", value=str(fuente), inline=False)
-
         if buffer is not None:
             archivo = discord.File(buffer, filename="collage.png")
             embed.set_image(url="attachment://collage.png")
             return embed, archivo
-
         embed.description = "Ninguna de las 3 candidatas se pudo abrir como imagen. Probá `🔄 Recargar`."
         return embed, None
 
@@ -3520,7 +3481,6 @@ class ComparacionImagenesView(discord.ui.View):
         self.terminado = True
         for item in self.children:
             item.disabled = True
-
         texto = f"Guardé imagen a **{self.guardados}** personaje(s). Salteé **{self.saltados}** (sin resultados o ninguna te sirvió)."
         if hubo_cambios_personajes_sin_guardar:
             try:
@@ -3530,7 +3490,6 @@ class ComparacionImagenesView(discord.ui.View):
                 texto += f"\n❌ Pero hubo un error al subirlo a GitHub: {e}"
         else:
             texto += "\n(No guardaste ninguna, así que no hizo falta tocar GitHub.)"
-
         return crear_embed(titulo="🖼️ Comparación de imágenes terminada", descripcion=texto)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -3627,19 +3586,15 @@ async def imgcompare(ctx, cantidad: int = None):
     if not personajes_cache:
         await ctx.reply(embed=crear_embed(descripcion="No hay personajes cargados. Corré `!rwreload` primero."))
         return
-
     pendientes = [p for p in personajes_cache if not str(campo_personaje(p, "Imagen", "imagen", default="")).strip()]
     if not pendientes:
         await ctx.reply(embed=crear_embed(descripcion="Ningún personaje de `rw.json` está sin imagen. 🎉"))
         return
-
     if cantidad is not None and cantidad > 0:
         pendientes = pendientes[:cantidad]
-
     aviso = await ctx.reply(embed=crear_embed(
         descripcion=f"🔎 Armando collages para **{len(pendientes)}** personaje(s) sin foto. Puede tardar un toque por cada uno..."
     ))
-
     vista = ComparacionImagenesView(ctx.author, pendientes)
     embed_inicial, archivo_inicial = await vista.cargar_siguiente_pendiente()
     if archivo_inicial is not None:
@@ -3649,14 +3604,10 @@ async def imgcompare(ctx, cantidad: int = None):
     vista.mensaje = aviso
 
 class BusquedaImagenesView(discord.ui.View):
-    """Recorre los personajes sin Imagen en rw.json, busca 2 candidatas por
-    Google Imágenes para cada uno, y deja que vos elijas Guardar/Rechazar.
-    rw.json recién se sube a GitHub una sola vez, al terminar todo."""
-
     def __init__(self, autor, pendientes):
         super().__init__(timeout=600)
         self.autor = autor
-        self.pendientes = pendientes  # referencias directas a dicts de personajes_cache
+        self.pendientes = pendientes
         self.indice_personaje = 0
         self.candidatos = []
         self.indice_candidato = 0
@@ -3696,7 +3647,6 @@ class BusquedaImagenesView(discord.ui.View):
         self.terminado = True
         for item in self.children:
             item.disabled = True
-
         texto = f"Guardé imagen a **{self.guardados}** personaje(s). Salteé **{self.saltados}** por falta de resultados."
         if hubo_cambios_personajes_sin_guardar:
             try:
@@ -3706,7 +3656,6 @@ class BusquedaImagenesView(discord.ui.View):
                 texto += f"\n❌ Pero hubo un error al subirlo a GitHub: {e}"
         else:
             texto += "\n(No guardaste ninguna, así que no hizo falta tocar GitHub.)"
-
         return crear_embed(titulo="🖼️ Búsqueda de imágenes terminada", descripcion=texto)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -3752,8 +3701,6 @@ class BusquedaImagenesView(discord.ui.View):
 
     @discord.ui.button(label="🔄 Recargar", style=discord.ButtonStyle.secondary)
     async def recargar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        """Vuelve a buscar candidatas frescas para el personaje actual, en vez
-        de solo re-mostrar el mismo link (que puede ser el que ya murió/no cargó)."""
         await interaction.response.defer()
         self.procesando = True
         try:
@@ -3780,35 +3727,28 @@ class BusquedaImagenesView(discord.ui.View):
 
 @bot.command(name="buscarimagenes", aliases=["imgsearch"])
 async def buscarimagenes(ctx, cantidad: int = None):
-    """Busca una foto (Safebooru + DuckDuckGo) para los personajes de rw.json que no tienen (Guardar/Rechazar/Recargar, sube a GitHub al final)"""
+    """Busca una foto para los personajes de rw.json que no tienen (Guardar/Rechazar/Recargar, sube a GitHub al final)"""
     if not GITHUB_TOKEN or not GITHUB_REPO:
         await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
         return
     if not personajes_cache:
         await ctx.reply(embed=crear_embed(descripcion="No hay personajes cargados. Corré `!rwreload` primero."))
         return
-
     pendientes = [p for p in personajes_cache if not str(campo_personaje(p, "Imagen", "imagen", default="")).strip()]
     if not pendientes:
         await ctx.reply(embed=crear_embed(descripcion="Ningún personaje de `rw.json` está sin imagen. 🎉"))
         return
-
     if cantidad is not None and cantidad > 0:
         pendientes = pendientes[:cantidad]
-
     aviso = await ctx.reply(embed=crear_embed(
         descripcion=f"🔎 Buscando imágenes para **{len(pendientes)}** personaje(s) sin foto. Puede tardar un toque por cada uno..."
     ))
-
     vista = BusquedaImagenesView(ctx.author, pendientes)
     embed_inicial = await vista.cargar_siguiente_pendiente()
     await aviso.edit(embed=embed_inicial, view=vista)
     vista.mensaje = aviso
 
 class GaleriaView(discord.ui.View):
-    """Recorre personajes_cache de a uno: solo nombre + imagen, para poder
-    revisar rápido cuáles tienen la foto rota o mal puesta."""
-
     def __init__(self, autor, personajes):
         super().__init__(timeout=600)
         self.autor = autor
@@ -3825,11 +3765,7 @@ class GaleriaView(discord.ui.View):
         personaje = self.personajes[self.indice]
         nombre = campo_personaje(personaje, "Nombre", "nombre")
         imagen = campo_personaje(personaje, "Imagen", "imagen", default=None)
-
-        embed = crear_embed(
-            titulo=nombre,
-            footer=f"{self.indice + 1}/{len(self.personajes)}",
-        )
+        embed = crear_embed(titulo=nombre, footer=f"{self.indice + 1}/{len(self.personajes)}")
         if imagen:
             embed.set_image(url=imagen)
         else:
@@ -3890,7 +3826,6 @@ class GaleriaIrAModal(discord.ui.Modal):
         if not (1 <= numero <= total):
             await interaction.response.send_message(f"Tiene que ser un número entre 1 y {total}.", ephemeral=True)
             return
-
         self.vista.indice = numero - 1
         self.vista._actualizar_botones()
         await interaction.response.edit_message(embed=self.vista.construir_embed(), view=self.vista)
@@ -3901,7 +3836,6 @@ async def galeria(ctx):
     if not personajes_cache:
         await ctx.reply(embed=crear_embed(descripcion="No hay personajes cargados. Probá `!rwreload` primero."))
         return
-
     view = GaleriaView(ctx.author, personajes_cache)
     mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
     view.mensaje = mensaje
@@ -3914,45 +3848,36 @@ async def winfo(ctx, *, nombre_buscado: str = None):
             descripcion="No hay personajes cargados todavía. Subí el `rw.json` al repo y corré `!rwreload`."
         ))
         return
-
     if not nombre_buscado:
         await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!winfo Gojo Satoru`"))
         return
-
     buscado = nombre_buscado.lower().strip()
     encontrados = [p for p in personajes_cache if buscado in campo_personaje(p, "Nombre", "nombre").lower()]
-
     if not encontrados:
         await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún personaje que coincida con **{nombre_buscado}**."))
         return
-
     exacto = next((p for p in encontrados if campo_personaje(p, "Nombre", "nombre").lower() == buscado), None)
     personaje = exacto or encontrados[0]
-
     nombre = campo_personaje(personaje, "Nombre", "nombre")
     imagen = campo_personaje(personaje, "Imagen", "imagen", default=None)
     fuente = campo_personaje(personaje, "Fuente", "fuente")
     valor = campo_personaje(personaje, "Valor", "valor")
     _, rareza = info_rareza(valor)
-
     embed = crear_embed(titulo=f"🔎 {nombre}")
     embed.add_field(name="Fuente", value=str(fuente), inline=True)
     embed.add_field(name="Valor", value=formatear_pesos(valor), inline=True)
     embed.add_field(name="Rareza", value=rareza, inline=True)
     if imagen:
         embed.set_image(url=imagen)
-
     if not exacto and len(encontrados) > 1:
         embed.set_footer(text=f"Coincidencia parcial. Hay {len(encontrados) - 1} más con nombres similares.")
-
     await ctx.reply(embed=embed)
 
 class ShopView(discord.ui.View):
-    """Un embed por categoría, con Previous/Next para pasar de categoría."""
     def __init__(self, autor, categorias):
         super().__init__(timeout=120)
         self.autor = autor
-        self.categorias = categorias  # lista de (nombre_categoria, [items])
+        self.categorias = categorias
         self.pagina = 0
         self.mensaje = None
         self._actualizar_botones()
@@ -3963,7 +3888,6 @@ class ShopView(discord.ui.View):
 
     def construir_embed(self):
         nombre_categoria, items = self.categorias[self.pagina]
-
         if items:
             bloques = []
             for item in items:
@@ -3977,7 +3901,6 @@ class ShopView(discord.ui.View):
             descripcion = f"### {nombre_categoria}\n{SEPARADOR}\n\n" + "\n\n".join(bloques)
         else:
             descripcion = f"### {nombre_categoria}\n{SEPARADOR}\n\n-# No hay ítems acá todavía."
-
         embed = crear_embed(
             descripcion=descripcion,
             footer=f"Página {self.pagina + 1}/{len(self.categorias)} — usá !buy \"nombre\" para comprar y !usar \"nombre\" para usar",
@@ -4018,7 +3941,6 @@ async def shop(ctx):
     if not shop_cache:
         await ctx.reply(embed=crear_embed(descripcion="La tienda está vacía. Subí `data/shop.json` al repo y corré `!shopreload`."))
         return
-
     categorias = list(shop_cache.items())
     view = ShopView(ctx.author, categorias)
     mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
@@ -4052,9 +3974,6 @@ async def buy(ctx, *, entrada: str = None):
         await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!buy Peluche de Ado`, `!buy Peluche de Ado 3` o `!buy Dólar 10k`"))
         return
 
-    # Acepta cantidad con sufijo (100k, 2m, all, etc) usando el mismo parser que el resto del bot.
-    # Si el último "token" del mensaje no es una cantidad válida, se asume que todo
-    # el texto es el nombre del ítem (y la cantidad = 1).
     partes = entrada.strip().rsplit(" ", 1)
     cantidad = 1
     nombre_buscado = entrada.strip()
@@ -4078,7 +3997,6 @@ async def buy(ctx, *, entrada: str = None):
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0}
     balances_cache[user_id].setdefault("banco", 0)
 
-    # "all": comprar todo lo que el balance alcance
     if cantidad == "all":
         cantidad = balances_cache[user_id]["balance"] // item["precio"]
         if cantidad <= 0:
@@ -4112,6 +4030,9 @@ async def buy(ctx, *, entrada: str = None):
         ),
     ))
 
+    await dar_xp_con_aviso(ctx.author, XP_POR_COMANDO["buy"], canal=ctx.channel)
+    await procesar_evento_mision(ctx.author, "buy_count", cantidad, canal=ctx.channel)
+
 ITEMS_POR_PAGINA = 10
 
 class InventarioIrAModal(discord.ui.Modal):
@@ -4135,20 +4056,15 @@ class InventarioIrAModal(discord.ui.Modal):
         if not (1 <= numero <= self.vista.total_paginas):
             await interaction.response.send_message(f"Tiene que ser un número entre 1 y {self.vista.total_paginas}.", ephemeral=True)
             return
-
         self.vista.pagina = numero - 1
         self.vista._actualizar_botones()
         await interaction.response.edit_message(embed=self.vista.construir_embed(), view=self.vista)
 
 class InventarioView(discord.ui.View):
-    """Muestra el inventario paginado: 10 tipos de item por página, con
-    Previous/Ir a/Next. Solo el autor puede mover las páginas."""
-
     def __init__(self, autor, miembro, items):
         super().__init__(timeout=120)
         self.autor = autor
         self.miembro = miembro
-        # Ordenamos por cantidad descendente (los que más tenés primero)
         self.items = sorted(items.items(), key=lambda kv: kv[1], reverse=True)
         self.pagina = 0
         self.total_paginas = max(1, -(-len(self.items) // ITEMS_POR_PAGINA))
@@ -4163,13 +4079,11 @@ class InventarioView(discord.ui.View):
         inicio = self.pagina * ITEMS_POR_PAGINA
         fin = inicio + ITEMS_POR_PAGINA
         items_pagina = self.items[inicio:fin]
-
         lineas = []
         for nombre_item, cantidad in items_pagina:
             _, item_shop = buscar_item_shop(nombre_item)
             emoji = item_shop["emoji"] if item_shop else "📦"
             lineas.append(f"> {emoji} **{nombre_item}** — x{cantidad}")
-
         if lineas:
             descripcion = (
                 f"### 🎒 Inventario de {self.miembro.display_name}\n"
@@ -4182,7 +4096,6 @@ class InventarioView(discord.ui.View):
                 f"{SEPARADOR}\n\n"
                 f"-# No hay items en esta página."
             )
-
         total_items = sum(c for _, c in self.items)
         return crear_embed(
             descripcion=descripcion,
@@ -4228,12 +4141,10 @@ async def inv(ctx, miembro: discord.Member = None):
     user_id = str(miembro.id)
     datos = inventario_cache.get(user_id)
     items = datos.get("items", {}) if datos else {}
-
     if not items:
         posesivo = "Todavía no compraste" if miembro.id == ctx.author.id else f"**{miembro.display_name}** todavía no compró"
         await ctx.reply(embed=crear_embed(descripcion=f"{posesivo} nada en `!shop`."))
         return
-
     view = InventarioView(ctx.author, miembro, items)
     mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
     view.mensaje = mensaje
@@ -4244,16 +4155,13 @@ async def invfo(ctx, *, nombre_buscado: str = None):
     if not shop_cache:
         await ctx.reply(embed=crear_embed(descripcion="La tienda está vacía. Subí `data/shop.json` al repo y corré `!shopreload`."))
         return
-
     if not nombre_buscado:
         await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!invfo Peluche de Ado`"))
         return
-
     categoria, item = buscar_item_shop(nombre_buscado)
     if item is None:
         await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún ítem que se llame **{nombre_buscado}** en la tienda. Mirá `!shop`."))
         return
-
     embed = crear_embed(titulo=f"{item['emoji']} {item['nombre']}", descripcion=item.get("descripcion") or None)
     embed.add_field(name="Categoría", value=categoria, inline=True)
     embed.add_field(name="Precio", value=formatear_pesos(item["precio"]), inline=True)
@@ -4261,14 +4169,9 @@ async def invfo(ctx, *, nombre_buscado: str = None):
         embed.add_field(name="Usable", value="Sí, con `!usar`", inline=False)
     if item.get("imagen"):
         embed.set_image(url=item["imagen"])
-
     await ctx.reply(embed=embed)
 
-# ===================== COMANDOS DE ITEMS =====================
-
 async def aplicar_efecto_item(ctx, item, efecto):
-    """Aplica el efecto del item. Devuelve el texto de resultado o None si no se pudo
-    (en cuyo caso ya mandó un mensaje explicando por qué)."""
     global hubo_cambios_inventario_sin_guardar
     user_id = str(ctx.author.id)
 
@@ -4293,7 +4196,7 @@ async def aplicar_efecto_item(ctx, item, efecto):
         return f"🏛️ Ganás **+{int(item['valor']*100)}%** en `!w` durante **{formatear_tiempo_restante(item.get('duracion', 259200))}**."
 
     if efecto == "reducir_cooldown_rw":
-        segundos = item.get("valor", 7200)  # default 2hs si el shop.json no lo trae
+        segundos = item.get("valor", 7200)
         restante_antes = cooldown_restante(cooldown_rw_usuario, user_id)
         if restante_antes <= 0:
             await ctx.reply(embed=crear_embed(descripcion="No tenés ningún cooldown activo de `!rw` para reducir. No gastaste el item."))
@@ -4335,7 +4238,6 @@ async def aplicar_efecto_item(ctx, item, efecto):
         )
 
     if efecto == "resetear_cooldown_rw":
-        # Poción de reset: solo borra el cooldown de !rw.
         restante = resetear_cooldown(cooldown_rw_usuario, user_id)
         if restante <= 0:
             await ctx.reply(embed=crear_embed(descripcion="No tenés ningún cooldown activo de `!rw` para resetear. No gastaste el item."))
@@ -4343,15 +4245,9 @@ async def aplicar_efecto_item(ctx, item, efecto):
         return f"⏰ Tu cooldown de `!rw` se borró. Ya podés tirar de nuevo (tenías **{formatear_tiempo_restante(restante)}** restantes)."
 
     if efecto == "resetear_todos_cooldowns":
-        # Máquina del tiempo: resetea TODOS los cooldowns de comandos con
-        # cooldown manual: !rw (tirada), !w (trabajo), el reclamo de !rw, y !mendigar.
         rw_restante = resetear_cooldown(cooldown_rw_usuario, user_id)
         w_restante = resetear_cooldown(cooldown_w_usuario, user_id)
         mendigar_restante = resetear_cooldown(cooldown_mendigar_usuario, user_id)
-
-        # El cooldown de reclamo de !rw no vive en un dict de cooldowns (es
-        # ultimo_reclamo_por_usuario, guarda el timestamp del último reclamo
-        # exitoso). Lo medimos y lo borramos a mano.
         reclamo_restante = 0
         ultimo = ultimo_reclamo_por_usuario.get(user_id)
         if ultimo is not None:
@@ -4359,12 +4255,9 @@ async def aplicar_efecto_item(ctx, item, efecto):
             if transcurrido < COOLDOWN_RECLAMO_SEGUNDOS:
                 reclamo_restante = COOLDOWN_RECLAMO_SEGUNDOS - transcurrido
             ultimo_reclamo_por_usuario.pop(user_id, None)
-
-        # Si no había NADA para resetear, no gastamos el item.
         if rw_restante <= 0 and w_restante <= 0 and reclamo_restante <= 0 and mendigar_restante <= 0:
             await ctx.reply(embed=crear_embed(descripcion="No tenías ningún cooldown activo para resetear. No gastaste el item."))
             return None
-
         lineas = []
         if rw_restante > 0:
             lineas.append(f"> 🎴 `!rw` — tenías **{formatear_tiempo_restante(rw_restante)}**")
@@ -4374,7 +4267,6 @@ async def aplicar_efecto_item(ctx, item, efecto):
             lineas.append(f"> 🔒 Reclamo de `!rw` — tenías **{formatear_tiempo_restante(reclamo_restante)}**")
         if mendigar_restante > 0:
             lineas.append(f"> 🪙 `!mendigar` — tenías **{formatear_tiempo_restante(mendigar_restante)}**")
-
         return "⏰ **Máquina del tiempo** activada. Se resetearon todos estos cooldowns:\n\n" + "\n".join(lineas)
 
     if efecto == "pase_vip":
@@ -4387,12 +4279,6 @@ async def aplicar_efecto_item(ctx, item, efecto):
 
     return None
 
-
-# ===================== AUTOUSE =====================
-# Cada efecto "usable" tiene, como mucho, UN momento natural en el que tiene
-# sentido gatillarse solo. Si un efecto no está acá, significa que no hay un
-# momento automático obvio para él (ej: los buffs de suerte, que se activan
-# antes de una sesión, no después de una acción puntual) y !autouse lo rechaza.
 TRIGGERS_AUTOUSE = {
     "reducir_cooldown_rw": "despues_de_rw",
     "resetear_cooldown_rw": "despues_de_rw",
@@ -4406,9 +4292,6 @@ NOMBRES_TRIGGER = {
 }
 
 class _CtxSilencioso:
-    """Shim mínimo para poder reusar aplicar_efecto_item() en el autouse sin que
-    mande mensajes al canal público cuando el efecto no corresponde aplicarse
-    (ej: 'no tenés cooldown que reducir'). El autouse falla en silencio en esos casos."""
     def __init__(self, author):
         self.author = author
 
@@ -4416,59 +4299,42 @@ class _CtxSilencioso:
         pass
 
 async def ejecutar_autouse_silencioso(usuario, trigger, interaction=None):
-    """Si `usuario` configuró un item para este gatillo y todavía le queda
-    stock, lo usa automáticamente (reusando la misma lógica que !usar) y le
-    avisa. Si `interaction` viene seteado (gatillo disparado desde un botón,
-    como el de reclamar), avisa con un mensaje ephemeral de esa interacción
-    -solo esa persona lo ve, sin salir del canal-. Si no hay interacción
-    (gatillo disparado desde un comando de texto plano, como !rw) no hay forma
-    de mandar algo ephemeral, así que cae a un DM. No hace nada si no hay
-    autouse configurado, no tiene stock, o el efecto no necesitaba aplicarse
-    (ej: no había cooldown activo)."""
     user_id = str(usuario.id)
     datos = inventario_cache.get(user_id)
     if not datos:
         return
-
     nombre_item = datos.get("autouse", {}).get(trigger)
     if not nombre_item:
         return
-
     if datos.get("items", {}).get(nombre_item, 0) <= 0:
-        return  # ya no le queda, no hay nada que avisar
-
+        return
     _, item = buscar_item_shop(nombre_item)
     if item is None or TRIGGERS_AUTOUSE.get(item.get("efecto")) != trigger:
-        return  # cambió la tienda y este item ya no corresponde a este gatillo
-
+        return
     global hubo_cambios_inventario_sin_guardar
     resultado_texto = await aplicar_efecto_item(_CtxSilencioso(usuario), item, item["efecto"])
     if resultado_texto is None:
-        return  # no hacía falta (ej: no había cooldown que reducir), no se gastó nada
-
+        return
     quitar_item_del_inventario(usuario, nombre_item, 1)
     hubo_cambios_inventario_sin_guardar = True
     try:
         await guardar_inventario_en_github()
     except Exception as e:
         print(f"⚠️ No pude guardar el inventario tras autouse: {e}", flush=True)
-
     embed_aviso = crear_embed(
         titulo="🤖 Autouse",
         descripcion=f"{resultado_texto}\n\n-# Se usó automáticamente tu **{item['emoji']} {item['nombre']}**.",
     )
-
     if interaction is not None:
         try:
             await interaction.followup.send(embed=embed_aviso, ephemeral=True)
             return
         except discord.HTTPException:
-            pass  # el token de la interacción venció o algo falló: probamos DM igual
-
+            pass
     try:
         await usuario.send(embed=embed_aviso)
     except discord.Forbidden:
-        pass  # tiene los DMs cerrados, no hay forma de avisarle
+        pass
 
 @bot.command(name="usar", aliases=["use"])
 async def usar(ctx, *, nombre_buscado: str = None):
@@ -4478,7 +4344,6 @@ async def usar(ctx, *, nombre_buscado: str = None):
     if not shop_cache:
         await ctx.reply(embed=crear_embed(descripcion="La tienda está vacía."))
         return
-
     if not nombre_buscado:
         await ctx.reply(embed=crear_embed(descripcion="Decime qué item querés usar. Ejemplo: `!usar Dado de la suerte`"))
         return
@@ -4489,31 +4354,25 @@ async def usar(ctx, *, nombre_buscado: str = None):
         await ctx.reply(embed=crear_embed(descripcion="No tenés ningún item en tu inventario. Mirá `!shop`."))
         return
 
-    # Buscar el item en el shop por nombre (usa la misma lógica difusa que !buy)
     categoria, item = buscar_item_shop(nombre_buscado)
     if item is None:
         await ctx.reply(embed=crear_embed(descripcion=f"No encontré ningún item llamado **{nombre_buscado}** en la tienda."))
         return
 
-    # ¿El usuario realmente tiene este item?
     items_usuario = datos.get("items", {})
     if items_usuario.get(item["nombre"], 0) <= 0:
         await ctx.reply(embed=crear_embed(descripcion=f"No tenés **{item['nombre']}** en tu inventario."))
         return
 
-    # ¿El item tiene un efecto usable?
     efecto = item.get("efecto")
     if not efecto:
         await ctx.reply(embed=crear_embed(descripcion=f"**{item['emoji']} {item['nombre']}** no tiene un efecto que se pueda usar. Es un item de colección."))
         return
 
-    # Aplicar el efecto
     resultado_texto = await aplicar_efecto_item(ctx, item, efecto)
     if resultado_texto is None:
-        # El efecto no se pudo aplicar (ya se mandó un mensaje explicando por qué)
         return
 
-    # Consumir 1 unidad del item
     quitar_item_del_inventario(ctx.author, item["nombre"], 1)
 
     embed = crear_embed(
@@ -4564,7 +4423,6 @@ async def autouse(ctx, *, nombre_buscado: str = None):
         ))
         return
 
-    # Toggle: si ya era justo este item el configurado en este gatillo, lo apagamos
     if config_autouse.get(trigger) == item["nombre"]:
         del config_autouse[trigger]
         hubo_cambios_inventario_sin_guardar = True
@@ -4595,7 +4453,6 @@ async def autouse(ctx, *, nombre_buscado: str = None):
 
     await ctx.reply(embed=crear_embed(titulo="🤖 Autouse configurado", descripcion=texto))
 
-
 @bot.command(name="buffs", aliases=["efectos"])
 async def buffs(ctx, miembro: discord.Member = None):
     """Muestra los buffs activos y efectos guardados de un usuario"""
@@ -4606,7 +4463,6 @@ async def buffs(ctx, miembro: discord.Member = None):
     lineas = []
     ahora = time.time()
 
-    # --- Buffs temporales (los limpiamos de paso si expiraron) ---
     buffs_activos = datos.get("buffs", {})
     nombres_buffs = {
         "suerte_rw": "🎲 Dado de la suerte",
@@ -4632,14 +4488,12 @@ async def buffs(ctx, miembro: discord.Member = None):
     else:
         lineas.append("**Buffs activos:**\n> *Ninguno.*")
 
-    # --- Mejoras permanentes ---
     if datos.get("reduccion_cooldown_w", 0) > 0:
         cooldown_actual = max(COOLDOWN_W_MINIMO, COOLDOWN_W_SEGUNDOS - datos["reduccion_cooldown_w"])
         lineas.append("")
         lineas.append("**Mejoras permanentes:**")
         lineas.append(f"> ⏱️ `!w` — cooldown reducido a {formatear_tiempo_restante(cooldown_actual)} (base: {formatear_tiempo_restante(COOLDOWN_W_SEGUNDOS)})")
 
-    # --- Efectos únicos guardados ---
     efectos = datos.get("efectos_unicos", {})
     efectos_activos = {k: v for k, v in efectos.items() if v > 0}
     nombres_efectos = {
@@ -4654,7 +4508,6 @@ async def buffs(ctx, miembro: discord.Member = None):
             etiqueta = nombres_efectos.get(nombre, nombre)
             lineas.append(f"> {etiqueta} x{cantidad}")
 
-    # --- Cooldowns activos ---
     restante_rw = cooldown_restante(cooldown_rw_usuario, user_id)
     restante_w = cooldown_restante(cooldown_w_usuario, user_id)
 
@@ -4672,7 +4525,223 @@ async def buffs(ctx, miembro: discord.Member = None):
     )
     await ctx.reply(embed=embed)
 
-# ===================== FIN COMANDOS DE ITEMS =====================
+# ===================== COMANDOS DE NIVELES / PERKS / MISIONES / DAR =====================
+
+class PerksView(discord.ui.View):
+    def __init__(self, autor):
+        super().__init__(timeout=180)
+        self.autor = autor
+        self.mensaje = None
+        self._reconstruir()
+
+    def _reconstruir(self):
+        self.clear_items()
+        for clave, definicion in PERKS_DEFINICION.items():
+            nivel_actual = obtener_nivel_perk(self.autor.id, clave)
+            if nivel_actual >= definicion["max_nivel"]:
+                etiqueta = f"{definicion['emoji']} {definicion['nombre']} (MAX)"
+                costo = None
+            else:
+                costo = definicion["costos"][nivel_actual]
+                etiqueta = f"{definicion['emoji']} {definicion['nombre']} — {costo} pts (niv {nivel_actual+1})"
+            boton = discord.ui.Button(label=etiqueta[:80], style=discord.ButtonStyle.success, custom_id=f"perk_{clave}")
+            boton.callback = self._hacer_callback(clave)
+            if costo is None:
+                boton.disabled = True
+            self.add_item(boton)
+
+    def _hacer_callback(self, clave):
+        async def callback(interaction: discord.Interaction):
+            if interaction.user.id != self.autor.id:
+                await interaction.response.send_message("Este panel no es tuyo.", ephemeral=True)
+                return
+            datos = niveles_cache.get(str(self.autor.id))
+            if not datos:
+                await interaction.response.send_message("Todavía no tenés progreso registrado.", ephemeral=True)
+                return
+            definicion = PERKS_DEFINICION[clave]
+            nivel_actual = datos.get("perks", {}).get(clave, 0)
+            if nivel_actual >= definicion["max_nivel"]:
+                await interaction.response.send_message("Ya tenés ese perk al máximo.", ephemeral=True)
+                return
+            costo = definicion["costos"][nivel_actual]
+            if datos.get("puntos", 0) < costo:
+                await interaction.response.send_message(
+                    f"Te faltan puntos. Necesitás **{costo}**, tenés **{datos.get('puntos', 0)}**.", ephemeral=True
+                )
+                return
+            global hubo_cambios_niveles_sin_guardar
+            datos["puntos"] -= costo
+            datos.setdefault("perks", {})
+            datos["perks"][clave] = nivel_actual + 1
+            hubo_cambios_niveles_sin_guardar = True
+            try:
+                await guardar_niveles_en_github()
+            except Exception as e:
+                print(f"⚠️ No pude guardar los niveles: {e}", flush=True)
+            self._reconstruir()
+            await interaction.response.edit_message(embed=construir_embed_perks(self.autor), view=self)
+        return callback
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.autor.id:
+            await interaction.response.send_message("Este panel no es tuyo.", ephemeral=True)
+            return False
+        return True
+
+    async def on_timeout(self):
+        if self.mensaje is None:
+            return
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.mensaje.edit(view=self)
+        except discord.HTTPException:
+            pass
+
+def construir_embed_perks(usuario):
+    user_id = str(usuario.id)
+    datos = niveles_cache.get(user_id, {})
+    nivel = datos.get("nivel", 1)
+    puntos = datos.get("puntos", 0)
+    xp = datos.get("xp", 0)
+    xp_necesario = xp_necesario_para_nivel(nivel)
+    perks = datos.get("perks", {})
+
+    lineas = [
+        f"### 📚 Nivel {nivel}",
+        f"> XP: **{formatear_numero(xp)}/{formatear_numero(xp_necesario)}**",
+        f"> Puntos disponibles: **{puntos}**",
+        "",
+        "### 🎯 Perks",
+    ]
+    for clave, d in PERKS_DEFINICION.items():
+        nivel_p = perks.get(clave, 0)
+        lineas.append(f"> {d['emoji']} **{d['nombre']}** (niv {nivel_p}/{d['max_nivel']}) — {d['descripcion']}")
+    return crear_embed(titulo=f"✨ Progreso de {usuario.display_name}", descripcion="\n".join(lineas))
+
+@bot.command(name="nivel", aliases=["lvl", "level"])
+async def nivel_cmd(ctx, miembro: discord.Member = None):
+    """Muestra tu nivel, XP, puntos y perks"""
+    objetivo = miembro or ctx.author
+    datos = niveles_cache.get(str(objetivo.id))
+    if not datos:
+        await ctx.reply(embed=crear_embed(descripcion=f"**{objetivo.display_name}** todavía no tiene progreso. Hablá un poco o usá comandos para arrancar."))
+        return
+    await ctx.reply(embed=construir_embed_perks(objetivo))
+
+@bot.command(name="perks")
+async def perks_cmd(ctx):
+    """Panel para ver y comprar perks con tus puntos"""
+    obtener_misiones_usuario(ctx.author.id)
+    _asegurar_registro_nivel(ctx.author.id, ctx.author.display_name)
+    vista = PerksView(ctx.author)
+    vista.mensaje = await ctx.reply(embed=construir_embed_perks(ctx.author), view=vista)
+
+@bot.command(name="misiones", aliases=["mision", "quests", "quest"])
+async def misiones_cmd(ctx, miembro: discord.Member = None):
+    """Muestra tus misiones semanales y el progreso"""
+    objetivo = miembro or ctx.author
+    datos = obtener_misiones_usuario(objetivo.id)
+    datos["nombre"] = objetivo.display_name
+
+    lineas = [f"### 📅 Semana {datos['semana']}"]
+    for m in datos["misiones"]:
+        definicion = next((x for x in MISIONES_POOL if x["id"] == m["id"]), None)
+        desc = definicion["desc"] if definicion else m["id"]
+        progreso = m["progreso"]
+        meta = m["meta"]
+        if meta >= 1000:
+            prog_txt = f"{formatear_numero(min(progreso, meta))}/{formatear_numero(meta)}"
+        else:
+            prog_txt = f"{min(progreso, meta)}/{meta}"
+        check = "✅" if m["completada"] else "⏳"
+        recompensa = f"+{definicion['xp']} XP, +{definicion['pts']} pt" if definicion else ""
+        lineas.append(f"> {check} {desc}\n> └ {prog_txt} · {recompensa}")
+
+    if datos.get("bonus_dado"):
+        lineas.append("")
+        lineas.append(f"-# 🏆 Completaste las 3 esta semana. +{XP_BONUS_MISIONES_COMPLETAS} XP y +{PTS_BONUS_MISIONES_COMPLETAS} pts extra.")
+
+    await ctx.reply(embed=crear_embed(titulo=f"📋 Misiones de {objetivo.display_name}", descripcion="\n".join(lineas)))
+
+@bot.command(name="dar", aliases=["regalar"])
+async def dar_cmd(ctx, miembro: discord.Member = None, *, entrada: str = None):
+    """Le das items de tu inventario a otro usuario.
+    Para plata usá `!pay`, para personajes usá `!givechar`.
+    Ejemplo: `!dar @Usuario Café doble 3`"""
+    global hubo_cambios_inventario_sin_guardar
+
+    if miembro is None or not entrada:
+        await ctx.reply(embed=crear_embed(descripcion="Usalo así: `!dar @Usuario Café doble 3` o `!dar @Usuario Pase VIP`"))
+        return
+    if miembro.id == ctx.author.id:
+        await ctx.reply(embed=crear_embed(descripcion="No te podés dar items a vos mismo."))
+        return
+    if miembro.bot:
+        await ctx.reply(embed=crear_embed(descripcion="No le podés dar items a un bot."))
+        return
+
+    partes = entrada.strip().rsplit(" ", 1)
+    cantidad = 1
+    nombre_item = entrada.strip()
+    if len(partes) == 2:
+        cant_parseada = parsear_cantidad(partes[1])
+        if isinstance(cant_parseada, int) and cant_parseada > 0:
+            nombre_item = partes[0].strip()
+            cantidad = cant_parseada
+
+    emisor_id = str(ctx.author.id)
+    items_emisor = inventario_cache.get(emisor_id, {}).get("items", {})
+    if not items_emisor:
+        await ctx.reply(embed=crear_embed(descripcion="No tenés items en tu inventario. Mirá `!shop`."))
+        return
+
+    real = None
+    for nombre_inv in items_emisor:
+        if nombre_inv.casefold() == nombre_item.casefold():
+            real = nombre_inv
+            break
+    if real is None:
+        parciales = [n for n in items_emisor if nombre_item.casefold() in n.casefold()]
+        if len(parciales) == 1:
+            real = parciales[0]
+        elif len(parciales) > 1:
+            await ctx.reply(embed=crear_embed(descripcion=f"Tenés varios items que coinciden: {', '.join(parciales[:10])}. Poné el nombre completo."))
+            return
+        else:
+            await ctx.reply(embed=crear_embed(descripcion=f"No tenés ningún item llamado **{nombre_item}** en tu inventario."))
+            return
+
+    if items_emisor.get(real, 0) < cantidad:
+        await ctx.reply(embed=crear_embed(descripcion=f"No tenés esa cantidad. Tenés **{items_emisor.get(real, 0)}** de **{real}**."))
+        return
+
+    items_emisor[real] -= cantidad
+    if items_emisor[real] <= 0:
+        items_emisor.pop(real, None)
+
+    receptor_id = str(miembro.id)
+    inventario_cache.setdefault(receptor_id, {"nombre": miembro.display_name, "items": {}})
+    inventario_cache[receptor_id]["nombre"] = miembro.display_name
+    items_rec = inventario_cache[receptor_id].setdefault("items", {})
+    items_rec[real] = items_rec.get(real, 0) + cantidad
+    hubo_cambios_inventario_sin_guardar = True
+
+    _, item_shop = buscar_item_shop(real)
+    emoji = item_shop["emoji"] if item_shop else "📦"
+
+    await ctx.reply(embed=crear_embed(
+        titulo="🎁 Item regalado",
+        descripcion=f"**{ctx.author.display_name}** le dio **{emoji} {real}** x{cantidad} a **{miembro.display_name}**.",
+    ))
+
+    try:
+        await guardar_inventario_en_github()
+    except Exception as e:
+        print(f"⚠️ No pude guardar tras !dar: {e}", flush=True)
+
+# ===================== FIN COMANDOS DE NIVELES =====================
 
 @bot.command(name="memoria")
 async def memoria(ctx, miembro: discord.Member = None):
@@ -4680,12 +4749,10 @@ async def memoria(ctx, miembro: discord.Member = None):
     objetivo = miembro or ctx.author
     user_id = str(objetivo.id)
     datos = memoria_cache.get(user_id)
-
     if not datos:
         posesivo = "de vos" if objetivo.id == ctx.author.id else f"de **{objetivo.display_name}**"
         await ctx.reply(embed=crear_embed(descripcion=f"Catherine todavía no tiene memoria guardada {posesivo}. Hablale un poco por acá primero."))
         return
-
     descripcion = (
         f"👤 **Nombre**\n> {datos.get('nombre') or '???'}\n\n"
         f"🎭 **Personalidad**\n> {datos.get('personalidad') or '(todavía no la notó)'}\n\n"
@@ -4695,7 +4762,6 @@ async def memoria(ctx, miembro: discord.Member = None):
     footer = None
     if datos.get("ultima_actualizacion"):
         footer = f"Actualizado por última vez el {time.strftime('%d/%m/%Y', time.localtime(datos['ultima_actualizacion']))}"
-
     embed = crear_embed(titulo=f"🧠 Lo que Catherine recuerda de {objetivo.display_name}", descripcion=descripcion, footer=footer)
     await ctx.reply(embed=embed)
 
@@ -4704,32 +4770,24 @@ async def olvidarme(ctx):
     """Borra lo que Catherine recuerda de vos"""
     global hubo_cambios_memoria_sin_guardar
     user_id = str(ctx.author.id)
-
     if user_id not in memoria_cache:
         await ctx.reply(embed=crear_embed(descripcion="Catherine no tenía nada guardado sobre vos."))
         return
-
     del memoria_cache[user_id]
     hubo_cambios_memoria_sin_guardar = True
     try:
         await guardar_memoria_en_github()
     except Exception as e:
         print(f"⚠️ No pude guardar el borrado de memoria: {e}", flush=True)
-
     await ctx.reply(embed=crear_embed(descripcion="🗑️ Listo, Catherine se olvidó de todo lo que sabía de vos."))
 
 # ===================== HELP =====================
-# Cada categoría es (emoji, nombre, [subpagina1, subpagina2, ...]). Si la
-# categoría entra en una sola página, se usa [ [linea1, linea2, ...] ] y listo.
-# Si es muy larga, se parte en varias subpáginas y el título muestra
-# "(1/2)", "(2/2)", etc.
 
 CATEGORIAS_HELP = [
     ("💰", "Economía", [
-        # Subpágina 1: cuenta y banco
         [
             "`!balance [@alguien]` · también `!bal` / `!saldo`\nMuestra tu plata, lo del banco y el total.\nEjemplo: `!balance` o `!balance @Usuario`",
-            "`!perfil [@alguien]`\nFicha completa: plata, matrimonio, colección e inventario.\nEjemplo: `!perfil` o `!perfil @Usuario`",
+            "`!perfil [@alguien]`\nFicha completa: nivel, plata, matrimonio, colección e inventario.\nEjemplo: `!perfil` o `!perfil @Usuario`",
             "`!top`\nTop 10 de usuarios con más plata total (balance + banco).\nEjemplo: `!top`",
             "`!depositar cantidad`\nGuardás plata en el banco. A salvo de `!robar` y suma 5% compuesto por día.\nEjemplo: `!depositar 50000` o `!depositar all`",
             "`!retirar cantidad`\nSacás plata del banco de vuelta a tu balance.\nEjemplo: `!retirar 50000` o `!retirar all`",
@@ -4738,16 +4796,14 @@ CATEGORIAS_HELP = [
             "`!pay @usuario cantidad`\nLe pasás plata de tu balance a otro usuario.\nEjemplo: `!pay @Usuario 5000` o `!pay @Usuario 100k`",
             "-# En cualquier `cantidad` del bot podés poner `all` (todo) o abreviar: `100k`, `2m`, `1b`, `1t`.",
         ],
-        # Subpágina 2: trabajo y dólar
         [
-            "`!w`\nTrabajás y ganás entre 5.000 y 6.500 Pesos (con un mensaje random cada vez).\nCooldown: 3 minutos.",
+            "`!w` · también `!work` / `!trabajar` / `!laburar` / `!currar`\nTrabajás y ganás entre 5.000 y 6.500 Pesos (con un mensaje random cada vez).\nCooldown: 3 minutos.",
             "`!mendigar`\nAbrís una colecta de 10 minutos para que el resto te done plata.\nCooldown: 20 minutos.",
             "`!dolar` · también `!dólar` / `!usd`\nCotización actual del Dólar Catherine. Cambia cada 4hs, nunca baja de 300 Pesos.",
             "`!topdolar` · también `!topdólar`\nTop 10 de quién tiene más Dólares guardados.",
             "`!buy Dólar cantidad` · también `!comprar`\nComprás Dólares a la cotización actual.\nEjemplo: `!buy Dólar 10` o `!buy Dólar all`",
             "`!vender Dólar cantidad`\nVendés Dólares. Hay 2% de comisión.\nEjemplo: `!vender Dólar 5`",
         ],
-        # Subpágina 3: tienda e items
         [
             "`!shop` · también `!tienda`\nCatálogo completo, por categorías (con Previous/Next).",
             "`!buy nombre [cantidad]` · también `!comprar`\nComprás algo de la tienda. La cantidad acepta `100k`, `all`, etc.\nEjemplo: `!buy Peluche de Ado` o `!buy Dólar 5`",
@@ -4763,6 +4819,7 @@ CATEGORIAS_HELP = [
             "`!marry @usuario`\nTe casás con otro usuario.\nEjemplo: `!marry @Usuario`",
             "`!divorcio`\nTe divorciás. Cuesta 5.000 a cada uno.\nEjemplo: `!divorcio`",
             "`!givechar nombre @usuario`\nLe regalás un personaje de tu colección a otro usuario.\nEjemplo: `!givechar Gojo Satoru @Usuario`",
+            "`!dar @usuario item [cantidad]`\nLe das items de tu inventario a otro usuario. Para plata es `!pay`, para personajes es `!givechar`.\nEjemplo: `!dar @Usuario Café doble 3`",
             "`!robar @usuario`\nSi está desconectado hace 6hs o más: 10% de afanarle todo el balance, 10% de perder vos el 5%, 80% no pasa nada.\nEjemplo: `!robar @Usuario`",
         ],
     ]),
@@ -4780,6 +4837,14 @@ CATEGORIAS_HELP = [
             "`!coleccion [@alguien]` · también `!harem`\nVes los personajes que reclamaste (paginado).\nEjemplo: `!coleccion`",
             "`!vender personaje`\nVendés un personaje. Te llevás el 70% de su valor en Pesos. También sirve para Dólares: `!vender Dólar 5`.\nEjemplo: `!vender Gojo Satoru`",
             "`!tasacion personaje`\nCuánto te darían por venderlo, sin venderlo.\nEjemplo: `!tasacion Gojo`",
+        ],
+    ]),
+    ("✨", "Progreso", [
+        [
+            "`!nivel [@alguien]` · también `!lvl` / `!level`\nVes tu nivel, XP, puntos y perks.\nEjemplo: `!nivel`",
+            "`!perks`\nPanel para comprar o subir perks con tus puntos.\nEjemplo: `!perks`",
+            "`!misiones [@alguien]` · también `!mision` / `!quests`\nTus 3 misiones semanales y el progreso.\nEjemplo: `!misiones`",
+            "-# Ganás XP por escribir mensajes (con cooldown de 15s) y por usar comandos. Cada nivel te da 2 puntos de perk.",
         ],
     ]),
     ("🎵", "Multimedia", [
@@ -4819,25 +4884,16 @@ CATEGORIAS_ADMINHELP = [
 ]
 
 class HelpView(discord.ui.View):
-    """Help paginado. Cada categoría puede tener varias subpáginas (por si es
-    muy larga), y el footer/título muestran el índice correspondiente. Solo
-    quien pidió el help puede cambiar de página."""
-
     def __init__(self, autor, titulo, categorias):
         super().__init__(timeout=180)
         self.autor = autor
         self.titulo = titulo
-
-        # Aplanamos la estructura: cada categoría es (emoji, nombre, [subpagina, ...])
-        # y lo convertimos a una lista plana de (emoji, nombre_mostrado, lineas),
-        # donde nombre_mostrado incluye "(1/3)" si hay más de una subpágina.
         self.paginas = []
         for emoji, nombre, subpaginas in categorias:
             total = len(subpaginas)
             for i, lineas in enumerate(subpaginas, start=1):
                 nombre_mostrado = f"{nombre} ({i}/{total})" if total > 1 else nombre
                 self.paginas.append((emoji, nombre_mostrado, lineas))
-
         self.pagina = 0
         self.mensaje = None
         self._actualizar_botones()
@@ -4894,18 +4950,10 @@ async def adminhelp(ctx):
     if str(ctx.author.id) != ID_BANCA:
         await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
         return
-
     vista = HelpView(ctx.author, "🛠️ Comandos de administración", CATEGORIAS_ADMINHELP)
     vista.mensaje = await ctx.reply(embed=vista.construir_embed(), view=vista)
 
-_HEADERS_NAVEGADOR = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
-}
-
 async def _chequear_una_imagen(session, semaforo, nombre, url):
-    """Devuelve (nombre, ok, motivo) para un link de imagen puntual."""
     if not url:
         return (nombre, False, "sin link cargado")
     async with semaforo:
@@ -4919,8 +4967,6 @@ async def _chequear_una_imagen(session, semaforo, nombre, url):
                 if resp.status != 200:
                     return (nombre, False, f"código {resp.status}")
                 content_type = resp.headers.get("Content-Type", "").lower()
-                # Solo lo marcamos roto si claramente devolvió una página web en vez de la imagen.
-                # Muchos hosts (Imgur, CDNs) no mandan un Content-Type prolijo con imagen/*.
                 if "text/html" in content_type:
                     return (nombre, False, "el link redirige a una página, no a la imagen")
                 return (nombre, True, "")
@@ -4933,12 +4979,10 @@ async def checkimg(ctx):
     if not personajes_cache:
         await ctx.reply(embed=crear_embed(descripcion="No hay personajes cargados. Probá `!rwreload` primero."))
         return
-
     aviso = await ctx.reply(embed=crear_embed(
         descripcion=f"🔎 Revisando {len(personajes_cache)} links de imagen, dame un toque..."
     ))
-
-    semaforo = asyncio.Semaphore(10)  # no golpear 101 links todos a la vez
+    semaforo = asyncio.Semaphore(10)
     async with aiohttp.ClientSession() as session:
         tareas = [
             _chequear_una_imagen(
@@ -4949,20 +4993,15 @@ async def checkimg(ctx):
             for p in personajes_cache
         ]
         resultados = await asyncio.gather(*tareas)
-
     rotas = [(nombre, motivo) for nombre, ok, motivo in resultados if not ok]
-
     if not rotas:
         await aviso.edit(embed=crear_embed(
             titulo="🔎 Chequeo de imágenes",
             descripcion=f"Revisé los **{len(personajes_cache)}** personajes y están todos los links bien. Ninguno roto 🎉"
         ))
         return
-
     lineas = [f"❌ **{nombre}** — {motivo}" for nombre, motivo in rotas]
     resumen = f"De {len(personajes_cache)} personajes, **{len(rotas)}** tienen la imagen rota:\n\n"
-
-    # Discord no deja más de 4096 caracteres en la descripción, así que partimos en varios embeds si hace falta
     bloque_actual = resumen
     bloques = []
     for linea in lineas:
@@ -4971,7 +5010,6 @@ async def checkimg(ctx):
             bloque_actual = ""
         bloque_actual += linea + "\n"
     bloques.append(bloque_actual)
-
     await aviso.edit(embed=crear_embed(titulo="🔎 Chequeo de imágenes", descripcion=bloques[0]))
     for bloque in bloques[1:]:
         await ctx.send(embed=crear_embed(descripcion=bloque))
@@ -4980,26 +5018,21 @@ async def checkimg(ctx):
 async def cinco_porciento_force(ctx):
     """Fuerza el 5% de interés diario a tu banco ahora mismo, sin esperar las 24hs. Solo vos."""
     global hubo_cambios_sin_guardar
-
     if str(ctx.author.id) != ID_BANCA:
         await ctx.reply(embed=crear_embed(descripcion="Este comando es solo para el dueño de la banca."))
         return
-
     user_id = str(ctx.author.id)
     if user_id not in balances_cache:
         balances_cache[user_id] = {"nombre": ctx.author.display_name, "balance": 0, "banco": 0}
     balances_cache[user_id].setdefault("banco", 0)
     banco = balances_cache[user_id]["banco"]
-
     if banco <= 0:
         await ctx.reply(embed=crear_embed(descripcion="No tenés nada en el banco todavía. Usá `!depositar` primero."))
         return
-
     ganancia = round(banco * INTERES_BANCO_DIARIO)
     balances_cache[user_id]["banco"] = banco + ganancia
-    balances_cache[user_id]["ultimo_interes"] = time.time()  # reinicia el reloj de 24hs para que no se sume de nuevo solo
+    balances_cache[user_id]["ultimo_interes"] = time.time()
     hubo_cambios_sin_guardar = True
-
     await ctx.reply(embed=crear_embed(
         titulo="🏦 5% forzado",
         descripcion=(
@@ -5014,7 +5047,6 @@ async def datasave(ctx):
     if not GITHUB_TOKEN or not GITHUB_REPO:
         await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar GITHUB_TOKEN y GITHUB_REPO en Render."))
         return
-
     aviso = await ctx.reply(embed=crear_embed(descripcion="🔄 Guardando los datos en GitHub..."))
     try:
         guardado_balances = await guardar_balances_en_github()
@@ -5024,7 +5056,11 @@ async def datasave(ctx):
         guardado_matrimonios = await guardar_matrimonios_en_github()
         guardado_memoria = await guardar_memoria_en_github()
         guardado_dolar = await guardar_dolar_en_github()
-        if guardado_balances or guardado_characters or guardado_personajes or guardado_inventario or guardado_matrimonios or guardado_memoria or guardado_dolar:
+        guardado_niveles = await guardar_niveles_en_github()
+        guardado_misiones = await guardar_misiones_en_github()
+        if (guardado_balances or guardado_characters or guardado_personajes or guardado_inventario
+                or guardado_matrimonios or guardado_memoria or guardado_dolar
+                or guardado_niveles or guardado_misiones):
             await aviso.edit(embed=crear_embed(descripcion="💾 Listo, quedó todo guardado en GitHub. Podés estar tranquilo/a."))
         else:
             await aviso.edit(embed=crear_embed(descripcion="No había cambios nuevos desde el último guardado, así que no hizo falta tocar nada."))
@@ -5036,7 +5072,7 @@ PERSONAJES_POR_PAGINA = 10
 class ColeccionView(discord.ui.View):
     def __init__(self, autor, miembro, personajes):
         super().__init__(timeout=120)
-        self.autor = autor  # solo quien pidió la colección puede pasar de página
+        self.autor = autor
         self.miembro = miembro
         self.personajes = sorted(
             personajes,
@@ -5060,7 +5096,6 @@ class ColeccionView(discord.ui.View):
             nombre_p = campo_personaje(p, "Nombre", "nombre")
             valor_p = campo_personaje(p, "Valor", "valor")
             lineas.append(f"> 🎴 **{nombre_p}** — {formatear_pesos(valor_p)}")
-
         if lineas:
             descripcion = (
                 f"### 📚 Colección de {self.miembro.display_name}\n"
@@ -5073,7 +5108,6 @@ class ColeccionView(discord.ui.View):
                 f"{SEPARADOR}\n\n"
                 f"-# No hay personajes en esta página."
             )
-
         return crear_embed(
             descripcion=descripcion,
             footer=f"Página {self.pagina + 1}/{self.total_paginas} — {len(self.personajes)} personajes en total",
@@ -5132,7 +5166,6 @@ class ColeccionIrAModal(discord.ui.Modal):
         if not (1 <= numero <= self.vista.total_paginas):
             await interaction.response.send_message(f"Tiene que ser un número entre 1 y {self.vista.total_paginas}.", ephemeral=True)
             return
-
         self.vista.pagina = numero - 1
         self.vista._actualizar_botones()
         await interaction.response.edit_message(embed=self.vista.construir_embed(), view=self.vista)
@@ -5142,25 +5175,17 @@ async def coleccion(ctx, miembro: discord.Member = None):
     """Muestra los personajes reclamados por vos o por alguien más, con paginado"""
     miembro = miembro or ctx.author
     user_id = str(miembro.id)
-
     datos = characters_cache.get(user_id)
     if not datos or not datos.get("personajes"):
         await ctx.reply(embed=crear_embed(
             descripcion=f"**{miembro.display_name}** todavía no reclamó ningún personaje. Probá `!rw`."
         ))
         return
-
     view = ColeccionView(ctx.author, miembro, datos["personajes"])
     mensaje = await ctx.reply(embed=view.construir_embed(), view=view)
     view.mensaje = mensaje
 
-# ===================== YTMUSICAPI (reemplaza a YouTube Data API) =====================
-
 def _buscar_en_ytmusic_sync(query, limite=1):
-    """Búsqueda síncrona en YouTube Music vía ytmusicapi (sin API key).
-    Devuelve un dict {'videoId': ..., 'title': ..., 'artists': '...'} o None.
-    Primero busca filtrando por 'songs' (música oficial); si no hay nada,
-    prueba sin filtro (por si es un video musical, cover, etc.)."""
     try:
         from ytmusicapi import YTMusic
         yt = YTMusic()
@@ -5169,38 +5194,26 @@ def _buscar_en_ytmusic_sync(query, limite=1):
             resultados = yt.search(query, limit=limite)
         if not resultados:
             return None
-
         item = resultados[0]
         video_id = item.get("videoId")
         if not video_id:
             return None
-
         titulo = item.get("title") or "audio"
-
-        # Los artistas vienen como lista de dicts con 'name'
         artists_raw = item.get("artists") or []
         if isinstance(artists_raw, list):
             nombres = [a.get("name") for a in artists_raw if isinstance(a, dict) and a.get("name")]
             artistas = ", ".join(nombres) if nombres else None
         else:
             artistas = str(artists_raw) if artists_raw else None
-
         return {"videoId": video_id, "title": titulo, "artists": artistas}
     except Exception as e:
         print(f"[ytmusic] Error buscando '{query}': {e}", flush=True)
         return None
 
-
 async def buscar_en_ytmusic(query, limite=1):
-    """Wrapper async: corre la búsqueda síncrona en un hilo aparte para no
-    bloquear el event loop del bot."""
     return await asyncio.to_thread(_buscar_en_ytmusic_sync, query, limite)
 
-# ===================== FIN YTMUSICAPI =====================
-
 async def buscar_por_scraping(session, texto):
-    """Fallback: busca directo en youtube.com/results y parsea el primer video ID.
-    Más preciso que la API, pero puede fallar."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     }
@@ -5214,31 +5227,21 @@ async def buscar_por_scraping(session, texto):
     except Exception:
         return None
 
-
 def _miniatura_youtube(video_id):
-    """Devuelve la URL de la miniatura de YouTube para ese video.
-    Usamos hqdefault porque maxresdefault no siempre existe."""
     return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
-
 
 @bot.command(name="mp3")
 async def mp3(ctx, *, entrada: str = None):
-    """Busca (o recibe un link de) un video de YouTube y manda el audio como mp3.
-    Busca primero en YouTube Music (ytmusicapi) y cae al scraping de YouTube
-    normal si ytmusicapi no encuentra nada."""
+    """Busca (o recibe un link de) un video de YouTube y manda el audio como mp3."""
     if not entrada:
         await ctx.reply(embed=crear_embed(descripcion="Decime qué buscar, o pasame un link. Ejemplo: `!mp3 bruh` o `!mp3 Oasis Wonderwall`"))
         return
-
     if not RAPIDAPI_KEY:
         await ctx.reply(embed=crear_embed(descripcion="❌ Falta configurar RAPIDAPI_KEY en las variables de entorno de Render."))
         return
 
     embed = crear_embed(titulo=entrada, descripcion="⏳ Buscando video...")
     aviso = await ctx.reply(embed=embed)
-
-    # Los pasos se van ACUMULANDO en el embed (no se reemplazan), así el usuario
-    # ve todo el progreso junto: ✅ Buscando video / ✅ Convirtiendo / ⏳ Descargando.
     pasos = ["⏳ Buscando video..."]
 
     async def mostrar_pasos():
@@ -5264,19 +5267,15 @@ async def mp3(ctx, *, entrada: str = None):
         async with aiohttp.ClientSession() as session:
             titulo = "audio"
             canal = None
-
             if match:
                 video_id = match.group(1)
             else:
-                # 1) Buscamos en YouTube Music primero (mejores resultados para música)
                 resultado_ytmusic = await buscar_en_ytmusic(entrada, limite=1)
-
                 if resultado_ytmusic:
                     video_id = resultado_ytmusic["videoId"]
                     titulo = resultado_ytmusic.get("title") or "audio"
                     canal = resultado_ytmusic.get("artists")
                 else:
-                    # 2) Fallback: scraping de YouTube normal
                     video_id = await buscar_por_scraping(session, entrada)
                     if not video_id:
                         await mostrar_error("No encontré nada para eso. Probá con otro nombre o pasame el link directo.")
@@ -5284,22 +5283,16 @@ async def mp3(ctx, *, entrada: str = None):
 
             await siguiente_paso("Convirtiendo a MP3...")
 
-            headers = {
-                "X-RapidAPI-Key": RAPIDAPI_KEY,
-                "X-RapidAPI-Host": RAPIDAPI_HOST,
-            }
-
+            headers = {"X-RapidAPI-Key": RAPIDAPI_KEY, "X-RapidAPI-Host": RAPIDAPI_HOST}
             mp3_url = None
             duracion = None
 
             for _ in range(10):
                 async with session.get(f"https://{RAPIDAPI_HOST}/dl", params={"id": video_id}, headers=headers) as resp:
                     data = await resp.json()
-
                 estado = data.get("status")
                 if estado == "ok":
                     mp3_url = data.get("link")
-                    # Si RapidAPI devuelve un título distinto, lo preferimos (suele estar más limpio)
                     if data.get("title"):
                         titulo = data["title"]
                     duracion = data.get("duration")
@@ -5331,10 +5324,6 @@ async def mp3(ctx, *, entrada: str = None):
                     if resp_mp3.status != 200:
                         await asyncio.sleep(2)
                         continue
-
-                    # Antes de bajar nada: si el header Content-Length dice que pesa
-                    # más de lo que Discord permite, ni lo descargamos. Nos ahorramos
-                    # bajarnos 100MB a RAM para después tirarlos.
                     content_length = resp_mp3.headers.get("Content-Length")
                     if content_length:
                         try:
@@ -5343,11 +5332,9 @@ async def mp3(ctx, *, entrada: str = None):
                                 break
                         except (ValueError, TypeError):
                             pass
-
                     contenido = await resp_mp3.read()
                     break
 
-            # Caso 1: demasiado grande, ni lo bajamos → solo link
             if demasiado_grande:
                 embed.title = "Descarga completada"
                 embed.description = None
@@ -5361,7 +5348,6 @@ async def mp3(ctx, *, entrada: str = None):
                 await aviso.edit(embeds=[embed, embed_datos])
                 return
 
-            # Caso 2: no pudimos bajarlo, pero el link sirve igual
             if contenido is None:
                 embed.title = "Descarga completada"
                 embed.description = None
@@ -5377,8 +5363,6 @@ async def mp3(ctx, *, entrada: str = None):
 
             tamaño_mb = len(contenido) / (1024 * 1024)
 
-            # Caso 3: lo bajamos pero igual pesa más de lo permitido (Content-Length
-            # mentía o no venía) → link en vez de adjunto
             if tamaño_mb > LIMITE_MB:
                 embed.title = "Descarga completada"
                 embed.description = None
@@ -5392,7 +5376,6 @@ async def mp3(ctx, *, entrada: str = None):
                 await aviso.edit(embeds=[embed, embed_datos])
                 return
 
-            # Resultado final: título + canal + tamaño/kbps + link al video de YT
             bits_info = [f"💾 {tamaño_mb:.1f} MB"]
             if duracion and duracion > 0:
                 bitrate_kbps = round((len(contenido) * 8) / duracion / 1000)
@@ -5414,5 +5397,4 @@ async def mp3(ctx, *, entrada: str = None):
     except Exception as e:
         await mostrar_error(f"Hubo un error: {str(e)}")
 
-# Iniciar el bot
 bot.run(os.environ.get("DISCORD_TOKEN"))
