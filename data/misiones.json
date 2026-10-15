@@ -1,0 +1,30 @@
+{
+  "1468974197895336151": {
+    "nombre": "Scarlett",
+    "semana": "2026-W42",
+    "misiones": [
+      {
+        "id": "buy_20",
+        "tipo": "buy_count",
+        "meta": 20,
+        "progreso": 20,
+        "completada": true
+      },
+      {
+        "id": "bet_win_500k",
+        "tipo": "bet_win",
+        "meta": 500000,
+        "progreso": 0,
+        "completada": false
+      },
+      {
+        "id": "bet_total_5m",
+        "tipo": "bet_total",
+        "meta": 5000000,
+        "progreso": 5000000,
+        "completada": true
+      }
+    ],
+    "bonus_dado": false
+  }
+}
