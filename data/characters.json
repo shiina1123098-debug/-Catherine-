@@ -2503,6 +2503,12 @@
         "Imagen": "https://static.wikia.nocookie.net/p__/images/e/e2/Suigetsu_body.png/revision/latest?cb=20170907174654&path-prefix=protagonist",
         "Fuente": "Naruto",
         "Valor": 18000
+      },
+      {
+        "Nombre": "Mio Naganohara",
+        "Imagen": "https://static.wikia.nocookie.net/nichijou/images/1/1f/Mio.jpg/revision/latest?cb=20190204183023",
+        "Fuente": "Nichijou",
+        "Valor": 22000
       }
     ]
   }
