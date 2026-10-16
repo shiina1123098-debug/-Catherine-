@@ -1234,17 +1234,36 @@ async def procesar_evento_mision(usuario, tipo, cantidad, canal=None):
 
     if m["progreso"] >= m["meta"] and not m["completada"]:
         m["completada"] = True
-        dar_xp(usuario.id, m["xp"])
+        definicion = next((x for x in MISIONES_POOL if x["id"] == m["id"]), None)
+        xp_recompensa = definicion["xp"] if definicion else 0
+        pts_recompensa = definicion["pts"] if definicion else 0
+        texto_desc = definicion["desc"] if definicion else m["id"]
+
+        dar_xp(usuario.id, xp_recompensa)
         reg = _asegurar_registro_nivel(usuario.id, usuario.display_name)
-        reg["puntos"] += m["pts"]
+        reg["puntos"] += pts_recompensa
         hubo_cambios_niveles_sin_guardar = True
+
         if canal is not None:
-            definicion = next((x for x in MISIONES_POOL if x["id"] == m["id"]), None)
-            texto_desc = definicion["desc"] if definicion else m["id"]
             try:
                 await canal.send(embed=crear_embed(
                     titulo="✅ Misión completada",
-                    descripcion=f"**{usuario.display_name}** completó: {texto_desc}\n+{m['xp']} XP · +{m['pts']} punto(s)",
+                    descripcion=f"**{usuario.display_name}** completó: {texto_desc}\n+{xp_recompensa} XP · +{pts_recompensa} punto(s)",
+                ))
+            except discord.HTTPException:
+                pass
+
+    if all(mm["completada"] for mm in datos["misiones"]) and not datos.get("bonus_dado"):
+        datos["bonus_dado"] = True
+        dar_xp(usuario.id, XP_BONUS_MISIONES_COMPLETAS)
+        reg = _asegurar_registro_nivel(usuario.id, usuario.display_name)
+        reg["puntos"] += PTS_BONUS_MISIONES_COMPLETAS
+        hubo_cambios_niveles_sin_guardar = True
+        if canal is not None:
+            try:
+                await canal.send(embed=crear_embed(
+                    titulo="🏆 ¡Misiones semanales completas!",
+                    descripcion=f"**{usuario.display_name}** completó las 3 misiones de la semana.\n+{XP_BONUS_MISIONES_COMPLETAS} XP · +{PTS_BONUS_MISIONES_COMPLETAS} puntos extra",
                 ))
             except discord.HTTPException:
                 pass
