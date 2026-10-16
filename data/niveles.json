@@ -1,10 +1,12 @@
 {
   "1468974197895336151": {
     "nombre": "",
-    "xp": 22,
-    "nivel": 1,
-    "puntos": 0,
-    "perks": {}
+    "xp": 146,
+    "nivel": 3,
+    "puntos": 6,
+    "perks": {
+      "estudiante": 1
+    }
   },
   "716390085896962058": {
     "nombre": "",
