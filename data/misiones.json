@@ -14,8 +14,8 @@
         "id": "bet_win_500k",
         "tipo": "bet_win",
         "meta": 500000,
-        "progreso": 0,
-        "completada": false
+        "progreso": 500000,
+        "completada": true
       },
       {
         "id": "bet_total_5m",
@@ -25,6 +25,6 @@
         "completada": true
       }
     ],
-    "bonus_dado": false
+    "bonus_dado": true
   }
 }
